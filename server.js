@@ -8,7 +8,7 @@ app.use(express.urlencoded({extended: false}))
 const pool = mysql.createPool({
     host: 'localhost',
     user: 'root',
-    password: 'arrow',  // Your MySQL password
+    password: 'pass',  // Your MySQL password
     database: 'Try',    // Your database name
     port: 3306,
     waitForConnections: true,
