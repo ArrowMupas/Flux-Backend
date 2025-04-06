@@ -68,6 +68,7 @@ To make setup easier, this project includes an **initDB script** that will autom
 node initDB.js
 
 ```
+---
 
 ## 4. Create a .env
 
@@ -86,8 +87,8 @@ Open the `.env` file and add the following database configuration:
 # MySQL Database Credentials
 
 DB_HOST=localhost  # Database host
-DB_USER=root       # Database user you setup
-DB_PASS=arrow      # Database password you setup
+DB_USER=user       # Database user you setup
+DB_PASS=pass       # Database password you setup
 DB_NAME=sauce      # Database name
 DB_PORT=3306       # Database port you setup
 
@@ -95,8 +96,7 @@ DB_PORT=3306       # Database port you setup
 PORT=3000         # Port
 
 NODE_ENV=development
-
-FRONTEND=http://localhost:5173 # The sample frontend I used
+FRONTEND=http://localhost:5173 # The sample frontend I used, you can just ignore this
 
 ```
 
