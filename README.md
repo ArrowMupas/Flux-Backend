@@ -23,6 +23,8 @@ This is a foundational backend setup. It’s currently a work in progress, focus
 
 Follow the steps below to set up the project locally:
 
+Create a folder, open it in VS code, open terminal and run this.
+
 ```bash
 
 git clone https://github.com/ArrowMupas/TRY-NPM.git .
