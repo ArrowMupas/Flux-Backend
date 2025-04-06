@@ -4,7 +4,6 @@ require("dotenv").config();
 
 (async () => {
   try {
-    // 1. Connect to MySQL without selecting a database
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -14,25 +13,25 @@ require("dotenv").config();
 
     console.log("✅ Connected to MySQL server");
 
-    // 2. Create the database if it doesn't exist
+    // Create the database if it doesn't exist
     const createDatabaseQuery = `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`;
     await connection.query(createDatabaseQuery);
     console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
 
-    // 3. Select the database
+    // Select the database
     await connection.query(`USE ${process.env.DB_NAME}`);
 
-    // 4. Run the initialization SQL script
-    const sqlFilePath = "database/init.sql"; // Make sure this file is in the correct path
+    // Run the initialization SQL script
+    const sqlFilePath = "database/init.sql";
     const sql = fs.readFileSync(sqlFilePath, "utf8");
     const queries = sql.split(";").filter((query) => query.trim());
     for (const query of queries) {
       await connection.query(query);
     }
 
-    console.log("✅ Database initialized successfully");
-    await connection.end(); // Close the connection after all queries are run
+    console.log("Database initialized successfully");
+    await connection.end();
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error("Error:", error);
   }
 })();
