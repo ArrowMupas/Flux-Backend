@@ -34,6 +34,7 @@ npm install
 npm run dev
 
 ```
+
 ---
 
 ## 🧰 How to Set Up MySQL on Your Computer
@@ -86,6 +87,7 @@ NODE_ENV=development
 FRONTEND=http://localhost:5173 # The sample frontend I used, you can just ignore this
 
 ```
+
 ---
 
 ## 4. One-Time Database Initialization
@@ -99,11 +101,20 @@ To make setup easier, this project includes an **initDB script** that will autom
 
 ```bash
 
-node initDB.js
+node database/initDB.js
 
 ```
+
 ---
 
+## Dropping a database
 
+```bash
+
+node database/dropDB.js
+
+```
+
+---
 
 _More features and documentation coming soon._
