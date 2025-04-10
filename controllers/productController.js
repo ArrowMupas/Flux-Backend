@@ -19,25 +19,38 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // Create a new product
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, quantity, price, image } = req.body;
-  const result = await productModel.addProduct(name, quantity, price, image);
-  res.status(201).json({ id: result.insertId, ...req.body });
-});
+  const { productID, name, category, quantity, price, image } = req.body;
 
-// Update a product
-const updateProduct = asyncHandler(async (req, res) => {
-  const { name, quantity, price, image } = req.body;
-  const result = await productModel.updateProduct(
-    req.params.id,
+  const result = await productModel.addProduct(
+    productID,
     name,
+    category,
     quantity,
     price,
     image
   );
+
+  res.status(201).json({ productID, ...req.body });
+});
+
+// Update a product
+const updateProduct = asyncHandler(async (req, res) => {
+  const { name, category, quantity, price, image } = req.body;
+
+  const result = await productModel.updateProduct(
+    req.params.id,
+    name,
+    category,
+    quantity,
+    price,
+    image
+  );
+
   if (result.affectedRows === 0) {
     res.status(404);
     throw new Error(`Cannot update product with ID ${req.params.id}`);
   }
+
   res.status(200).json({ message: "Product updated successfully" });
 });
 

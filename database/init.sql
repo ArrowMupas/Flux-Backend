@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS sauce;
 USE sauce;
 
 CREATE TABLE IF NOT EXISTS products (
-    productID INT PRIMARY KEY,
+    productID VARCHAR(50) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     category VARCHAR(100),
     quantity INT NOT NULL DEFAULT 0,
