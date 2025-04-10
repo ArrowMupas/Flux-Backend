@@ -2,8 +2,9 @@ CREATE DATABASE IF NOT EXISTS sauce;
 USE sauce;
 
 CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    productID INT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    category VARCHAR(100),
     quantity INT NOT NULL DEFAULT 0,
     price DECIMAL(10,2) NOT NULL,
     image VARCHAR(255),
