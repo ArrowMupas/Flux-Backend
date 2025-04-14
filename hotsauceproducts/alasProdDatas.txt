@@ -1,0 +1,145 @@
+  {
+    "productID": "P001",
+    "name": "The Ballad of Q,
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "ballad.jpg"
+  }
+  {
+    "productID": "P002",
+    "name": "Big Bald Bob",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "bigbald.jpg"
+  }
+  {
+    "productID": "P003",
+    "name": "Call Me Debra",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "callme.jpg"
+  }
+  {
+    "productID": "P004",
+    "name": "Carbon",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "carbon.jpg
+  }
+  {
+    "productID": "P005",
+    "name": "Catch 22",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "catch.jpg"
+  }
+  {
+    "productID": "P006",
+    "name": "Grin",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "grin.jpg"
+  }
+  {
+    "productID": "P007",
+    "name": "Gypsy Bu",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 1000,
+    "image": "gypsybus.jpg"
+  }
+  {
+    "productID": "P008",
+    "name": "Heyday Wreck",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 1000,
+    "image": "heyday.jpg"
+  }
+  {
+    "productID": "P009",
+    "name": "Hikari",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "hikari.jpg"
+  }
+  {
+    "productID": "P010",
+    "name": "Jinx",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "jinx.jpg"
+  }
+  {
+    "productID": "P011",
+    "name": "Kawild",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 650,
+    "image": "kawild.jpg"
+  }
+
+  {
+    "productID": "P012",
+    "name": "Kink",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 300,
+    "image": "kink.jpg"
+  }
+  {
+    "productID": "P013",
+    "name": "Le Blanc",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "leblanc.jpg"
+  }
+  {
+    "productID": "P014",
+    "name": "Mamengs revenge",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 650,
+    "image": "mameng.jpg"
+  }
+  {
+    "productID": "P015",
+    "name": "Rufus",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "rufus.jpg"
+  }
+  {
+    "productID": "P016",
+    "name": "Swan Song",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "swansong.jpg"
+  }
+  {
+    "productID": "P017",
+    "name": "The Red Tam",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "team.jpg"
+  }
+  {
+    "productID": "P018",
+    "name": "XVII",
+    "category": "Condiment",
+    "quantity": 50,
+    "price": 400,
+    "image": "xvii.jpg"
+  }
