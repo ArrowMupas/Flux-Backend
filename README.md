@@ -27,7 +27,7 @@ Create a folder, open it in VS code, open terminal and run this.
 
 ```bash
 
-git clone https://github.com/ArrowMupas/TRY-NPM.git .
+git clone https://github.com/ArrowMupas/Flux-Backend.git .
 
 npm install
 
