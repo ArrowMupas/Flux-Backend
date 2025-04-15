@@ -19,31 +19,35 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // Create a new product
 const createProduct = asyncHandler(async (req, res) => {
-  const { productID, name, category, quantity, price, image } = req.body;
+  const { id, name, category, stock_quantity, price, image, description } =
+    req.body;
 
   const result = await productModel.addProduct(
-    productID,
+    id,
     name,
     category,
-    quantity,
+    stock_quantity,
     price,
-    image
+    image,
+    description
   );
 
-  res.status(201).json({ productID, ...req.body });
+  res.status(201).json({ id, ...req.body });
 });
 
 // Update a product
 const updateProduct = asyncHandler(async (req, res) => {
-  const { name, category, quantity, price, image } = req.body;
+  const { name, category, stock_quantity, price, image, description } =
+    req.body;
 
   const result = await productModel.updateProduct(
     req.params.id,
     name,
     category,
-    quantity,
+    stock_quantity,
     price,
-    image
+    image,
+    description
   );
 
   if (result.affectedRows === 0) {

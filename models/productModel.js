@@ -8,51 +8,49 @@ const getAllProducts = async () => {
 
 // Function to get a product by ID
 const getProductById = async (id) => {
-  const [product] = await pool.query(
-    "SELECT * FROM products WHERE productID = ?",
-    [id]
-  );
+  const [product] = await pool.query("SELECT * FROM products WHERE id = ?", [
+    id,
+  ]);
   return product[0];
 };
 
 // Function to add a new product
 const addProduct = async (
-  productID,
+  id,
   name,
   category,
-  quantity,
+  stock_quantity,
   price,
-  image
+  image,
+  description
 ) => {
   const [result] = await pool.query(
-    "INSERT INTO products (productID, name, category, quantity, price, image) VALUES (?, ?, ?, ?, ?, ?)",
-    [productID, name, category, quantity, price, image]
+    "INSERT INTO products (id, name, category, stock_quantity, price, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [id, name, category, stock_quantity, price, image, description]
   );
   return result;
 };
 
 // Function to update a product
 const updateProduct = async (
-  productID,
+  id,
   name,
   category,
-  quantity,
+  stock_quantity,
   price,
-  image
+  image,
+  description
 ) => {
   const [result] = await pool.query(
-    "UPDATE products SET name = ?, category = ?, quantity = ?, price = ?, image = ? WHERE productID = ?",
-    [name, category, quantity, price, image, productID]
+    "UPDATE products SET name = ?, category = ?, stock_quantity = ?, price = ?, image = ?, description = ? WHERE id = ?",
+    [name, category, stock_quantity, price, image, description, id]
   );
   return result;
 };
 
 // Function to delete a product
 const deleteProduct = async (id) => {
-  const [result] = await pool.query(
-    "DELETE FROM products WHERE productID = ?",
-    [id]
-  );
+  const [result] = await pool.query("DELETE FROM products WHERE id = ?", [id]);
   return result;
 };
 
