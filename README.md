@@ -4,18 +4,18 @@ This is a foundational backend setup. It’s currently a work in progress, focus
 
 ## ✨ Features
 
-- **GET** product
-- **POST** product
-- **UPDATE** product
-- **DELETE** product
+-   **GET** product
+-   **POST** product
+-   **UPDATE** product
+-   **DELETE** product
 
 ## 🛠 Technologies Used/ You can use
 
-- **Node.js** – JavaScript runtime environment
-- **Git** – Version control
-- **Insomnia** – API testing
-- **Visual Studio Code** – Code editor
-- **MySQL2** – Database driver for MySQL
+-   **Node.js** – JavaScript runtime environment
+-   **Git** – Version control
+-   **Insomnia** – API testing
+-   **Visual Studio Code** – Code editor
+-   **MySQL2** – Database driver for MySQL
 
 ---
 
@@ -113,6 +113,36 @@ node database/initDB.js
 
 node database/dropDB.js
 
+```
+
+---
+
+## 🚀 Git Commands (Quick Reference)
+
+```bash
+# Create a new branch
+git checkout -b your-branch-name
+
+# Switch to an existing branch
+git checkout your-branch-name
+
+# Switch back to main branch
+git checkout main
+
+# Stage all changes
+git add .
+
+# Commit changes with a message
+git commit -m "your message here"
+
+# Push your branch to GitHub
+git push origin your-branch-name
+
+# List all local branches
+git branch
+
+# List remote branches
+git branch -r
 ```
 
 ---
