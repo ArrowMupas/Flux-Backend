@@ -142,37 +142,10 @@ git branch
 
 # List remote branches
 git branch -r
+
+# pull latest main
+git pull origin main
 ```
----
-
-## 🚀 Git Commands (Quick Reference)
-
-```bash
-# Create a new branch
-git checkout -b your-branch-name
-
-# Switch to an existing branch
-git checkout your-branch-name
-
-# Switch back to main branch
-git checkout main
-
-# Stage all changes
-git add .
-
-# Commit changes with a message
-git commit -m "your message here"
-
-# Push your branch to GitHub
-git push origin your-branch-name
-
-# List all local branches
-git branch
-
-# List remote branches
-git branch -r
-```
-
 ---
 
 _More features and documentation coming soon._
