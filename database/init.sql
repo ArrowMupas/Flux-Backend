@@ -23,7 +23,7 @@ INSERT INTO roles (name, description) VALUES
 ('admin', 'Administrator role with full permissions'),
 ('customer', 'Customer role with limited permissions');
 
-CREATE TABLE IF NOT EXISTS user (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY, 
     username VARCHAR(100) NOT NULL,    
     address TEXT,                    

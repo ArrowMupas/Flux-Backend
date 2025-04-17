@@ -3,7 +3,7 @@ const pool = require("../database/pool");
 const getUserById = async (id) => {
   const [user] = await pool.query(
     `SELECT 
-            user.id, 
+            users.id, 
             roles.name AS role_name, 
             username, 
             address, 
@@ -11,16 +11,16 @@ const getUserById = async (id) => {
             email, 
             created_at,
             updated_at
-         FROM user 
-         JOIN roles ON user.role_id = roles.id 
-         WHERE user.id = ?`,
+         FROM users 
+         JOIN roles ON users.role_id = roles.id 
+         WHERE users.id = ?`,
     [id]
   );
   return user[0];
 };
 
 const getUserByEmail = async (email) => {
-  const [user] = await pool.query("SELECT * FROM user WHERE email = ?", [
+  const [user] = await pool.query("SELECT * FROM users WHERE email = ?", [
     email,
   ]);
   return user[0];
@@ -28,7 +28,7 @@ const getUserByEmail = async (email) => {
 
 const createUser = async (username, email, password) => {
   const [result] = await pool.query(
-    `INSERT INTO user (username, email, password_hash) 
+    `INSERT INTO users (username, email, password_hash) 
          VALUES (?, ?, ?)`,
     [username, email, password]
   );
@@ -39,7 +39,7 @@ const createUser = async (username, email, password) => {
 
 const updateUser = async (userId, updates) => {
   const [result] = await pool.query(
-    "UPDATE user SET username=?, address=?, contact_number=? WHERE id=?",
+    "UPDATE users SET username=?, address=?, contact_number=? WHERE id=?",
     [updates.username, updates.address, updates.contact_number, userId]
   );
 
