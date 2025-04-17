@@ -1,14 +1,14 @@
 const express = require('express');
-require('dotenv').config();
-const productRoute = require('./routes/productRoute');
-const errorMiddleware = require('./middlewares/errorMiddleware');
-const cors = require('cors');
-const userRoute = require('./routes/userRoute');
-
-//express
 const app = express();
+require('dotenv').config();
+const cors = require('cors');
+const errorMiddleware = require('./middlewares/errorMiddleware');
 
-//CORS
+// route import
+const userRoute = require('./routes/userRoute');
+const productRoute = require('./routes/productRoute');
+
+// CORS
 const FRONTEND = process.env.FRONTEND;
 const corOptions = {
     origin: FRONTEND,
@@ -21,14 +21,14 @@ app.use(cors(corOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-//routes
+// routes
 app.use('/api/products', productRoute);
 app.use('/api/users', userRoute);
 
-//error middleware
+// error middleware
 app.use(errorMiddleware);
 
-//port
+// port
 app.listen(process.env.PORT, () => {
     console.log(`Node API is running on port ${process.env.PORT}`);
 });
