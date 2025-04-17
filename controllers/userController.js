@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const userModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 // Register a user
 const registerUser = asyncHandler(async (req, res) => {
@@ -34,8 +35,8 @@ const registerUser = asyncHandler(async (req, res) => {
 // Authenticate user
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const user = await userModel.getUserByEmail(email);
 
+    const user = await userModel.getUserByEmail(email);
     // Check for existing user
     if (!user) {
         res.status(400);
@@ -49,16 +50,21 @@ const loginUser = asyncHandler(async (req, res) => {
         throw new Error('Invalid credentials');
     }
 
+    // Generate JWT
+    const token = jwt.sign(
+        { id: user.id, username: user.username, email: user.email },
+        process.env.SECRET_KEY,
+        { expiresIn: '1d' }
+    );
+
     res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
+        token,
     });
 });
 
 // Retrieve user data
 const getUserProfile = asyncHandler(async (req, res) => {
-    const user = await userModel.getUserById(req.params.id);
+    const user = await userModel.getUserById(req.user.id);
 
     // Check for existing user
     if (!user) {
@@ -81,9 +87,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // Update user
 const updateUser = asyncHandler(async (req, res) => {
     const { username, address, contact_number } = req.body;
-    const userId = req.params.id;
 
-    const updatedUser = await userModel.updateUser(userId, {
+    const updatedUser = await userModel.updateUser(req.user.id, {
         username,
         address,
         contact_number,
