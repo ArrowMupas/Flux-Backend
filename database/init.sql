@@ -23,14 +23,14 @@ INSERT INTO roles (name, description) VALUES
 ('admin', 'Administrator role with full permissions'),
 ('customer', 'Customer role with limited permissions');
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS user (
     id INT AUTO_INCREMENT PRIMARY KEY, 
     username VARCHAR(100) NOT NULL,    
     address TEXT,                    
     contact_number VARCHAR(20),         
-    role_id INT,                       
+    role_id INT DEFAULT 2,                      
     email VARCHAR(100) UNIQUE NOT NULL, 
-    password_hash VARCHAR(255) NOT NULL,   
+    password VARCHAR(255) NOT NULL,   
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
