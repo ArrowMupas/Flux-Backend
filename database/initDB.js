@@ -13,15 +13,12 @@ require('dotenv').config();
 
         console.log('✅ Connected to MySQL server');
 
-        // Create the database if it doesn't exist
         const createDatabaseQuery = `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`;
         await connection.query(createDatabaseQuery);
         console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
 
-        // Select the database
         await connection.query(`USE ${process.env.DB_NAME}`);
 
-        // Run the initialization SQL script
         const sqlFilePath = 'database/init.sql';
         const sql = fs.readFileSync(sqlFilePath, 'utf8');
         const queries = sql.split(';').filter((query) => query.trim());

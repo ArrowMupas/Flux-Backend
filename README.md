@@ -116,6 +116,7 @@ node database/dropDB.js
 ```
 
 ---
+
 ## 🚀 Git Commands (Quick Reference)
 
 ```bash
@@ -145,7 +146,11 @@ git branch -r
 
 # pull latest main
 git pull origin main
+
+# fetch
+git fetch
 ```
+
 ---
 
 _More features and documentation coming soon._
