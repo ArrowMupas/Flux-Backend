@@ -4,18 +4,18 @@ This is a foundational backend setup. It’s currently a work in progress, focus
 
 ## ✨ Features
 
-- **GET** product
-- **POST** product
-- **UPDATE** product
-- **DELETE** product
+-   **GET** product
+-   **POST** product
+-   **UPDATE** product
+-   **DELETE** product
 
 ## 🛠 Technologies Used/ You can use
 
-- **Node.js** – JavaScript runtime environment
-- **Git** – Version control
-- **Insomnia** – API testing
-- **Visual Studio Code** – Code editor
-- **MySQL2** – Database driver for MySQL
+-   **Node.js** – JavaScript runtime environment
+-   **Git** – Version control
+-   **Insomnia** – API testing
+-   **Visual Studio Code** – Code editor
+-   **MySQL2** – Database driver for MySQL
 
 ---
 
@@ -142,6 +142,9 @@ git branch
 
 # List remote branches
 git branch -r
+
+# pull latest main
+git pull origin main
 ```
 ---
 
