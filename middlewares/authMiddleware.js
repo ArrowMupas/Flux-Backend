@@ -1,8 +1,7 @@
 const jwt = require('jsonwebtoken');
 
-// Verify Token Middleware
 const verifyToken = (req, res, next) => {
-    // Get auth header value
+    // Get 'authentication' header value
     const bearerHeader = req.headers['authorization'];
 
     // Check if bearer is undefined
