@@ -26,7 +26,7 @@ INSERT INTO roles (name, description) VALUES
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY, 
     username VARCHAR(100) NOT NULL,    
-    address TEXT,                    
+    address  VARCHAR(255),                    
     contact_number VARCHAR(20),         
     role_id INT DEFAULT 2,                      
     email VARCHAR(100) UNIQUE NOT NULL, 
@@ -81,10 +81,9 @@ CREATE TABLE IF NOT EXISTS orders (
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
     shipping_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    tax_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-    payment_method VARCHAR(50) NOT NULL,
-    shipping_address TEXT NOT NULL,  -- Changed from address_id to direct TEXT
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'cash on delivery',
+    address  VARCHAR(255),  
     notes TEXT,
     FOREIGN KEY (customer_id) REFERENCES users(id),
     INDEX (customer_id),

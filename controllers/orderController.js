@@ -1,47 +1,63 @@
 const asyncHandler = require('express-async-handler');
 const orderModel = require('../models/orderModel');
-const pool = require('../database/pool'); // Add this line
+const cartModel = require('../models/cartModel'); 
+const pool = require('../database/pool'); 
 
-const createOrder = asyncHandler(async (req, res) => {
-    const { customer_id, items, ...orderData } = req.body;
-    
+const checkoutFromCart = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
     const connection = await pool.getConnection();
     await connection.beginTransaction();
-    
+
     try {
-        // Add customer_id to orderData since it was destructured out
-        orderData.customer_id = customer_id;
-        const orderId = await orderModel.createOrder(orderData);
-        
-        for (const item of items) {
+        // 1. Fetch cart items
+        const cart = await cartModel.getCartItemsByUserId(userId);
+        if (!cart.items || cart.items.length === 0) {
+            throw new Error('Cart is empty');
+        }
+
+        // 2. Create order
+        const orderId = await orderModel.createOrder({
+            customer_id: userId,
+            total_amount: cart.cart_total,
+            status: 'pending'
+        });
+
+        // 3. Add items to order_items and update stock
+        for (const item of cart.items) {
             await orderModel.addOrderItem({
                 order_id: orderId,
-                product_id: item.product_id, // Make sure this matches your frontend data
+                product_id: item.product_id,
                 quantity: item.quantity,
-                unit_price: item.unit_price,
-                subtotal: item.subtotal
+                unit_price: item.price,
+                subtotal: item.price * item.quantity
             });
+
+            // Deduct stock
+            await pool.query(
+                'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+                [item.quantity, item.product_id]
+            );
         }
-        
+
+        // 4. Clear cart
+        await cartModel.clearCart(userId);
         await connection.commit();
         res.status(201).json({ 
-            success: true,
-            orderId,
-            message: 'Order created successfully'
+            success: true, 
+            orderId, 
+            message: 'Order created successfully' 
         });
     } catch (error) {
         await connection.rollback();
-        console.error('Order creation error:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error creating order',
-            error: error.message 
+        res.status(400).json({ 
+            success: false, 
+            message: error.message 
         });
     } finally {
-        if (connection) connection.release();
+        connection.release();
     }
 });
 
 module.exports = {
-    createOrder
+    checkoutFromCart 
 };
