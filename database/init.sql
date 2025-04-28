@@ -25,12 +25,13 @@ INSERT INTO roles (name, description) VALUES
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY, 
-    username VARCHAR(100) NOT NULL,    
-    address TEXT,                    
-    contact_number VARCHAR(20),         
-    role_id INT DEFAULT 2,                      
-    email VARCHAR(100) UNIQUE NOT NULL, 
-    password_hash VARCHAR(255) NOT NULL,   
+    username VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id INT DEFAULT 2,
+    is_active BOOLEAN DEFAULT TRUE,
+    contact_number VARCHAR(20),
+    address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (role_id) REFERENCES roles(id)
