@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel'); 
 const pool = require('../database/pool'); 
+const { get } = require('../routes/orderRoute');
 
 const checkoutFromCart = asyncHandler(async (req, res) => {
     const userId = req.user.id;
@@ -58,6 +59,28 @@ const checkoutFromCart = asyncHandler(async (req, res) => {
     }
 });
 
+
+const getOrderDetails = asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
+    const [order] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+    
+    if (!order.length) {
+        res.status(404);
+        throw new Error('Order not found');
+    }
+
+    const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+    const [statusHistory] = await pool.query('SELECT * FROM order_status_history WHERE order_id = ?', [orderId]);
+
+    res.json({
+        ...order[0],
+        items,
+        statusHistory
+    });
+});
+
+
 module.exports = {
-    checkoutFromCart 
+    checkoutFromCart,
+    getOrderDetails,
 };
