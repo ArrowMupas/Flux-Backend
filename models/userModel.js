@@ -48,9 +48,26 @@ const updateUser = async (userId, updates) => {
     return await getUserById(userId);
 };
 
+const getAllUsers = async () => {
+    const [users] = await pool.query(`
+        SELECT 
+            u.id, 
+            u.username, 
+            u.email, 
+            r.name as role_name,
+            u.address,
+            u.contact_number,
+            u.created_at
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+    `);
+    return users;
+};
+
 module.exports = {
     getUserById,
     getUserByEmail,
     createUser,
     updateUser,
+    getAllUsers
 };

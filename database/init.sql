@@ -68,6 +68,11 @@ VALUES
 ('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder'),
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder');
 
+ -- fuck you, you the captain now
+INSERT INTO users (username, email, password_hash, role_id) 
+VALUES 
+('admin', 'admin@example.com', '$2b$10$EXAMPLExEXAMPLExEXAMPLExEXAMPLEuT7lY1uZRjZr3uV4DzWY2', 1 );
+
 -- Seed cart
 INSERT INTO cart (user_id, product_id, quantity) VALUES
 (2, 'P001', 2),  

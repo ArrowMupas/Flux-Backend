@@ -8,5 +8,6 @@ router.post('/login', userController.loginUser);
 // Protected routes
 router.get('/', verifyToken, userController.getUserProfile);
 router.put('/', verifyToken, userController.updateUser);
+router.get('/all', verifyToken, userController.getAllUsers);
 
 module.exports = router;

@@ -6,5 +6,7 @@ const verifyToken = require('../middlewares/authMiddleware'); // Add auth middle
 // Corrected route (POST /api/orders)
 router.get('/:id', verifyToken, orderController.getOrderDetails);
 router.post('/', verifyToken, orderController.checkoutFromCart);
+router.post('/:id/items', verifyToken, orderController.addOrderItem);
+router.put('/:id/status', verifyToken, orderController.updateOrderStatus);
 
 module.exports = router;
