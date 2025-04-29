@@ -8,6 +8,4 @@ router.put('/:id', cartController.updateCartItemQuantity);
 router.delete('/:id', cartController.removeCartItem);
 router.delete('/clear/:id', cartController.clearCart);
 
-// will be implemented with JWT in the future
-
 module.exports = router;

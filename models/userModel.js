@@ -9,7 +9,7 @@ const getUserById = async (id) => {
             username, 
             address, 
             contact_number, 
-            email, 
+            email,
             created_at,
             updated_at
          FROM users 
@@ -17,6 +17,12 @@ const getUserById = async (id) => {
          WHERE users.id = ?`,
         [id]
     );
+    return user[0];
+};
+
+// Function to get a user by email
+const getUserByUsername = async (username) => {
+    const [user] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
     return user[0];
 };
 
@@ -48,9 +54,21 @@ const updateUser = async (userId, updates) => {
     return await getUserById(userId);
 };
 
+// Function to reset user password
+const resetUserPassword = async (userId, newPasswordHash) => {
+    const [result] = await pool.query(
+        'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
+        [newPasswordHash, userId]
+    );
+
+    return await getUserById(userId);
+};
+
 module.exports = {
     getUserById,
+    getUserByUsername,
     getUserByEmail,
     createUser,
     updateUser,
+    resetUserPassword,
 };
