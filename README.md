@@ -2,13 +2,6 @@
 
 This is a foundational backend setup. It’s currently a work in progress, focusing on basic CRUD operations.
 
-## ✨ Features
-
--   **GET** product
--   **POST** product
--   **UPDATE** product
--   **DELETE** product
-
 ## 🛠 Technologies Used/ You can use
 
 -   **Node.js** – JavaScript runtime environment
