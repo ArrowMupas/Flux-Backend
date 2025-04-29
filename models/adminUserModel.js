@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 
+// Function to get all users
 const getAllUsers = async () => {
     const [users] = await pool.query(
         `SELECT 
@@ -18,6 +19,7 @@ const getAllUsers = async () => {
     return users;
 };
 
+// Function to get a user by ID
 const getUserById = async (userId) => {
     const [user] = await pool.query(
         `SELECT 
