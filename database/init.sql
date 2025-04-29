@@ -74,3 +74,48 @@ INSERT INTO cart (user_id, product_id, quantity) VALUES
 (2, 'P001', 2),  
 (3, 'P002', 1),  
 (4, 'P005', 3);  
+
+INSERT INTO users (username, email, password_hash, role_id) 
+VALUES 
+('admin', 'admin@example.com', '$2b$10$EXAMPLExEXAMPLExEXAMPLExEXAMPLEuT7lY1uZRjZr3uV4DzWY2', 1 );
+
+CREATE TABLE IF NOT EXISTS orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'pending',
+    total_amount DECIMAL(10, 2) NOT NULL,
+    shipping_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'cash on delivery',
+    address  VARCHAR(255),  
+    notes TEXT,
+    FOREIGN KEY (customer_id) REFERENCES users(id),
+    INDEX (customer_id),
+    INDEX (order_date),
+    INDEX (status)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    INDEX (order_id),
+    INDEX (product_id)
+);
+
+CREATE TABLE IF NOT EXISTS order_status_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL,
+    status_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    INDEX (order_id),
+    INDEX (status_date)
+);
