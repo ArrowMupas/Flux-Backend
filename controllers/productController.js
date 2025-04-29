@@ -1,5 +1,6 @@
 const productModel = require('../models/productModel');
 const asyncHandler = require('express-async-handler');
+const entityExistHelper = require('../helpers/entityExistHelper');
 
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
@@ -10,10 +11,9 @@ const getAllProducts = asyncHandler(async (req, res) => {
 // Get a product by ID
 const getProductById = asyncHandler(async (req, res) => {
     const product = await productModel.getProductById(req.params.id);
-    if (!product) {
-        res.status(404);
-        throw new Error(`Cannot find product with ID ${req.params.id}`);
-    }
+
+    entityExistHelper(product, res, 404, `Cannot find product with ID ${req.params.id}`);
+
     res.status(200).json(product);
 });
 
