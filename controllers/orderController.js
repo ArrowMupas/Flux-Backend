@@ -22,7 +22,7 @@ const checkoutFromCart = asyncHandler(async (req, res) => {
             status: 'pending'
         });
 
-        // 3. Add items to order_items and update stock
+        // 3. Process items
         for (const item of cart.items) {
             await orderModel.addOrderItem({
                 order_id: orderId,
@@ -32,7 +32,7 @@ const checkoutFromCart = asyncHandler(async (req, res) => {
                 subtotal: item.price * item.quantity
             });
 
-            // Deduct stock
+            // Update stock
             await pool.query(
                 'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
                 [item.quantity, item.product_id]
@@ -42,6 +42,7 @@ const checkoutFromCart = asyncHandler(async (req, res) => {
         // 4. Clear cart
         await cartModel.clearCart(userId);
         await connection.commit();
+        
         res.status(201).json({ 
             success: true, 
             orderId, 
@@ -63,8 +64,8 @@ const addOrderItem = asyncHandler(async (req, res) => {
     const { product_id, quantity, unit_price } = req.body;
 
     // Verify order exists
-    const [order] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [orderId]);
-    if (!order.length) {
+    const order = await orderModel.getOrderById(orderId);
+    if (!order) {
         res.status(404);
         throw new Error('Order not found');
     }
@@ -84,48 +85,38 @@ const addOrderItem = asyncHandler(async (req, res) => {
     }
 
     // Add item to order
-    const [result] = await pool.query(
-        `INSERT INTO order_items 
-         (order_id, product_id, quantity, unit_price, subtotal)
-         VALUES (?, ?, ?, ?, ?)`,
-        [orderId, product_id, quantity, price, price * quantity]
-    );
+    const itemId = await orderModel.addOrderItem({
+        order_id: orderId,
+        product_id,
+        quantity,
+        unit_price: price,
+        subtotal: price * quantity
+    });
 
     // Update order total
-    await pool.query(
-        `UPDATE orders 
-         SET total_amount = (
-             SELECT SUM(subtotal) 
-             FROM order_items 
-             WHERE order_id = ?
-         ) 
-         WHERE order_id = ?`,
-        [orderId, orderId]
-    );
+    await orderModel.updateOrderTotal(orderId);
 
     res.status(201).json({
         success: true,
-        itemId: result.insertId,
+        itemId,
         message: 'Item added to order'
     });
 });
 
-
-
 const getOrderDetails = asyncHandler(async (req, res) => {
     const orderId = req.params.id;
-    const [order] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+    const order = await orderModel.getOrderById(orderId);
     
-    if (!order.length) {
+    if (!order) {
         res.status(404);
         throw new Error('Order not found');
     }
 
-    const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
-    const [statusHistory] = await pool.query('SELECT * FROM order_status_history WHERE order_id = ?', [orderId]);
+    const items = await orderModel.getOrderItems(orderId);
+    const statusHistory = await orderModel.getOrderStatusHistory(orderId);
 
     res.json({
-        ...order[0],
+        ...order,
         items,
         statusHistory
     });
@@ -136,8 +127,8 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     const { status, notes = '' } = req.body;
 
     // Verify order exists
-    const [order] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [orderId]);
-    if (!order.length) {
+    const order = await orderModel.getOrderById(orderId);
+    if (!order) {
         res.status(404);
         throw new Error('Order not found');
     }
@@ -149,19 +140,8 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         throw new Error('Invalid status value');
     }
 
-    // Update order status
-    await pool.query(
-        `UPDATE orders SET status = ? WHERE order_id = ?`,
-        [status, orderId]
-    );
-
-    // Record in history
-    await pool.query(
-        `INSERT INTO order_status_history 
-         (order_id, status, notes) 
-         VALUES (?, ?, ?)`,
-        [orderId, status, notes]
-    );
+    // Update status
+    await orderModel.updateOrderStatus(orderId, status, notes);
 
     res.json({
         success: true,
