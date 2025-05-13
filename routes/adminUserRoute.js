@@ -11,5 +11,10 @@ router.put(
     adminUserController.updateUser
 );
 router.patch('/manage/:id', adminUserController.manageUser);
+router.post(
+    '/register',
+    regexMiddleware.regexValidation(['username', 'email', 'password']),
+    adminUserController.createUser
+);
 
 module.exports = router;
