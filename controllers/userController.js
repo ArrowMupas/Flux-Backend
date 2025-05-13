@@ -35,24 +35,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
     entityExistHelper(user, res, 404, 'User not found');
 
-    if (username === 'admin' && password === 'admin') { // Admin login bypass
-
-        const adminUser = await userModel.getUserByUsername('admin');
-        if (!adminUser) throw new Error('Admin user not found');
-        
-        const token = jwt.sign(
-            {
-                id: adminUser.id,
-                username: adminUser.username,
-                email: adminUser.email,
-                role_name: adminUser.role_name
-            },
-            process.env.SECRET_KEY,
-            { expiresIn: '1d' }
-        );
-        return res.json({ token });
-    }
-
     // Check if user is active
     if (!user.is_active) {
         res.status(403);
