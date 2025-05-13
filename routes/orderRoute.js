@@ -3,9 +3,7 @@ const router = express.Router();
 const orderController = require('../controllers/orderController');
 const verifyToken = require('../middlewares/authMiddleware'); // Add auth middleware
 
-router.get('/:id', verifyToken, orderController.getOrderDetails);
-router.post('/', verifyToken, orderController.checkoutFromCart);
-router.post('/:id/items', verifyToken, orderController.addOrderItem);
-router.put('/:id/status', verifyToken, orderController.updateOrderStatus);
+router.get('/status/:status', verifyToken, orderController.getOrderByStatus);
+router.post('/', verifyToken, orderController.createOrder);
 
 module.exports = router;
