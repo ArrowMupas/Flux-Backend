@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS roles (
 
 INSERT INTO roles (name, description) VALUES
 ('admin', 'Administrator role with full permissions'),
-('customer', 'Customer role with limited permissions');
+('customer', 'Customer role with limited permissions'),
+('staff', 'Staff role with controlled permissions');
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY, 
@@ -75,17 +76,12 @@ INSERT INTO cart (user_id, product_id, quantity) VALUES
 (3, 'P002', 1),  
 (4, 'P005', 3);  
 
-INSERT INTO users (username, email, password_hash, role_id) 
-VALUES 
-('admin', 'admin@example.com', '$2b$10$EXAMPLExEXAMPLExEXAMPLExEXAMPLEuT7lY1uZRjZr3uV4DzWY2', 1 );
-
 CREATE TABLE IF NOT EXISTS orders (
     order_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
-    shipping_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     payment_method VARCHAR(50) NOT NULL DEFAULT 'cash on delivery',
     address  VARCHAR(255),  

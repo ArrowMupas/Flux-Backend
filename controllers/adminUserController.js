@@ -2,6 +2,7 @@ const adminUserModel = require('../models/adminUserModel');
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const entityExistHelper = require('../helpers/entityExistHelper');
+const bcrypt = require('bcrypt');
 
 // Admin get all users
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -58,9 +59,29 @@ const manageUser = asyncHandler(async (req, res) => {
     });
 });
 
+// Admin create  user
+const createUser = asyncHandler(async (req, res) => {
+    const { username, email, password, role } = req.body;
+
+    // Check for existing user
+    const userExists = await adminUserModel.getUserByUsername(username);
+    if (userExists) {
+        console.error('User already exists:', username);
+        res.status(400);
+        throw new Error('User already exists');
+    }
+
+    // Create user with hashed password
+    const hashedPassword = await bcrypt.hash(password, 10); // Combines password with salt
+    const user = await adminUserModel.createUser(username, email, hashedPassword, role);
+
+    return sendResponse(res, 200, 'User created', user);
+});
+
 module.exports = {
     getAllUsers,
     getUserById,
     updateUser,
     manageUser,
+    createUser,
 };
