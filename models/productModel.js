@@ -22,10 +22,19 @@ const addProduct = async (id, name, category, stock_quantity, price, image, desc
 };
 
 // Function to update a product
-const updateProduct = async (id, name, category, stock_quantity, price, image, description) => {
+const updateProduct = async (
+    id,
+    name,
+    category,
+    stock_quantity,
+    price,
+    image,
+    description,
+    is_active
+) => {
     const [result] = await pool.query(
-        'UPDATE products SET name = ?, category = ?, stock_quantity = ?, price = ?, image = ?, description = ? WHERE id = ?',
-        [name, category, stock_quantity, price, image, description, id]
+        'UPDATE products SET name = ?, category = ?, stock_quantity = ?, price = ?, image = ?, description = ?, is_active = ? WHERE id = ?',
+        [name, category, stock_quantity, price, image, description, is_active, id]
     );
     return result;
 };
