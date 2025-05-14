@@ -36,7 +36,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
 // Update a product
 const updateProduct = asyncHandler(async (req, res) => {
-    const { name, category, stock_quantity, price, image, description } = req.body;
+    const { name, category, stock_quantity, price, image, description, is_active } = req.body;
 
     const result = await productModel.updateProduct(
         req.params.id,
@@ -45,7 +45,8 @@ const updateProduct = asyncHandler(async (req, res) => {
         stock_quantity,
         price,
         image,
-        description
+        description,
+        is_active
     );
 
     if (result.affectedRows === 0) {
