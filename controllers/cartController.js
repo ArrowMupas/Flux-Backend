@@ -1,6 +1,7 @@
 const cartModel = require('../models/cartModel');
 const sendResponse = require('../middlewares/responseMiddleware');
 const asyncHandler = require('express-async-handler');
+const HttpError = require('../helpers/errorHelper');
 
 // Get all cart items by user ID
 const getCartItems = asyncHandler(async (req, res) => {
@@ -8,9 +9,8 @@ const getCartItems = asyncHandler(async (req, res) => {
     const cartItems = await cartModel.getCartItemsByUserId(userId);
 
     // Return error if cart has no items
-    if (!cartItems || cartItems.length === 0) {
-        res.status(404).json({ message: 'No items found in the cart.' });
-        return;
+    if (!cartItems.items || cartItems.items.length === 0) {
+        throw new HttpError(404, 'No items found in the cart');
     }
 
     return sendResponse(res, 200, 'Cart fetched.', cartItems);
@@ -23,15 +23,13 @@ const addToCart = asyncHandler(async (req, res) => {
 
     // Validate input fields
     if (!productId || !quantity) {
-        res.status(400).json({ message: 'Product ID and quantity are required.' });
-        return;
+        throw new HttpError(404, `Product and quantity are required`);
     }
 
     const result = await cartModel.addToCart(userId, productId, quantity);
 
     if (result.affectedRows === 0) {
-        res.status(400).json({ message: 'Failed to add item to cart.' });
-        return;
+        throw new HttpError(400, `Failed to add item to cart`);
     }
 
     return sendResponse(res, 201, 'Added to cart', result);
@@ -44,15 +42,13 @@ const updateCartItemQuantity = asyncHandler(async (req, res) => {
 
     // Validate input fields
     if (!productId || !quantity) {
-        res.status(400).json({ message: 'Product ID and quantity are required.' });
-        return;
+        throw new HttpError(404, `Product and quantity are required`);
     }
 
     const result = await cartModel.updateCartItemQuantity(userId, productId, quantity);
 
     if (result.affectedRows === 0) {
-        res.status(400).json({ message: 'Failed to update cart.' });
-        return;
+        throw new HttpError(400, `Failed to update cart`);
     }
 
     return sendResponse(res, 200, 'Cart Updated', result);
@@ -65,8 +61,7 @@ const removeCartItem = asyncHandler(async (req, res) => {
     const result = await cartModel.removeCartItem(userId, productId);
 
     if (result.affectedRows === 0) {
-        res.status(404);
-        throw new Error(`Cannot find product with ID ${productId} in the cart`);
+        throw new HttpError(404, `Cannot find product with ID ${productId} in the cart`);
     }
 
     return sendResponse(res, 201, 'Item removed from cart', result);
@@ -78,8 +73,7 @@ const clearCart = asyncHandler(async (req, res) => {
     const result = await cartModel.clearCart(userId);
 
     if (result.affectedRows === 0) {
-        res.status(404);
-        throw new Error('No items found in the cart to clear.');
+        throw new HttpError(404, `No items to clear in cart`);
     }
 
     return sendResponse(res, 200, 'Cart cleared.', []);
