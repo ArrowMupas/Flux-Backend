@@ -155,8 +155,8 @@ const removeCartItem = async (userId, productId) => {
 };
 
 // Function to clear cart
-const clearCart = async (userId) => {
-    const [result] = await pool.query('DELETE FROM cart WHERE user_id = ?', [userId]);
+const clearCart = async (userId, connection = pool) => {
+    const [result] = await connection.query('DELETE FROM cart WHERE user_id = ?', [userId]);
     return await getCartItemsByUserId(userId);
 };
 

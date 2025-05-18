@@ -1,5 +1,5 @@
 const errorMiddleware = (err, req, res, next) => {
-    const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+    const statusCode = err.status || 500;
 
     // Log the error message
     console.error(`Error: ${err.message}`);

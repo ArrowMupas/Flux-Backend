@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const entityExistHelper = require('../helpers/entityExistHelper');
 const bcrypt = require('bcrypt');
+const HttpError = require('../helpers/errorHelper');
 
 // Admin get all users
 const getAllUsers = asyncHandler(async (req, res) => {
@@ -45,13 +46,13 @@ const manageUser = asyncHandler(async (req, res) => {
 
     // Make sure request is true or false
     if (typeof is_active !== 'boolean') {
-        return res.status(400).json({ message: 'is_active must be a boolean (true or false)' });
+        throw new HttpError(400, 'is_active must be a boolean (true or false)');
     }
 
     const result = await adminUserModel.manageUser(id, is_active);
 
     if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'User not found' });
+        throw new HttpError(404, 'User not found');
     }
 
     res.status(200).json({
@@ -66,9 +67,7 @@ const createUser = asyncHandler(async (req, res) => {
     // Check for existing user
     const userExists = await adminUserModel.getUserByUsername(username);
     if (userExists) {
-        console.error('User already exists:', username);
-        res.status(400);
-        throw new Error('User already exists');
+        throw new HttpError(400, 'User already exists');
     }
 
     // Create user with hashed password
