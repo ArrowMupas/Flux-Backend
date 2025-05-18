@@ -4,8 +4,8 @@ const pool = require('../database/pool');
 const getAllUsers = async () => {
     const [users] = await pool.query(
         `SELECT 
-            u.id, 
-            u.username,
+           u.id, 
+             u.username,
             u.email,
             r.name AS role_name, 
             u.is_active,

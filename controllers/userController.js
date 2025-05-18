@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const userModel = require('../models/userModel');
 const entityExistHelper = require('../helpers/entityExistHelper');
+const HttpError = require('../helpers/errorHelper');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -11,9 +12,7 @@ const registerUser = asyncHandler(async (req, res) => {
     // Check for existing user
     const userExists = await userModel.getUserByUsername(username);
     if (userExists) {
-        console.error('User already exists:', email);
-        res.status(400);
-        throw new Error('User already exists');
+        throw new HttpError(401, `User already exists`);
     }
 
     // Create user with hashed password
@@ -37,15 +36,13 @@ const loginUser = asyncHandler(async (req, res) => {
 
     // Check if user is active
     if (!user.is_active) {
-        res.status(403);
-        throw new Error('Account is inactive');
+        throw new HttpError(403, `Account is inactive`);
     }
 
     //Bcrypt authentication
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-        res.status(401);
-        throw new Error('Invalid credentials');
+        throw new HttpError(401, 'Invalid credentials');
     }
 
     // Generate JWT
@@ -101,28 +98,24 @@ const resetUserPassword = asyncHandler(async (req, res) => {
 
     // Check if user is active
     if (!user.is_active) {
-        res.status(403);
-        throw new Error('Account is inactive');
+        throw new HttpError(403, `Account is inactive`);
     }
 
     // Bcrypt authentication
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-        res.status(401);
-        throw new Error('Invalid credentials');
+        throw new HttpError(401, `Invalid Credentials`);
     }
 
     // Check if new password is same as old password
     const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
     if (isSamePassword) {
-        res.status(400);
-        throw new Error('New password must be different from the old password');
+        throw new HttpError(400, `New password must be different from the old password`);
     }
 
     // Check if newPassword and confirmPassword match
     if (newPassword !== confirmPassword) {
-        res.status(400);
-        throw new Error('New passwords do not match');
+        throw new HttpError(400, `New password do not match`);
     }
 
     // Create user with hashed password

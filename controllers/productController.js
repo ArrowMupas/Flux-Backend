@@ -1,6 +1,7 @@
 const productModel = require('../models/productModel');
 const asyncHandler = require('express-async-handler');
 const entityExistHelper = require('../helpers/entityExistHelper');
+const HttpError = require('../helpers/errorHelper');
 
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
@@ -50,8 +51,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-        res.status(404);
-        throw new Error(`Cannot update product with ID ${req.params.id}`);
+        throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
     res.status(200).json({ message: 'Product updated successfully' });
@@ -61,8 +61,7 @@ const updateProduct = asyncHandler(async (req, res) => {
 const deleteProduct = asyncHandler(async (req, res) => {
     const result = await productModel.deleteProduct(req.params.id);
     if (result.affectedRows === 0) {
-        res.status(404);
-        throw new Error(`Cannot delete product with ID ${req.params.id}`);
+        throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
     res.status(200).json({ message: 'Product deleted successfully' });
 });

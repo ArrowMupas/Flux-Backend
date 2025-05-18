@@ -1,10 +1,10 @@
+const HttpError = require('./errorHelper');
+
 const checkEntityExist = (entity, res, status = 404, message = 'Not found') => {
     if (!entity) {
-        res.status(status);
-        throw new Error(message);
+        throw new HttpError(404, message);
     }
 };
 
 module.exports = checkEntityExist;
-
-// Not sure if I will add more here
+// Checks if an entity exist
