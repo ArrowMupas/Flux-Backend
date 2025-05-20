@@ -72,6 +72,19 @@ const cancelOrder = async (orderId, notes, connection = pool) => {
     );
 };
 
+// Function to cancel order
+const createCancelRequest = async (orderId, notes, connection = pool) => {
+    await connection.query(`UPDATE orders SET cancel_requested = TRUE WHERE order_id = ?`, [
+        orderId,
+    ]);
+
+    // Log the cancel on status history
+    await connection.query(
+        `INSERT INTO order_status_history (order_id, status, notes) VALUES (?, 'cancel_requested', ?)`,
+        [orderId, notes]
+    );
+};
+
 module.exports = {
     createOrder,
     addOrderItem,
@@ -82,4 +95,5 @@ module.exports = {
     getOrdersByUserAndStatus,
     getAllOrdersByUser,
     cancelOrder,
+    createCancelRequest,
 };
