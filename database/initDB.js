@@ -11,8 +11,6 @@ require('dotenv').config();
             port: process.env.DB_PORT,
         });
 
-        console.log('✅ Connected to MySQL server');
-
         const createDatabaseQuery = `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`;
         await connection.query(createDatabaseQuery);
         console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
