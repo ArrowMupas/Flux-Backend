@@ -9,7 +9,6 @@ const statusUpdateSchema = Joi.object({
     notes: Joi.string().optional(),
 });
 
-// Trying out joi
 const validateStatusUpdate = validate(statusUpdateSchema);
 
 module.exports = {

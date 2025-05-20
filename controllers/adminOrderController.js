@@ -42,10 +42,19 @@ const changeOrderStatus = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order status updated', order);
 });
 
+const adminCancelOrder = asyncHandler(async (req, res) => {
+    const orderId = req.params.orderId;
+    const { notes } = req.body;
+
+    await adminOrderService.adminCancelOrder(orderId, notes);
+    return sendResponse(res, 200, 'Order cancelled by admin');
+});
+
 module.exports = {
     getAllOrders,
     getOrderById,
     getOrdersByUserId,
     getOrderStatusHistory,
     changeOrderStatus,
+    adminCancelOrder,
 };

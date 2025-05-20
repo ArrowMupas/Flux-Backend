@@ -21,8 +21,6 @@ const createOrder = async (userId, { payment_method, address, notes }) => {
                 customer_id: userId,
                 total_amount: cart.cart_total,
                 status: 'pending',
-                payment_method,
-                address,
                 notes,
             },
             connection
@@ -101,12 +99,31 @@ const cancelOrder = async (userId, orderId, notes) => {
         if (!order) throw new HttpError(404, 'Order not found');
         if (order.customer_id !== userId)
             throw new HttpError(403, 'You are not allowed to cancel this order');
-        // Make sure only pending orders can be cancelled
-        if (order.status !== 'pending')
-            throw new HttpError(400, 'Only pending orders can be cancelled');
 
-        await orderModel.cancelOrder(orderId, notes, connection);
+        let message = '';
+
+        if (order.status === 'pending') {
+            await orderModel.cancelOrder(orderId, notes, connection);
+            message = 'Order cancelled successfully.';
+        } else if (order.status === 'processing' || order.status === 'shipped') {
+            if (order.cancel_requested) {
+                throw new HttpError(
+                    400,
+                    'Cancel request already submitted. Wait for admin to review'
+                );
+            }
+            await orderModel.createCancelRequest(orderId, notes, connection);
+            message = 'Cancel request submitted. Admin will review it.';
+        } else if (order.status === 'delivered') {
+            throw new HttpError(400, 'Order has already been delivered and cannot be cancelled.');
+        } else if (order.status === 'cancelled') {
+            throw new HttpError(400, 'Order is already cancelled.');
+        } else {
+            throw new HttpError(400, 'Order cannot be cancelled at this stage.');
+        }
+
         await connection.commit();
+        return message;
     } catch (err) {
         await connection.rollback();
         throw err;

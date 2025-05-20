@@ -11,6 +11,7 @@ const cartRoute = require('./routes/cartRoute');
 const admiUserRoute = require('./routes/adminUserRoute');
 const orderRoute = require('./routes/orderRoute');
 const adminOrderRoute = require('./routes/adminOrderRoute');
+const paymentRoute = require('./routes/paymentRoute');
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -32,6 +33,7 @@ app.use('/api/cart', cartRoute);
 app.use('/api/adminUser', admiUserRoute);
 app.use('/api/orders', orderRoute);
 app.use('/api/adminOrder', adminOrderRoute);
+app.use('/api/payments', paymentRoute);
 
 // error middleware
 app.use(errorMiddleware);
