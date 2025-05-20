@@ -13,5 +13,6 @@ router.patch(
     validateStatusUpdate,
     adminOrderController.changeOrderStatus
 );
+router.patch('/cancel/:orderId', adminOrderController.adminCancelOrder);
 
 module.exports = router;
