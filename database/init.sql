@@ -146,3 +146,30 @@ VALUES
 ('saul_goodman', '1000 Legal Ave, Albuquerque', '5050000000', 2, 'bettercall@saul.com', '$2b$10$SaulHashPlaceholder'),
 ('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder'),
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder');
+
+-- Seed orders
+INSERT INTO orders (customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
+(1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0),
+(2, '2025-05-02 11:30:00', 'shipped', 800.00, 5.00, 'Test order #2', 0),
+(3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0),
+(1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0),
+(2, '2025-05-05 16:45:00', 'shipped', 900.00, 0.00, 'Test order #5', 0),
+(3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0),
+(1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0),
+(2, '2025-05-08 15:30:00', 'shipped', 600.00, 0.00, 'Test order #8', 0),
+(3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0),
+(1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0);
+
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
+(1, 'P001', 2, 300.00, 600.00),
+(2, 'P002', 2, 400.00, 800.00),
+(3, 'P003', 3, 300.00, 900.00),
+(4, 'P004', 3, 400.00, 1200.00),
+(5, 'P005', 3, 300.00, 900.00),
+(6, 'P001', 5, 300.00, 1500.00),
+(7, 'P004', 1, 400.00, 400.00),
+(7, 'P005', 1, 300.00, 300.00),
+(8, 'P003', 2, 300.00, 600.00),
+(9, 'P002', 2, 400.00, 800.00),
+(9, 'P005', 1, 300.00, 300.00),
+(10, 'P001', 1, 300.00, 300.00);
