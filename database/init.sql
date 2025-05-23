@@ -106,6 +106,27 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX (order_id)
 );
 
+CREATE TABLE IF NOT EXISTS limited_offers (
+    offer_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id VARCHAR(50) NOT NULL,
+    discounted_price DECIMAL(10, 2) NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE (product_id)
+);
+
+CREATE TABLE IF NOT EXISTS product_reviews (
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    review_text TEXT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
 
 -- Seeds for easier testing (why did we not do this earlier)
 -- Seed products
@@ -125,5 +146,3 @@ VALUES
 ('saul_goodman', '1000 Legal Ave, Albuquerque', '5050000000', 2, 'bettercall@saul.com', '$2b$10$SaulHashPlaceholder'),
 ('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder'),
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder');
-
-
