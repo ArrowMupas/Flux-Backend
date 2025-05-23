@@ -86,10 +86,20 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
     }
 };
 
+const adminCancelOrder = async (orderId, notes, connection = pool) => {
+    const order = await adminOrderModel.getOrderById(orderId);
+    if (!order) throw new HttpError(404, 'Order not found');
+
+    if (!order.cancel_requested) throw new HttpError(400, 'Order has no pending cancel request');
+
+    await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes);
+};
+
 module.exports = {
     getAllOrders,
     getOrderById,
     getOrdersByUserId,
     getOrderStatusHistory,
     changeOrderStatus,
+    adminCancelOrder,
 };
