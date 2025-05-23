@@ -5,11 +5,9 @@ const sendResponse = require('../middlewares/responseMiddleware');
 // Create order
 const createOrder = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { payment_method, address, notes } = req.body;
+    const { notes } = req.body;
 
     const result = await orderService.createOrder(userId, {
-        payment_method,
-        address,
         notes,
     });
     return sendResponse(res, 200, 'Order Created', result);
@@ -38,8 +36,8 @@ const cancelOrder = asyncHandler(async (req, res) => {
     const orderId = req.params.orderId;
     const { notes } = req.body;
 
-    await orderService.cancelOrder(userId, orderId, notes);
-    return sendResponse(res, 200, 'Order cancelled successfully');
+    const message = await orderService.cancelOrder(userId, orderId, notes);
+    return sendResponse(res, 200, message);
 });
 
 module.exports = {
