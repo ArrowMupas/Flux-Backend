@@ -14,6 +14,7 @@ const adminOrderRoute = require('./routes/adminOrderRoute');
 const paymentRoute = require('./routes/paymentRoute');
 const limitedOfferRoute = require('./routes/limitedOfferRoute');
 const reviewRoute = require('./routes/reviewRoute');
+const reportRoute = require('./routes/reportRoute');
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -38,6 +39,7 @@ app.use('/api/adminOrder', adminOrderRoute);
 app.use('/api/payments', paymentRoute);
 app.use('/api/limited-offer', limitedOfferRoute);
 app.use('/api/reviews', reviewRoute);
+app.use('/api/reports', reportRoute);
 
 // error middleware
 app.use(errorMiddleware);
