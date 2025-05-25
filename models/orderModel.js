@@ -3,7 +3,7 @@ const pool = require('../database/pool');
 // Function to create order
 const createOrder = async (orderData, connection = pool) => {
     const [result] = await connection.query(`INSERT INTO orders SET ?`, orderData);
-    return result.insertId;
+    return orderData.id;
 };
 
 // Function to add order items
@@ -20,7 +20,7 @@ const getOrderItems = async (orderId) => {
 
 // Function to get order by id
 const getOrderById = async (orderId) => {
-    const [rows] = await pool.query(`SELECT * FROM orders WHERE order_id = ?`, [orderId]);
+    const [rows] = await pool.query(`SELECT * FROM orders WHERE id = ?`, [orderId]);
     return rows[0];
 };
 
@@ -41,7 +41,7 @@ const getAllOrdersByUser = async (userId) => {
 
 // Function to create initial order status
 const createOrderStatus = async ({ orderId, newStatus, notes }, connection = pool) => {
-    await connection.query(`UPDATE orders SET status = ? WHERE order_id = ?`, [newStatus, orderId]);
+    await connection.query(`UPDATE orders SET status = ? WHERE id = ?`, [newStatus, orderId]);
 
     // Log it on status history
     await connection.query(
@@ -63,7 +63,7 @@ const getOrderStatusHistory = async (orderId) => {
 
 // Function to cancel order
 const cancelOrder = async (orderId, notes, connection = pool) => {
-    await connection.query(`UPDATE orders SET status = 'cancelled' WHERE order_id = ?`, [orderId]);
+    await connection.query(`UPDATE orders SET status = 'cancelled' WHERE id = ?`, [orderId]);
 
     // Log the cancel on status history
     await connection.query(
@@ -74,14 +74,69 @@ const cancelOrder = async (orderId, notes, connection = pool) => {
 
 // Function to cancel order
 const createCancelRequest = async (orderId, notes, connection = pool) => {
-    await connection.query(`UPDATE orders SET cancel_requested = TRUE WHERE order_id = ?`, [
-        orderId,
-    ]);
+    await connection.query(`UPDATE orders SET cancel_requested = TRUE WHERE id = ?`, [orderId]);
 
     // Log the cancel on status history
     await connection.query(
         `INSERT INTO order_status_history (order_id, status, notes) VALUES (?, 'cancel_requested', ?)`,
         [orderId, notes]
+    );
+};
+
+const getTodayOrderCountByUser = async (userId, connection = pool) => {
+    const [[{ count }]] = await connection.query(
+        `
+    SELECT COUNT(*) AS count
+    FROM orders
+    WHERE customer_id = ?
+      AND DATE(order_date) = CURDATE()
+  `,
+        [userId]
+    );
+    return count;
+};
+
+const createReservation = async (product_id, order_id, quantity, connection = pool) => {
+    await connection.query(
+        `
+    INSERT INTO product_reservations (product_id, order_id, quantity)
+    VALUES (?, ?, ?)
+  `,
+        [product_id, order_id, quantity]
+    );
+};
+
+const getReservedQuantityByProductId = async (product_id, connection = pool) => {
+    const [[{ reserved }]] = await connection.query(
+        `
+    SELECT IFNULL(SUM(quantity), 0) AS reserved
+    FROM product_reservations
+    WHERE product_id = ?
+  `,
+        [product_id]
+    );
+    return reserved;
+};
+
+const deductStockForOrder = async (order_id, connection = pool) => {
+    await connection.query(
+        `
+    UPDATE products p
+    JOIN product_reservations r ON p.id = r.product_id
+    SET p.stock_quantity = p.stock_quantity - r.quantity
+    WHERE r.order_id = ?
+  `,
+        [order_id]
+    );
+};
+
+const deleteReservationsByOrderId = async (order_id, connection = pool) => {
+    await connection.query(
+        `
+    DELETE FROM product_reservations
+    WHERE order_id = ?
+  `,
+        [order_id]
     );
 };
 
@@ -96,4 +151,9 @@ module.exports = {
     getAllOrdersByUser,
     cancelOrder,
     createCancelRequest,
+    getTodayOrderCountByUser,
+    createReservation,
+    getReservedQuantityByProductId,
+    deductStockForOrder,
+    deleteReservationsByOrderId,
 };

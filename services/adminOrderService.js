@@ -1,4 +1,5 @@
 const adminOrderModel = require('../models/adminOrderModel');
+const reservationModel = require('../models/reservationModel');
 const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
 
@@ -12,7 +13,7 @@ const getAllOrders = async (status) => {
     const detailed = await Promise.all(
         orders.map(async (o) => ({
             ...o,
-            items: await adminOrderModel.getOrderItems(o.order_id),
+            items: await adminOrderModel.getOrderItems(o.id),
         }))
     );
 
@@ -26,7 +27,7 @@ const getOrderById = async (orderId) => {
     // Check if order exist
     if (!order) throw new HttpError(404, 'Order not found');
 
-    const items = await adminOrderModel.getOrderItems(order.order_id);
+    const items = await adminOrderModel.getOrderItems(order.id);
 
     return {
         ...order,
@@ -46,7 +47,7 @@ const getOrdersByUserId = async (userId) => {
     const detailed = await Promise.all(
         orders.map(async (order) => ({
             ...order,
-            items: await adminOrderModel.getOrderItems(order.order_id),
+            items: await adminOrderModel.getOrderItems(order.id),
         }))
     );
 
@@ -71,11 +72,35 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
         const order = await adminOrderModel.getOrderById(orderId);
         if (!order) throw new HttpError(404, 'No order found');
 
-        // Status won't be changed if new status is same as current status
-        if (order.status === newStatus)
+        const currentStatus = order.status;
+
+        if (currentStatus === newStatus) {
             throw new HttpError(400, `Order is already marked as '${newStatus}'`);
+        }
+
+        const allowedTransitions = {
+            pending: ['processing', 'cancelled'],
+            processing: ['shipping'],
+            shipping: ['delivered'],
+        };
+
+        const allowedNext = allowedTransitions[currentStatus] || [];
+
+        if (!allowedNext.includes(newStatus)) {
+            throw new HttpError(
+                400,
+                `Cannot change status from '${currentStatus}' to '${newStatus}'`
+            );
+        }
 
         await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
+
+        if (currentStatus === 'pending' && newStatus === 'processing') {
+            await reservationModel.deductReservedStock(orderId, connection);
+        }
+
+        await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
+
         await connection.commit();
         return await adminOrderModel.getOrderById(orderId);
     } catch (error) {
@@ -86,13 +111,36 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
     }
 };
 
-const adminCancelOrder = async (orderId, notes, connection = pool) => {
-    const order = await adminOrderModel.getOrderById(orderId);
-    if (!order) throw new HttpError(404, 'Order not found');
+const adminCancelOrder = async (orderId, notes) => {
+    const connection = await pool.getConnection();
 
-    if (!order.cancel_requested) throw new HttpError(400, 'Order has no pending cancel request');
+    try {
+        await connection.beginTransaction();
 
-    await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes);
+        const order = await adminOrderModel.getOrderById(orderId, connection);
+        if (!order) throw new HttpError(404, 'Order not found');
+
+        if (order.status !== 'pending') {
+            throw new HttpError(400, 'Only pending orders can be cancelled');
+        }
+
+        if (!order.cancel_requested) {
+            throw new HttpError(400, 'Order has no pending cancel request');
+        }
+
+        // Release stock reservation
+        await reservationModel.releaseReservedStock(orderId, connection);
+
+        // Change status to cancelled
+        await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes, connection);
+
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 module.exports = {

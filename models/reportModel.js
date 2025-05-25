@@ -6,7 +6,7 @@ const fetchSalesSummary = async (start, end) => {
     // Get total orders and total sales
     const [[salesStats]] = await pool.query(
         `SELECT 
-            COUNT(order_id) AS totalOrders,
+            COUNT(id) AS totalOrders,
             SUM(total_amount) AS totalSales
          FROM orders
          WHERE order_date BETWEEN ? AND ?
@@ -19,7 +19,7 @@ const fetchSalesSummary = async (start, end) => {
         `SELECT 
             SUM(oi.quantity) AS totalItemsSold
          FROM orders o
-         JOIN order_items oi ON o.order_id = oi.order_id
+         JOIN order_items oi ON o.id = oi.order_id
          WHERE o.order_date BETWEEN ? AND ?
            AND o.status IN ('processing', 'shipped', 'delivered')`,
         [start, end]
@@ -43,7 +43,7 @@ const fetchTopProducts = async (start, end) => {
             p.price AS unitPrice,
             SUM(oi.subtotal) AS totalRevenue
          FROM order_items oi
-         JOIN orders o ON oi.order_id = o.order_id
+         JOIN orders o ON oi.order_id = o.id
          JOIN products p ON oi.product_id = p.id
          WHERE o.order_date BETWEEN ? AND ?
            AND o.status IN ('processing', 'shipped', 'delivered')
@@ -61,7 +61,7 @@ const fetchSalesPerDay = async (start, end) => {
     const [rows] = await pool.query(
         `SELECT 
             DATE(o.order_date) AS date,
-            COUNT(DISTINCT o.order_id) AS orders,
+            COUNT(DISTINCT o.id) AS orders,
             SUM(o.total_amount) AS totalSales
          FROM orders o
          WHERE o.order_date BETWEEN ? AND ?
@@ -73,8 +73,28 @@ const fetchSalesPerDay = async (start, end) => {
     return rows;
 };
 
+const fetchUserReport = async (start, end) => {
+    end = end + ' 23:59:59';
+
+    const [rows] = await pool.query(
+        `SELECT 
+            COUNT(*) AS totalUsers,
+            COUNT(CASE 
+                WHEN created_at BETWEEN ? AND ? THEN 1 
+            END) AS signupsInTimeframe
+        FROM users`,
+        [start, end]
+    );
+
+    return {
+        totalUsers: rows[0].totalUsers,
+        signupsInTimeframe: rows[0].signupsInTimeframe,
+    };
+};
+
 module.exports = {
     fetchSalesSummary,
     fetchTopProducts,
     fetchSalesPerDay,
+    fetchUserReport,
 };

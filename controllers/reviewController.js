@@ -1,6 +1,6 @@
-const reviewModel = require('../models/reviewModel');
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
+const reviewModel = require('../models/reviewModel');
 const HttpError = require('../helpers/errorHelper');
 
 // Create a new review
@@ -18,7 +18,7 @@ const createReview = asyncHandler(async (req, res) => {
 const getReviewsByProduct = asyncHandler(async (req, res) => {
     const { product_id } = req.params;
     const reviews = await reviewModel.getReviewsByProduct(product_id);
-    return sendResponse(res, 200, 'Product reviews fetched.', reviews);
+    return sendResponse(res, 200, 'Product reviews retrieved.', reviews);
 });
 
 // Delete a review
