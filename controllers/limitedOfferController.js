@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
-const limitedOfferModel = require('../models/limitedOfferModel');
 const sendResponse = require('../middlewares/responseMiddleware');
+const limitedOfferModel = require('../models/limitedOfferModel');
 
 const createLimitedOffer = asyncHandler(async (req, res) => {
     const { product_id, discounted_price, start_date, end_date } = req.body;
@@ -27,8 +27,8 @@ const deleteLimitedOffer = asyncHandler(async (req, res) => {
 });
 
 const getActiveLimitedOffers = asyncHandler(async (req, res) => {
-    const offers = await limitedOfferModel.getAllOffers(); // changed here
-    return sendResponse(res, 200, 'All limited offers fetched.', offers);
+    const offers = await limitedOfferModel.getAllOffers();
+    return sendResponse(res, 200, 'All limited offers retrieved.', offers);
 });
 
 module.exports = {
