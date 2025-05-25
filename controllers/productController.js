@@ -1,5 +1,5 @@
-const productModel = require('../models/productModel');
 const asyncHandler = require('express-async-handler');
+const productModel = require('../models/productModel');
 const entityExistHelper = require('../helpers/entityExistHelper');
 const HttpError = require('../helpers/errorHelper');
 

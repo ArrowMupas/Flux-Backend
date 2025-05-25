@@ -1,8 +1,13 @@
+const HttpError = require('../helpers/errorHelper');
+
 const validate = (schema) => (req, res, next) => {
-    const { error } = schema.validate(req.body);
+    const { error } = schema.validate(req.body, { abortEarly: false });
+
     if (error) {
-        return res.status(400).json({ message: error.details[0].message });
+        const message = error.details.map((detail) => detail.message).join(', ');
+        return next(new HttpError(400, message));
     }
+
     next();
 };
 

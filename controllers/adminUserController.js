@@ -1,6 +1,6 @@
-const adminUserModel = require('../models/adminUserModel');
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
+const adminUserModel = require('../models/adminUserModel');
 const entityExistHelper = require('../helpers/entityExistHelper');
 const bcrypt = require('bcrypt');
 const HttpError = require('../helpers/errorHelper');
@@ -13,9 +13,9 @@ const getAllUsers = asyncHandler(async (req, res) => {
 
 // Admin get users by ID
 const getUserById = asyncHandler(async (req, res) => {
-    const user = await adminUserModel.getUserById(req.params.id);
-    entityExistHelper(user, res, 404, 'User not found');
-
+    const id = req.params.id;
+    const user = await adminUserModel.getUserById(id);
+    if (!user) throw new HttpError(404, `No user found with ID: ${id}`);
     return sendResponse(res, 200, 'User fetched', user);
 });
 
@@ -25,7 +25,7 @@ const updateUser = asyncHandler(async (req, res) => {
     const { username, email, address, contact_number, role_id } = req.body;
 
     const user = await adminUserModel.getUserById(id);
-    entityExistHelper(user, res, 404, 'User not found');
+    if (!user) throw new HttpError(404, `No user found with ID: ${id}`);
 
     const result = await adminUserModel.updateUser(
         id,
@@ -46,13 +46,13 @@ const manageUser = asyncHandler(async (req, res) => {
 
     // Make sure request is true or false
     if (typeof is_active !== 'boolean') {
-        throw new HttpError(400, 'is_active must be a boolean (true or false)');
+        throw new HttpError(400, 'Value must be true or false');
     }
 
     const result = await adminUserModel.manageUser(id, is_active);
 
     if (result.affectedRows === 0) {
-        throw new HttpError(404, 'User not found');
+        throw new HttpError(404, `No user found with ID: ${id}`);
     }
 
     res.status(200).json({
