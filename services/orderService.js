@@ -1,23 +1,30 @@
 const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
+const paymentModel = require('../models/paymentModel');
+const productModel = require('../models/productModel');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
+const { generateOrderId } = require('../helpers/orderIdHelper');
 
-// Logic of creating order
-const createOrder = async (userId, { payment_method, address, notes }) => {
+const createOrder = async (
+    userId,
+    { payment_method, address, notes, reference_number, account_name }
+) => {
+    const cart = await cartModel.getCartItemsByUserId(userId);
+    if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
+    const todayCount = await orderModel.getTodayOrderCountByUser(userId);
+    if (todayCount >= 100)
+        throw new HttpError(429, 'You’ve reached your 3 orders today. Try again tomorrow.');
+
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
-        const cart = await cartModel.getCartItemsByUserId(userId);
-        // Check if cart has items
-        if (!cart.items || cart.items.length === 0) {
-            throw new HttpError(404, 'Cart is empty');
-        }
-
-        // Create the order
+        const generatedID = generateOrderId();
+        // 2. Create Order
         const orderId = await orderModel.createOrder(
             {
+                id: generatedID,
                 customer_id: userId,
                 total_amount: cart.cart_total,
                 status: 'pending',
@@ -26,8 +33,9 @@ const createOrder = async (userId, { payment_method, address, notes }) => {
             connection
         );
 
-        // Add items of the order
+        // 3. Add Order Items AND create stock reservations
         for (const item of cart.items) {
+            // Add order item
             await orderModel.addOrderItem(
                 {
                     order_id: orderId,
@@ -38,9 +46,16 @@ const createOrder = async (userId, { payment_method, address, notes }) => {
                 },
                 connection
             );
+
+            await productModel.checkAndReserveStock(
+                item.product_id,
+                item.quantity,
+                orderId,
+                connection
+            );
         }
 
-        // Set initial status, Log it in status history
+        // 4. Create Initial Status
         await orderModel.createOrderStatus(
             {
                 orderId,
@@ -50,9 +65,25 @@ const createOrder = async (userId, { payment_method, address, notes }) => {
             connection
         );
 
-        await cartModel.clearCart(userId);
+        // 5. Submit Payment
+        const existingPayment = await paymentModel.getPaymentByOrderId(orderId, connection);
+        if (existingPayment) {
+            throw new HttpError(400, 'Payment for this order already submitted');
+        }
+
+        const paymentId = await paymentModel.createPayment(
+            orderId,
+            payment_method,
+            reference_number,
+            account_name,
+            address,
+            connection
+        );
+
+        // 6. Clear Cart
+        await cartModel.clearCart(userId, connection);
         await connection.commit();
-        return orderId;
+        return { orderId, paymentId };
     } catch (error) {
         await connection.rollback();
         throw error;
@@ -71,7 +102,7 @@ const getOrders = async (userId, status) => {
     const detailed = await Promise.all(
         orders.map(async (o) => ({
             ...o,
-            items: await orderModel.getOrderItems(o.order_id),
+            items: await orderModel.getOrderItems(o.id),
         }))
     );
 
@@ -102,10 +133,11 @@ const cancelOrder = async (userId, orderId, notes) => {
 
         let message = '';
 
-        if (order.status === 'pending') {
-            await orderModel.cancelOrder(orderId, notes, connection);
-            message = 'Order cancelled successfully.';
-        } else if (order.status === 'processing' || order.status === 'shipped') {
+        if (
+            order.status === 'pending' ||
+            order.status === 'processing' ||
+            order.status === 'shipped'
+        ) {
             if (order.cancel_requested) {
                 throw new HttpError(
                     400,

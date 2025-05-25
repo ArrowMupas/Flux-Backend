@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS cart (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    id VARCHAR(50) PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'pending',
@@ -70,12 +70,12 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE TABLE IF NOT EXISTS order_items (
     item_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
     product_id VARCHAR(50) NOT NULL,
     quantity INT UNSIGNED NOT NULL,
     unit_price DECIMAL(10, 2) NOT NULL,
     subtotal DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id),
     INDEX (order_id),
     INDEX (product_id)
@@ -83,18 +83,18 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE TABLE IF NOT EXISTS order_status_history (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
     status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'cancel_requested', 'refunded') NOT NULL,
     status_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     INDEX (order_id),
     INDEX (status_date)
 );
 
 CREATE TABLE IF NOT EXISTS payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL UNIQUE,
+    order_id VARCHAR(50) NOT NULL UNIQUE,
     method ENUM('GCash', 'Maya', 'bank_transfer') NOT NULL,
     reference_number VARCHAR(100) NOT NULL,
     account_name VARCHAR(100),
@@ -102,9 +102,20 @@ CREATE TABLE IF NOT EXISTS payments (
     status ENUM('submitted', 'verified', 'failed', 'refunded') DEFAULT 'submitted',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     INDEX (order_id)
 );
+
+CREATE TABLE IF NOT EXISTS product_reservations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id VARCHAR(50),
+    order_id VARCHAR(50),
+    quantity INT,
+    reserved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+
 
 CREATE TABLE IF NOT EXISTS limited_offers (
     offer_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -148,28 +159,28 @@ VALUES
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder');
 
 -- Seed orders
-INSERT INTO orders (customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
-(1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0),
-(2, '2025-05-02 11:30:00', 'shipped', 800.00, 5.00, 'Test order #2', 0),
-(3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0),
-(1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0),
-(2, '2025-05-05 16:45:00', 'shipped', 900.00, 0.00, 'Test order #5', 0),
-(3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0),
-(1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0),
-(2, '2025-05-08 15:30:00', 'shipped', 600.00, 0.00, 'Test order #8', 0),
-(3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0),
-(1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0);
+INSERT INTO orders (id, customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
+('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0),
+('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipped', 800.00, 5.00, 'Test order #2', 0),
+('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0),
+('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0),
+('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipped', 900.00, 0.00, 'Test order #5', 0),
+('ALAS202505060006', 3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0),
+('ALAS202505070007', 1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0),
+('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipped', 600.00, 0.00, 'Test order #8', 0),
+('ALAS202505090009', 3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0),
+('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0);
 
 INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
-(1, 'P001', 2, 300.00, 600.00),
-(2, 'P002', 2, 400.00, 800.00),
-(3, 'P003', 3, 300.00, 900.00),
-(4, 'P004', 3, 400.00, 1200.00),
-(5, 'P005', 3, 300.00, 900.00),
-(6, 'P001', 5, 300.00, 1500.00),
-(7, 'P004', 1, 400.00, 400.00),
-(7, 'P005', 1, 300.00, 300.00),
-(8, 'P003', 2, 300.00, 600.00),
-(9, 'P002', 2, 400.00, 800.00),
-(9, 'P005', 1, 300.00, 300.00),
-(10, 'P001', 1, 300.00, 300.00);
+('ALAS202505010001', 'P001', 2, 300.00, 600.00),
+('ALAS202505020002', 'P002', 2, 400.00, 800.00),
+('ALAS202505030003', 'P003', 3, 300.00, 900.00),
+('ALAS202505040004', 'P004', 3, 400.00, 1200.00),
+('ALAS202505050005', 'P005', 3, 300.00, 900.00),
+('ALAS202505060006', 'P001', 5, 300.00, 1500.00),
+('ALAS202505070007', 'P004', 1, 400.00, 400.00),
+('ALAS202505070007', 'P005', 1, 300.00, 300.00),
+('ALAS202505080008', 'P003', 2, 300.00, 600.00),
+('ALAS202505090009', 'P002', 2, 400.00, 800.00),
+('ALAS202505090009', 'P005', 1, 300.00, 300.00),
+('ALAS202505100010', 'P001', 1, 300.00, 300.00);

@@ -8,7 +8,7 @@ const getAllOrders = async () => {
 
 // Function to get order
 const getOrderById = async (orderId) => {
-    const [rows] = await pool.query('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+    const [rows] = await pool.query('SELECT * FROM orders WHERE id = ?', [orderId]);
     return rows[0];
 };
 
@@ -47,7 +47,7 @@ const getOrderStatusHistory = async (orderId) => {
 
 // Function to change status of an order
 const changeOrderStatus = async (orderId, newStatus, notes, connection = pool) => {
-    await connection.query(`UPDATE orders SET status = ? WHERE order_id = ?`, [newStatus, orderId]);
+    await connection.query(`UPDATE orders SET status = ? WHERE id = ?`, [newStatus, orderId]);
 
     // Log the change on status history
     await connection.query(
