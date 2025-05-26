@@ -22,7 +22,15 @@ const getUserById = async (id) => {
 
 // Function to get a user by email
 const getUserByUsername = async (username) => {
-    const [user] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    const [user] = await pool.query(
+        `SELECT 
+            users.*, 
+            roles.name AS role_name
+        FROM users
+        JOIN roles ON users.role_id = roles.id
+        WHERE users.username = ?`,
+        [username]
+    );
     return user[0];
 };
 
