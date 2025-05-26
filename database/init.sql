@@ -39,6 +39,25 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
+CREATE TABLE IF NOT EXISTS staff_permissions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+INSERT INTO staff_permissions (name) VALUES
+('get_sales_summary'),
+('get_top_products'),
+('get_daily_sales'),
+('get_user_report');
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+    user_id INT,
+    permission_id INT,
+    PRIMARY KEY (user_id, permission_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES staff_permissions(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS cart (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
