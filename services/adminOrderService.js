@@ -1,6 +1,8 @@
 const adminOrderModel = require('../models/adminOrderModel');
 const reservationModel = require('../models/reservationModel');
+const userModel = require('../models/userModel');
 const HttpError = require('../helpers/errorHelper');
+const { sendEmail } = require('../utilities/emailUtility');
 const pool = require('../database/pool');
 
 // Logic for getting all orders
@@ -101,6 +103,20 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
 
         await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
 
+        const user = await userModel.getUserById(order.customer_id);
+
+        await sendEmail({
+            to: user.email,
+            subject: `Your order #${orderId} status changed to "${newStatus}"`,
+            html: `
+        <h2>Hello, ${user.username}</h2>
+        <p>Your order with ID <strong>#${orderId}</strong> has been updated.</p>
+        <p><strong>New Status:</strong> ${newStatus}</p>
+        ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+        <p>If you have any questions, please contact our support team.</p>
+    `,
+        });
+
         await connection.commit();
         return await adminOrderModel.getOrderById(orderId);
     } catch (error) {
@@ -133,6 +149,18 @@ const adminCancelOrder = async (orderId, notes) => {
 
         // Change status to cancelled
         await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes, connection);
+
+        const user = await userModel.getUserById(order.customer_id);
+
+        await sendEmail({
+            to: user.email,
+            subject: `Your order #${orderId} has been cancelled"`,
+            html: `
+        <h2>Hello, ${user.username}</h2>
+        <p>Your order with ID <strong>#${orderId}</strong> has been cancelled.</p>
+        <p>If you have any questions, please contact our support team.</p>
+    `,
+        });
 
         await connection.commit();
     } catch (error) {
