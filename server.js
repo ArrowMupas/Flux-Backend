@@ -16,6 +16,8 @@ const limitedOfferRoute = require('./routes/limitedOfferRoute');
 const reviewRoute = require('./routes/reviewRoute');
 const reportRoute = require('./routes/reportRoute');
 const permissionRoute = require('./routes/permissionRoute');
+const afterSalesRoute = require('./routes/afterSalesRoute');
+const walkInOrderRoute = require('./routes/walkInOrderRoute');
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -42,6 +44,8 @@ app.use('/api/limited-offer', limitedOfferRoute);
 app.use('/api/reviews', reviewRoute);
 app.use('/api/reports', reportRoute);
 app.use('/api/permissions', permissionRoute);
+app.use('/api/afterSales', afterSalesRoute);
+app.use('/api/walkInOrders', walkInOrderRoute);
 
 // error middleware
 app.use(errorMiddleware);

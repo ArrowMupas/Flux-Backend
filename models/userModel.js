@@ -62,6 +62,15 @@ const updateUser = async (userId, updates) => {
     return await getUserById(userId);
 };
 
+// Function to log a user login
+const logUserLogin = async (userId, username) => {
+    await pool.query(
+        `INSERT INTO login_logs (user_id, username)
+         VALUES (?, ?)`,
+        [userId, username]
+    );
+};
+
 // Function to reset user password
 const resetUserPassword = async (userId, newPasswordHash) => {
     const [result] = await pool.query(
@@ -72,6 +81,68 @@ const resetUserPassword = async (userId, newPasswordHash) => {
     return await getUserById(userId);
 };
 
+const saveVerificationToken = async (userId, token) => {
+    await pool.query(`INSERT INTO email_verification_tokens (user_id, token) VALUES (?, ?)`, [
+        userId,
+        token,
+    ]);
+};
+
+const getUserByVerificationToken = async (token) => {
+    const [rows] = await pool.query(
+        `SELECT users.*, roles.name AS role_name
+         FROM users
+         JOIN roles ON users.role_id = roles.id
+         JOIN email_verification_tokens evt ON users.id = evt.user_id
+         WHERE evt.token = ?
+         LIMIT 1`,
+        [token]
+    );
+    return rows[0];
+};
+
+const verifyUser = async (userId) => {
+    await pool.query(`UPDATE users SET is_verified = 1 WHERE id = ?`, [userId]);
+};
+
+const deleteVerificationToken = async (token) => {
+    await pool.query(`DELETE FROM email_verification_tokens WHERE token = ?`, [token]);
+};
+
+const savePasswordResetToken = async (userId, token, expires_at) => {
+    await pool.query(
+        `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`,
+        [userId, token, expires_at]
+    );
+};
+
+const getUserByPasswordResetToken = async (token) => {
+    const [rows] = await pool.query(
+        `SELECT users.*, roles.name AS role_name
+         FROM users
+         JOIN roles ON users.role_id = roles.id
+         JOIN password_reset_tokens prt ON users.id = prt.user_id
+         WHERE prt.token = ? AND prt.expires_at > NOW()
+         LIMIT 1`,
+        [token]
+    );
+    return rows[0];
+};
+
+const hasActivePasswordResetRequest = async (userId) => {
+    const [rows] = await pool.query(
+        `SELECT id FROM password_reset_tokens 
+         WHERE user_id = ? AND expires_at > NOW()
+         LIMIT 1`,
+        [userId]
+    );
+    return rows.length > 0;
+};
+
+const deletePasswordResetToken = async (userId) => {
+    await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = ?`, [userId]);
+};
+
 module.exports = {
     getUserById,
     getUserByUsername,
@@ -79,4 +150,14 @@ module.exports = {
     createUser,
     updateUser,
     resetUserPassword,
+    getUserByUsername,
+    saveVerificationToken,
+    getUserByVerificationToken,
+    verifyUser,
+    deleteVerificationToken,
+    savePasswordResetToken,
+    getUserByPasswordResetToken,
+    hasActivePasswordResetRequest,
+    deletePasswordResetToken,
+    logUserLogin,
 };
