@@ -47,7 +47,6 @@ const deleteProduct = async (id) => {
 };
 
 const checkAndReserveStock = async (productId, quantity, orderId, connection) => {
-    // Check available stock considering reservations, and lock row
     const [rows] = await connection.query(
         `
         SELECT 
@@ -78,6 +77,17 @@ const checkAndReserveStock = async (productId, quantity, orderId, connection) =>
     );
 };
 
+// Get price of a product
+const getProductPrice = async (productId, connection = pool) => {
+    const [rows] = await connection.query('SELECT price FROM products WHERE id = ?', [productId]);
+
+    if (rows.length === 0) {
+        throw new Error(`Product with ID ${productId} not found.`);
+    }
+
+    return rows[0].price;
+};
+
 module.exports = {
     getAllProducts,
     getProductById,
@@ -85,4 +95,5 @@ module.exports = {
     updateProduct,
     deleteProduct,
     checkAndReserveStock,
+    getProductPrice,
 };
