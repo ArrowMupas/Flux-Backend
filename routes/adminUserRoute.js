@@ -3,7 +3,7 @@ const router = express.Router();
 const adminUserController = require('../controllers/adminUserController');
 const regexMiddleware = require('../middlewares/regexMiddleware');
 
-router.get('/', adminUserController.getAllUsers);
+router.get('/', adminUserController.getUsers);
 router.get('/:id', adminUserController.getUserById);
 router.put(
     '/:id',

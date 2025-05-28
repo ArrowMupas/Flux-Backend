@@ -5,10 +5,12 @@ const entityExistHelper = require('../helpers/entityExistHelper');
 const bcrypt = require('bcrypt');
 const HttpError = require('../helpers/errorHelper');
 
-// Admin get all users
-const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await adminUserModel.getAllUsers();
-    return sendResponse(res, 200, 'All users fetched', users);
+// Admin get users with optional filters
+const getUsers = asyncHandler(async (req, res) => {
+    const { role, is_active, is_verified } = req.query;
+
+    const users = await adminUserModel.getUsers({ role, is_active, is_verified });
+    return sendResponse(res, 200, 'Users fetched', users);
 });
 
 // Admin get users by ID
@@ -78,9 +80,9 @@ const createUser = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-    getAllUsers,
     getUserById,
     updateUser,
     manageUser,
     createUser,
+    getUsers,
 };

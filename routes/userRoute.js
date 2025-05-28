@@ -23,5 +23,10 @@ router.put(
     regexMiddleware.regexValidation(['username']),
     userController.updateUser
 );
+router.get('/verify-email', userController.verifyEmail);
+router.post('/resend-verification-email', userController.resendVerificationEmail);
+router.post('/request-password-reset', userController.requestPasswordReset);
+router.get('/verify-password-reset', userController.verifyResetToken);
+router.post('/change-password', userController.changeUserPassword);
 
 module.exports = router;
