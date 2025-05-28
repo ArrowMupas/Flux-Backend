@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
+CREATE TABLE IF NOT EXISTS login_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -94,7 +103,7 @@ CREATE TABLE IF NOT EXISTS orders (
     id VARCHAR(50) PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded') NOT NULL DEFAULT 'pending',
+    status ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded', 'returned') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
     discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     notes TEXT,
@@ -121,7 +130,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 CREATE TABLE IF NOT EXISTS order_status_history (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
     order_id VARCHAR(50) NOT NULL,
-    status ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'cancel_requested', 'refunded') NOT NULL,
+    status ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled', 'cancel_requested', 'refunded', 'returned') NOT NULL,
     status_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
@@ -153,6 +162,42 @@ CREATE TABLE IF NOT EXISTS product_reservations (
     FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
+CREATE TABLE IF NOT EXISTS after_sales_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('refund', 'return') NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
+    user_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    status ENUM('requested', 'pending', 'completed') DEFAULT 'requested',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS walk_in_sales (
+    id VARCHAR(50) PRIMARY KEY,
+    sale_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    customer_name VARCHAR(255), 
+    customer_email VARCHAR(255), 
+    total_amount DECIMAL(10, 2) NOT NULL,
+    discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    notes TEXT,
+    INDEX (sale_date)
+);
+
+CREATE TABLE IF NOT EXISTS walk_in_sale_items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    sale_id VARCHAR(50) NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    quantity INT UNSIGNED NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (sale_id) REFERENCES walk_in_sales(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id), 
+    INDEX (sale_id),
+    INDEX (product_id)
+);
 
 CREATE TABLE IF NOT EXISTS limited_offers (
     offer_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,13 +243,13 @@ VALUES
 -- Seed orders
 INSERT INTO orders (id, customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
 ('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0),
-('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipped', 800.00, 5.00, 'Test order #2', 0),
+('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 5.00, 'Test order #2', 0),
 ('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0),
 ('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0),
-('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipped', 900.00, 0.00, 'Test order #5', 0),
+('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipping', 900.00, 0.00, 'Test order #5', 0),
 ('ALAS202505060006', 3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0),
 ('ALAS202505070007', 1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0),
-('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipped', 600.00, 0.00, 'Test order #8', 0),
+('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipping', 600.00, 0.00, 'Test order #8', 0),
 ('ALAS202505090009', 3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0),
 ('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0);
 

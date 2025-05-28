@@ -136,7 +136,7 @@ const cancelOrder = async (userId, orderId, notes) => {
         if (
             order.status === 'pending' ||
             order.status === 'processing' ||
-            order.status === 'shipped'
+            order.status === 'shipping'
         ) {
             if (order.cancel_requested) {
                 throw new HttpError(

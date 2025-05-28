@@ -14,5 +14,7 @@ router.patch(
     adminOrderController.changeOrderStatus
 );
 router.patch('/cancel/:orderId', adminOrderController.adminCancelOrder);
+router.put('/requests/processing/:id', adminOrderController.adminRefundReturnProcess);
+router.put('/requests/completion/:id', adminOrderController.adminRefundReturnComplete);
 
 module.exports = router;

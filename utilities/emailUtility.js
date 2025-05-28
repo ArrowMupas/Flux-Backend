@@ -5,15 +5,11 @@ let transporter;
 async function getTransporter() {
     if (transporter) return transporter;
 
-    // Create Ethereal test account once
-    const testAccount = await nodemailer.createTestAccount();
-
     transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
+        service: 'gmail',
         auth: {
-            user: testAccount.user,
-            pass: testAccount.pass,
+            user: process.env.GMAIL_USER, // your Gmail address
+            pass: process.env.GMAIL_PASS, // your Gmail app password or account password
         },
     });
 
@@ -24,7 +20,7 @@ async function sendEmail({ to, subject, html }) {
     const transporter = await getTransporter();
 
     const info = await transporter.sendMail({
-        from: '"Sauce Shop" <noreply@sauceshop.com>',
+        from: `"Clark Sauce Shop" <${process.env.GMAIL_USER}>`,
         to,
         subject,
         html,

@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { sendEmail } = require('../utilities/emailUtility');
 const crypto = require('crypto');
+require('dotenv').config();
 
 // Register a user
 const registerUser = asyncHandler(async (req, res) => {
@@ -24,7 +25,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await userModel.saveVerificationToken(user.id, verificationToken);
 
-    const verificationLink = `http://localhost:3000/api/users/verify-email?token=${verificationToken}`;
+    const verificationLink = `${process.env.BASE_URL}/api/users/verify-email?token=${verificationToken}`;
 
     await sendEmail({
         to: email,
@@ -65,6 +66,8 @@ const loginUser = asyncHandler(async (req, res) => {
     if (!isMatch) {
         throw new HttpError(401, 'Invalid credentials');
     }
+
+    await userModel.logUserLogin(user.id, user.username);
 
     // Generate JWT
     const token = jwt.sign(
@@ -115,7 +118,7 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     await userModel.saveVerificationToken(user.id, verificationToken);
 
     // Construct verification link
-    const verificationLink = `http://localhost:3000/api/users/verify-email?token=${verificationToken}`;
+    const verificationLink = `${process.env.BASE_URL}/api/users/verify-email?token=${verificationToken}`;
 
     // Send verification email
     await sendEmail({
@@ -211,7 +214,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
 
     await userModel.savePasswordResetToken(user.id, token, expiresAt);
 
-    const resetLink = `http://localhost:3000/api/users/verify-password-reset?token=${token}`;
+    const resetLink = `${process.env.BASE_URL}/api/users/verify-password-reset?token=${token}`;
     await sendEmail({
         to: user.email,
         subject: 'Password Reset Request',

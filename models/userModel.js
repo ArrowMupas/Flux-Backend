@@ -62,6 +62,15 @@ const updateUser = async (userId, updates) => {
     return await getUserById(userId);
 };
 
+// Function to log a user login
+const logUserLogin = async (userId, username) => {
+    await pool.query(
+        `INSERT INTO login_logs (user_id, username)
+         VALUES (?, ?)`,
+        [userId, username]
+    );
+};
+
 // Function to reset user password
 const resetUserPassword = async (userId, newPasswordHash) => {
     const [result] = await pool.query(
@@ -150,4 +159,5 @@ module.exports = {
     getUserByPasswordResetToken,
     hasActivePasswordResetRequest,
     deletePasswordResetToken,
+    logUserLogin,
 };
