@@ -21,7 +21,6 @@ const createOrder = async (
 
     try {
         const generatedID = generateOrderId();
-        // 2. Create Order
         const orderId = await orderModel.createOrder(
             {
                 id: generatedID,
@@ -33,9 +32,7 @@ const createOrder = async (
             connection
         );
 
-        // 3. Add Order Items AND create stock reservations
         for (const item of cart.items) {
-            // Add order item
             await orderModel.addOrderItem(
                 {
                     order_id: orderId,
@@ -55,7 +52,6 @@ const createOrder = async (
             );
         }
 
-        // 4. Create Initial Status
         await orderModel.createOrderStatus(
             {
                 orderId,
@@ -65,7 +61,6 @@ const createOrder = async (
             connection
         );
 
-        // 5. Submit Payment
         const existingPayment = await paymentModel.getPaymentByOrderId(orderId, connection);
         if (existingPayment) {
             throw new HttpError(400, 'Payment for this order already submitted');
@@ -80,7 +75,6 @@ const createOrder = async (
             connection
         );
 
-        // 6. Clear Cart
         await cartModel.clearCart(userId, connection);
         await connection.commit();
         return { orderId, paymentId };
@@ -136,7 +130,7 @@ const cancelOrder = async (userId, orderId, notes) => {
         if (
             order.status === 'pending' ||
             order.status === 'processing' ||
-            order.status === 'shipped'
+            order.status === 'shipping'
         ) {
             if (order.cancel_requested) {
                 throw new HttpError(
