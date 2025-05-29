@@ -19,7 +19,7 @@ const registerSchema = Joi.object({
     role: Joi.number().valid(1, 2, 3).required().messages({
         'any.only': 'Role must be one of the following values: 1, 2, or 3.',
     }),
-});
+}).unknown();
 
 const userSchema = Joi.object({
     username: Joi.string().min(8).max(50).required(),
@@ -30,11 +30,11 @@ const userSchema = Joi.object({
         .message('Contact number must be a valid international format')
         .optional(),
     role_id: Joi.valid('1', '2', '3').required(),
-});
+}).unknown();
 
 const statusSchema = Joi.object({
     is_active: Joi.boolean().required(),
-});
+}).unknown();
 
 const validateStatus = validate(statusSchema);
 const validateUserCreation = validate(userSchema);
