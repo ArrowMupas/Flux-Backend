@@ -95,10 +95,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
 const resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
 
-    if (!email) {
-        throw new HttpError(400, 'Email is required');
-    }
-
     // Find user by email
     const user = await userModel.getUserByEmail(email);
     if (!user) {
@@ -189,11 +185,6 @@ const resetUserPassword = asyncHandler(async (req, res) => {
         throw new HttpError(400, `New password must be different from the old password`);
     }
 
-    // Check if newPassword and confirmPassword match
-    if (newPassword !== confirmPassword) {
-        throw new HttpError(400, `New password do not match`);
-    }
-
     // Create user with hashed password
     const hashedPassword = await bcrypt.hash(newPassword, 10); // Combines password with salt
     userModel.resetUserPassword(user.id, hashedPassword);
@@ -252,11 +243,6 @@ const changeUserPassword = asyncHandler(async (req, res) => {
     const hasReset = await userModel.hasActivePasswordResetRequest(user.id);
     if (!hasReset) {
         throw new HttpError(403, `Password reset not verified`);
-    }
-
-    // Check if newPassword and confirmPassword match
-    if (newPassword !== confirmPassword) {
-        throw new HttpError(400, `New password do not match`);
     }
 
     // Create user with hashed password
