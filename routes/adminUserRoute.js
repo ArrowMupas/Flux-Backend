@@ -1,20 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const adminUserController = require('../controllers/adminUserController');
-const regexMiddleware = require('../middlewares/regexMiddleware');
+const {
+    validateUserCreation,
+    validateRegister,
+    validateStatus,
+} = require('../validations/adminUserValidation');
 
 router.get('/', adminUserController.getUsers);
 router.get('/:id', adminUserController.getUserById);
-router.put(
-    '/:id',
-    regexMiddleware.regexValidation(['username', 'email']),
-    adminUserController.updateUser
-);
-router.patch('/manage/:id', adminUserController.manageUser);
-router.post(
-    '/register',
-    regexMiddleware.regexValidation(['username', 'email', 'password']),
-    adminUserController.createUser
-);
+router.put('/:id', validateUserCreation, adminUserController.updateUser);
+router.patch('/manage/:id', validateStatus, adminUserController.manageUser);
+router.post('/register', validateRegister, adminUserController.createUser);
 
 module.exports = router;
