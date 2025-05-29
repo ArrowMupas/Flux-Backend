@@ -16,7 +16,7 @@ const registerSchema = Joi.object({
         'string.pattern.base':
             'Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, and one number.',
     }),
-});
+}).unknown();
 
 const loginSchema = Joi.object({
     username: Joi.string().alphanum().min(7).max(15).required().messages({
@@ -29,7 +29,7 @@ const loginSchema = Joi.object({
         'string.min': 'Password must be at least 8 characters long.',
         'any.required': 'Password is required.',
     }),
-});
+}).unknown();
 
 const resetPasswordSchema = Joi.object({
     username: Joi.string().alphanum().min(4).max(15).required().messages({
@@ -56,7 +56,7 @@ const resetPasswordSchema = Joi.object({
     confirmPassword: Joi.any().valid(Joi.ref('newPassword')).required().messages({
         'any.only': 'Confirm password must match the new password.',
     }),
-});
+}).unknown();
 
 const updateUserSchema = Joi.object({
     username: Joi.string().alphanum().min(8).max(15).required().messages({
@@ -77,14 +77,14 @@ const updateUserSchema = Joi.object({
             'string.pattern.base':
                 'Contact number must be a valid phone number (10–15 digits, optional +).',
         }),
-});
+}).unknown();
 
 const emailSchema = Joi.object({
     email: Joi.string().email().required().messages({
         'string.email': 'Please provide a valid email address.',
         'any.required': 'Email is required.',
     }),
-});
+}).unknown();
 
 const confirmResetPasswordSchema = Joi.object({
     email: Joi.string().email().required().messages({
@@ -105,7 +105,7 @@ const confirmResetPasswordSchema = Joi.object({
         'any.only': 'Confirm password must match new password.',
         'any.required': 'Confirm password is required.',
     }),
-});
+}).unknown();
 
 const validateRegistration = validate(registerSchema);
 const validatePasswordReset = validate(resetPasswordSchema);

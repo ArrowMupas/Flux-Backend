@@ -7,7 +7,7 @@ const checkoutSchema = Joi.object({
     notes: Joi.string().allow('').max(255),
     reference_number: Joi.string().max(50).required(),
     account_name: Joi.string().max(100),
-});
+}).unknown();
 
 const validateCheckout = validate(checkoutSchema);
 

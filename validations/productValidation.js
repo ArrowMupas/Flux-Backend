@@ -9,7 +9,7 @@ const productSchema = Joi.object({
     price: Joi.number().min(0).required(),
     image: Joi.string().max(255).required(),
     description: Joi.string().max(500).optional().allow(''),
-});
+}).unknown();
 
 const updateProductSchema = Joi.object({
     id: Joi.string().max(10).required(),
@@ -20,7 +20,7 @@ const updateProductSchema = Joi.object({
     image: Joi.string().max(255).optional(),
     description: Joi.string().max(500).optional().allow(''),
     is_active: Joi.boolean().required(),
-});
+}).unknown();
 
 const validateProduct = validate(productSchema);
 const validateProductUpdate = validate(updateProductSchema);
