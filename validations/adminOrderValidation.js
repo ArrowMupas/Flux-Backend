@@ -15,7 +15,7 @@ const statusUpdateSchema = Joi.object({
         )
         .required(),
     notes: Joi.string().optional(),
-});
+}).unknown();
 
 const validateStatusUpdate = validate(statusUpdateSchema);
 
