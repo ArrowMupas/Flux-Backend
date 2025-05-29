@@ -18,6 +18,7 @@ const reportRoute = require('./routes/reportRoute');
 const permissionRoute = require('./routes/permissionRoute');
 const afterSalesRoute = require('./routes/afterSalesRoute');
 const walkInOrderRoute = require('./routes/walkInOrderRoute');
+const specialOfferRoute = require('./routes/specialOfferRoute');
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -46,6 +47,7 @@ app.use('/api/reports', reportRoute);
 app.use('/api/permissions', permissionRoute);
 app.use('/api/afterSales', afterSalesRoute);
 app.use('/api/walkInOrders', walkInOrderRoute);
+app.use('/api/special-offers', specialOfferRoute);
 
 // error middleware
 app.use(errorMiddleware);
