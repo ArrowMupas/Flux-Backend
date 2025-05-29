@@ -266,3 +266,15 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) V
 ('ALAS202505090009', 'P002', 2, 400.00, 800.00),
 ('ALAS202505090009', 'P005', 1, 300.00, 300.00),
 ('ALAS202505100010', 'P001', 1, 300.00, 300.00);
+
+CREATE TABLE IF NOT EXISTS special_offers (
+    offer_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id VARCHAR(50) NOT NULL,
+    rule_type ENUM('B1G1', 'FIXED') NOT NULL,
+    x_quantity INT NOT NULL,
+    y_quantity INT DEFAULT 0,
+    fixed_price DECIMAL(10,2) DEFAULT NULL,
+    start_date DATETIME,
+    end_date DATETIME,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
