@@ -14,7 +14,18 @@ const addOrderItem = async (itemData, connection = pool) => {
 
 // Function to get order items
 const getOrderItems = async (orderId) => {
-    const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+    const [items] = await pool.query(
+        `
+    SELECT 
+      oi.*, 
+      p.name AS product_name
+    FROM order_items oi
+    JOIN products p ON oi.product_id = p.id
+    WHERE oi.order_id = ?
+  `,
+        [orderId]
+    );
+
     return items;
 };
 
@@ -26,16 +37,33 @@ const getOrderById = async (orderId) => {
 
 // Function to get order by user and status
 const getOrdersByUserAndStatus = async (userId, status) => {
-    const [rows] = await pool.query(`SELECT * FROM orders WHERE customer_id = ? AND status = ?`, [
-        userId,
-        status,
-    ]);
+    const [rows] = await pool.query(
+        `
+    SELECT 
+      o.*, 
+      p.method AS payment_method
+    FROM orders o
+    LEFT JOIN payments p ON o.id = p.order_id
+    WHERE o.customer_id = ? AND o.status = ?
+  `,
+        [userId, status]
+    );
+
     return rows;
 };
 
 // Function to get all orders by user
 const getAllOrdersByUser = async (userId) => {
-    const [rows] = await pool.query(`SELECT * FROM orders WHERE customer_id = ?`, [userId]);
+    const [rows] = await pool.query(
+        `SELECT 
+            o.*, 
+            p.method AS payment_method
+            FROM orders o
+            LEFT JOIN payments p ON o.id = p.order_id
+            WHERE o.customer_id = ?
+        `,
+        [userId]
+    );
     return rows;
 };
 
