@@ -278,3 +278,40 @@ CREATE TABLE IF NOT EXISTS special_offers (
     end_date DATETIME,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
+
+CREATE TABLE IF NOT EXISTS coupons (
+    coupon_id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    type ENUM('PERCENTAGE', 'FIXED', 'SPECIAL') NOT NULL,
+    amount DECIMAL(10,2) DEFAULT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    start_date DATETIME,
+    end_date DATETIME
+);
+
+CREATE TABLE IF NOT EXISTS coupon_usage (
+    usage_id INT AUTO_INCREMENT PRIMARY KEY,
+    coupon_id INT,
+    user_id INT,
+    used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS bundles (
+    bundle_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS bundle_items (
+    bundle_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    bundle_id INT NOT NULL,
+    product_id VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (bundle_id) REFERENCES bundles(bundle_id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
