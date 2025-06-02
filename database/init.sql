@@ -315,3 +315,15 @@ CREATE TABLE IF NOT EXISTS bundle_items (
     FOREIGN KEY (bundle_id) REFERENCES bundles(bundle_id),
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  notification_id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  type ENUM('info', 'promo', 'alert') DEFAULT 'info',
+  is_global BOOLEAN DEFAULT TRUE, 
+  user_id INT DEFAULT NULL,       
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

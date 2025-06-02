@@ -3,11 +3,16 @@ const pool = require('../database/pool');
 // Function to get all order
 const getAllOrders = async () => {
     const [rows] = await pool.query(`
-        SELECT o.*, p.method AS payment_method
-        FROM orders o
-        LEFT JOIN payments p ON o.id = p.order_id
-        ORDER BY o.order_date DESC
-    `);
+    SELECT 
+      o.*, 
+      p.method AS payment_method, 
+      u.username, 
+      u.email
+    FROM orders o
+    LEFT JOIN payments p ON o.id = p.order_id
+    JOIN users u ON o.customer_id = u.id
+    ORDER BY o.order_date DESC
+  `);
     return rows;
 };
 
@@ -29,14 +34,20 @@ const getOrderById = async (orderId) => {
 const getOrdersByStatus = async (status) => {
     const [rows] = await pool.query(
         `
-        SELECT o.*, p.method AS payment_method
-        FROM orders o
-        LEFT JOIN payments p ON o.id = p.order_id
-        WHERE o.status = ?
-        ORDER BY o.order_date DESC
-    `,
+    SELECT 
+      o.*, 
+      p.method AS payment_method, 
+      u.username, 
+      u.email
+    FROM orders o
+    LEFT JOIN payments p ON o.id = p.order_id
+    JOIN users u ON o.customer_id = u.id
+    WHERE o.status = ?
+    ORDER BY o.order_date DESC
+  `,
         [status]
     );
+
     return rows;
 };
 
