@@ -1,18 +1,39 @@
 const pool = require('../database/pool');
 
-// Function to get all order
-const getAllOrders = async () => {
-    const [rows] = await pool.query(`
-    SELECT 
-      o.*, 
-      p.method AS payment_method, 
-      u.username, 
-      u.email
-    FROM orders o
-    LEFT JOIN payments p ON o.id = p.order_id
-    JOIN users u ON o.customer_id = u.id
-    ORDER BY o.order_date DESC
-  `);
+const getOrders = async (status = null, start = null, end = null) => {
+    end = end + ` 23:59:59`;
+
+    let query = `
+        SELECT 
+            o.*, 
+            p.method AS payment_method, 
+            u.username, 
+            u.email
+        FROM orders o
+        LEFT JOIN payments p ON o.id = p.order_id
+        JOIN users u ON o.customer_id = u.id
+    `;
+
+    const queryParams = [];
+    const conditions = [];
+
+    if (status) {
+        conditions.push(`o.status = ?`);
+        queryParams.push(status);
+    }
+
+    if (start && end) {
+        conditions.push(`o.order_date BETWEEN ? AND ?`);
+        queryParams.push(start, end);
+    }
+
+    if (conditions.length > 0) {
+        query += ` WHERE ` + conditions.join(' AND ');
+    }
+
+    query += ` ORDER BY o.order_date DESC`;
+
+    const [rows] = await pool.query(query, queryParams);
     return rows;
 };
 
@@ -28,27 +49,6 @@ const getOrderById = async (orderId) => {
         [orderId]
     );
     return rows[0];
-};
-
-// Function to get order by status
-const getOrdersByStatus = async (status) => {
-    const [rows] = await pool.query(
-        `
-    SELECT 
-      o.*, 
-      p.method AS payment_method, 
-      u.username, 
-      u.email
-    FROM orders o
-    LEFT JOIN payments p ON o.id = p.order_id
-    JOIN users u ON o.customer_id = u.id
-    WHERE o.status = ?
-    ORDER BY o.order_date DESC
-  `,
-        [status]
-    );
-
-    return rows;
 };
 
 // Function to get order items
@@ -101,9 +101,8 @@ const changeOrderStatus = async (orderId, newStatus, notes, connection = pool) =
 };
 
 module.exports = {
-    getAllOrders,
+    getOrders,
     getOrderById,
-    getOrdersByStatus,
     getOrderItems,
     getAllOrdersByUser,
     getOrderStatusHistory,
