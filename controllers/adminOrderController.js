@@ -5,7 +5,10 @@ const adminOrderService = require('../services/adminOrderService');
 // Admin get all orders
 const getAllOrders = asyncHandler(async (req, res) => {
     const status = req.params.status || req.query.status;
-    const data = await adminOrderService.getAllOrders(status);
+    const startDate = req.query.startDate || null;
+    const endDate = req.query.endDate || null;
+
+    const data = await adminOrderService.getAllOrders(status, startDate, endDate);
     return sendResponse(res, 200, 'All orders retrieved', data);
 });
 
