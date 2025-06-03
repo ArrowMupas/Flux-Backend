@@ -22,6 +22,7 @@ const specialOfferRoute = require('./routes/specialOfferRoute');
 const couponRoute = require('./routes/couponRoute');
 const bundleRoute = require('./routes/bundleRoute');
 const notificationRoute = require('./routes/notificationRoute');
+const uploadRoute = require('./routes/uploadRoute');
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -54,6 +55,7 @@ app.use('/api/special-offers', specialOfferRoute);
 app.use('/api/coupons', couponRoute);
 app.use('/api/bundles', bundleRoute);
 app.use('/api/notifications', notificationRoute);
+app.use('/api', uploadRoute);
 
 // error middleware
 app.use(errorMiddleware);
