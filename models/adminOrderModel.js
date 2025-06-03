@@ -41,11 +41,20 @@ const getOrders = async (status = null, start = null, end = null) => {
 const getOrderById = async (orderId) => {
     const [rows] = await pool.query(
         `
-        SELECT o.*, p.method AS payment_method
+        SELECT 
+            o.*, 
+            p.method AS payment_method,
+            p.reference_number,
+            p.account_name,
+            u.username,
+            u.email,
+            u.contact_number,
+            u.address
         FROM orders o
         LEFT JOIN payments p ON o.id = p.order_id
+        LEFT JOIN users u ON o.customer_id = u.id
         WHERE o.id = ?
-    `,
+        `,
         [orderId]
     );
     return rows[0];
