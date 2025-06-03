@@ -323,7 +323,11 @@ CREATE TABLE IF NOT EXISTS notifications (
   type ENUM('info', 'promo', 'alert') DEFAULT 'info',
   is_global BOOLEAN DEFAULT TRUE, 
   user_id INT DEFAULT NULL,       
-  is_read BOOLEAN DEFAULT FALSE,
+  is_read BOOLEAN DEFAULT FALSE, -- for specific user notifications
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+ALTER TABLE orders
+  ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0.00,
+  ADD COLUMN coupon_code VARCHAR(50);

@@ -5,10 +5,11 @@ const productModel = require('../models/productModel');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
+const couponModel = require('../models/couponModel');
 
 const createOrder = async (
     userId,
-    { payment_method, address, notes, reference_number, account_name }
+    { payment_method, address, notes, reference_number, account_name, coupon_code }
 ) => {
     const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
@@ -20,12 +21,27 @@ const createOrder = async (
     await connection.beginTransaction();
 
     try {
+        let discountAmount = 0;
+
+        if (coupon_code) {
+            const coupon = await couponModel.findValidCoupon(coupon_code);
+            if (!coupon) throw new HttpError(400, 'Invalid or expired coupon');
+
+            if (coupon.type === 'PERCENTAGE') {
+                discountAmount = (cart.cart_total * coupon.amount) / 100;
+            } else if (coupon.type === 'FIXED') {
+                discountAmount = coupon.amount;
+            }
+        }
+        const totalAmount = Math.max(cart.cart_total - discountAmount, 0);
         const generatedID = generateOrderId();
         const orderId = await orderModel.createOrder(
             {
                 id: generatedID,
                 customer_id: userId,
-                total_amount: cart.cart_total,
+                total_amount: totalAmount,
+                discount_amount: discountAmount,
+                coupon_code: coupon_code || null,
                 status: 'pending',
                 notes,
             },
@@ -74,6 +90,10 @@ const createOrder = async (
             address,
             connection
         );
+
+        if (coupon_code) {
+            await couponModel.markCouponAsUsed(coupon_code, userId, connection);
+        }
 
         await cartModel.clearCart(userId, connection);
         await connection.commit();

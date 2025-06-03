@@ -34,16 +34,19 @@ const deleteCoupon = async (id) => {
 
 const findValidCoupon = async (code) => {
     const [rows] = await pool.query(
-        `
-    SELECT * FROM coupons
-    WHERE code = ?
-      AND is_active = TRUE
-      AND NOW() BETWEEN start_date AND end_date
-    LIMIT 1`,
+        `SELECT * FROM coupons WHERE code = ? AND is_active = TRUE AND NOW() BETWEEN start_date AND end_date LIMIT 1`,
         [code]
     );
+    return rows[0];
+};
 
-    return rows[0] || null;
+const markCouponAsUsed = async (code, user_id, connection = pool) => {
+    const [coupon] = await pool.query(`SELECT coupon_id FROM coupons WHERE code = ?`, [code]);
+    if (!coupon.length) return;
+    await connection.query(`INSERT INTO coupon_usage (coupon_id, user_id) VALUES (?, ?)`, [
+        coupon[0].coupon_id,
+        user_id,
+    ]);
 };
 
 module.exports = {
@@ -52,4 +55,5 @@ module.exports = {
     updateCoupon,
     deleteCoupon,
     findValidCoupon,
+    markCouponAsUsed,
 };
