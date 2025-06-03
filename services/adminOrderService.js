@@ -5,11 +5,8 @@ const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
 
 // Logic for getting all orders
-const getAllOrders = async (status) => {
-    // Get data bases on status
-    const orders = status
-        ? await adminOrderModel.getOrdersByStatus(status)
-        : await adminOrderModel.getAllOrders(); // If no status, get all order instead
+const getAllOrders = async (status, startDate = null, endDate = null) => {
+    orders = await adminOrderModel.getOrders(status, startDate, endDate);
 
     const detailed = await Promise.all(
         orders.map(async (o) => ({
