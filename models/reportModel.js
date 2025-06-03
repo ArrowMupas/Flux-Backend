@@ -10,7 +10,7 @@ const fetchSalesSummary = async (start, end) => {
             SUM(total_amount) AS totalSales
          FROM orders
          WHERE order_date BETWEEN ? AND ?
-           AND status IN ('processing', 'shipped', 'delivered')`,
+           AND status IN ('processing', 'shipping', 'delivered')`,
         [start, end]
     );
 
@@ -21,7 +21,7 @@ const fetchSalesSummary = async (start, end) => {
          FROM orders o
          JOIN order_items oi ON o.id = oi.order_id
          WHERE o.order_date BETWEEN ? AND ?
-           AND o.status IN ('processing', 'shipped', 'delivered')`,
+           AND o.status IN ('processing', 'shipping', 'delivered')`,
         [start, end]
     );
 
@@ -30,6 +30,33 @@ const fetchSalesSummary = async (start, end) => {
         totalSales: salesStats.totalSales || 0,
         totalItemsSold: itemsStats.totalItemsSold || 0,
     };
+};
+
+const fetchSalesSummaryByStatus = async (start, end) => {
+    end = end + ` 23:59:59`;
+
+    const [rows] = await pool.query(
+        `
+    SELECT 
+      grouped_status AS status,
+      COUNT(*) AS totalOrders
+    FROM (
+      SELECT 
+        CASE 
+          WHEN status = 'pending' AND cancel_requested = TRUE THEN 'cancel_requested'
+          WHEN status = 'pending' THEN 'pending'
+          ELSE status
+        END AS grouped_status
+      FROM orders
+      WHERE order_date BETWEEN ? AND ?
+        AND status IN ('pending', 'processing', 'shipping', 'delivered', 'cancelled')
+    ) AS derived
+    GROUP BY grouped_status
+    `,
+        [start, end]
+    );
+
+    return rows;
 };
 
 const fetchTopProducts = async (start, end) => {
@@ -46,7 +73,7 @@ const fetchTopProducts = async (start, end) => {
          JOIN orders o ON oi.order_id = o.id
          JOIN products p ON oi.product_id = p.id
          WHERE o.order_date BETWEEN ? AND ?
-           AND o.status IN ('processing', 'shipped', 'delivered')
+           AND o.status IN ('processing', 'shipping', 'delivered')
          GROUP BY p.id
          ORDER BY totalSold DESC
          LIMIT 10`,
@@ -65,7 +92,7 @@ const fetchSalesPerDay = async (start, end) => {
             SUM(o.total_amount) AS totalSales
          FROM orders o
          WHERE o.order_date BETWEEN ? AND ?
-           AND o.status IN ('processing', 'shipped', 'delivered')
+           AND o.status IN ('processing', 'shipping', 'delivered')
          GROUP BY DATE(o.order_date)
          ORDER BY DATE(o.order_date) ASC`,
         [start, end]
@@ -97,4 +124,5 @@ module.exports = {
     fetchTopProducts,
     fetchSalesPerDay,
     fetchUserReport,
+    fetchSalesSummaryByStatus,
 };

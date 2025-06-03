@@ -4,24 +4,10 @@ const verifyToken = require('../middlewares/authMiddleware');
 const authorize = require('../middlewares/accessMiddleware');
 const reportController = require('../controllers/reportController');
 
-router.get(
-    '/sales-summary',
-    verifyToken,
-    authorize(['customer']),
-    reportController.getSalesSummary
-);
-router.get('/top-products', verifyToken, authorize(['admin']), reportController.getTopProducts);
-router.get(
-    '/sales-per-day',
-    verifyToken,
-    authorize(['staff'], 'get_daily_sales'),
-    reportController.getSalesPerDay
-);
-router.get(
-    '/user-report',
-    verifyToken,
-    authorize(['admin', 'staff'], 'get_user_report'),
-    reportController.getUserReport
-);
+router.get('/sales-summary', reportController.getSalesSummary);
+router.get('/sales-summary-order', reportController.getSalesSummaryByStatus);
+router.get('/top-products', reportController.getTopProducts);
+router.get('/sales-per-day', reportController.getSalesPerDay);
+router.get('/user-report', reportController.getUserReport);
 
 module.exports = router;

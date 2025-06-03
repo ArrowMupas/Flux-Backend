@@ -15,6 +15,20 @@ const getSalesSummary = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Sales Summary Generated', result);
 });
 
+const getSalesSummaryByStatus = asyncHandler(async (req, res) => {
+    const { start, end } = req.query;
+
+    const data = await reportModel.fetchSalesSummaryByStatus(start, end);
+
+    const result = {
+        startDate: start,
+        endDate: end,
+        data,
+    };
+
+    return sendResponse(res, 200, 'Sales Summary Generated', result);
+});
+
 const getTopProducts = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
     const summary = await reportModel.fetchTopProducts(start, end);
@@ -59,4 +73,5 @@ module.exports = {
     getTopProducts,
     getSalesPerDay,
     getUserReport,
+    getSalesSummaryByStatus,
 };
