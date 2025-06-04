@@ -22,6 +22,11 @@ const addProduct = async (id, name, category, stock_quantity, price, image, desc
     return result;
 };
 
+// Function to update is_active status of a product
+const updateProductActiveStatus = async (productId, isActive) => {
+    await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [isActive, productId]);
+};
+
 // Function to update a product
 const updateProduct = async (
     id,
@@ -88,6 +93,14 @@ const getProductPrice = async (productId, connection = pool) => {
     return rows[0].price;
 };
 
+const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
+    await pool.query('UPDATE products SET stock_quantity = ?, price = ? WHERE id = ?', [
+        stockQuantity,
+        price,
+        productId,
+    ]);
+};
+
 module.exports = {
     getAllProducts,
     getProductById,
@@ -96,4 +109,6 @@ module.exports = {
     deleteProduct,
     checkAndReserveStock,
     getProductPrice,
+    updateProductActiveStatus,
+    updateProductStockAndPrice,
 };
