@@ -35,6 +35,19 @@ const createProduct = asyncHandler(async (req, res) => {
     res.status(201).json({ id, ...req.body });
 });
 
+// Update product is_active status
+const updateProductActiveStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    if (typeof is_active !== 'boolean') {
+        return res.status(400).json({ message: 'is_active must be a boolean' });
+    }
+
+    await productModel.updateProductActiveStatus(id, is_active);
+    res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
+});
+
 // Update a product
 const updateProduct = asyncHandler(async (req, res) => {
     const { name, category, stock_quantity, price, image, description, is_active } = req.body;
@@ -66,10 +79,28 @@ const deleteProduct = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Product deleted successfully' });
 });
 
+const updateProductStockAndPrice = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { stock_quantity, price } = req.body;
+
+    if (typeof stock_quantity !== 'number' || stock_quantity < 0) {
+        return res.status(400).json({ message: 'Invalid stock_quantity' });
+    }
+    if (typeof price !== 'number' || price < 0) {
+        return res.status(400).json({ message: 'Invalid price' });
+    }
+
+    await productModel.updateProductStockAndPrice(id, stock_quantity, price);
+
+    res.status(200).json({ message: `Product ${id} updated with new stock and price.` });
+});
+
 module.exports = {
     getAllProducts,
     getProductById,
     createProduct,
     updateProduct,
     deleteProduct,
+    updateProductActiveStatus,
+    updateProductStockAndPrice,
 };
