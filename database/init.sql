@@ -223,22 +223,28 @@ CREATE TABLE IF NOT EXISTS product_reviews (
 
 -- Seeds for easier testing (why did we not do this earlier)
 -- Seed products
+INSERT INTO products (id, name, category, stock_quantity, price, image, description, created_at)
+VALUES
+('P001', 'The Ballad of Q', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302194/alas_uploads/iknwr95caffzjwbkkhdu.jpg', 'A mysterious sauce with a bold, rich flavor.', '2025-05-30 09:14:12'),
+('P002', 'Big Bald Bob', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302182/alas_uploads/bbounuzrfo02cbronbme.jpg', 'Intense and strong, just like Bob himself.', '2025-05-30 09:14:12'),
+('P003', 'Call Me Debra', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302419/alas_uploads/ffgfhv57rvygxjkriw9e.jpg', 'Sweet with a surprising kick.', '2025-05-30 09:14:12'),
+('P004', 'Carbon', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302380/alas_uploads/gpdvbwvqnx1l2ri4fbx9.jpg', 'Smoky and dark — for those who like it bold.', '2025-05-30 09:14:12'),
+('P005', 'Catch 22', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749303226/alas_uploads/n2yltnqql5zvciosdugo.jpg', 'A twisty blend that keeps you coming back.', '2025-05-30 09:14:12');
+
 INSERT INTO products (id, name, category, stock_quantity, price, image, description)
 VALUES
-('P001', 'The Ballad of Q', 'Condiment', 50, 300.00, 'ballad.jpg', 'A mysterious sauce with a bold, rich flavor.'),
-('P002', 'Big Bald Bob', 'Condiment', 50, 400.00, 'bigbald.jpg', 'Intense and strong, just like Bob himself.'),
-('P003', 'Call Me Debra', 'Condiment', 50, 300.00, 'callme.jpg', 'Sweet with a surprising kick.'),
-('P004', 'Carbon', 'Condiment', 50, 400.00, 'carbon.jpg', 'Smoky and dark — for those who like it bold.'),
-('P005', 'Catch 22', 'Condiment', 50, 300.00, 'catch.jpg', 'A twisty blend that keeps you coming back.');
+('P006', 'Gypsy Bu', 'Condiment', 40, 999.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302550/alas_uploads/zgb62etqzs0pmyohucar.jpg', 'Rises in heat and flavor.'),
+('P007', 'Grin', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302469/alas_uploads/y3alljz8lpsne23jbdm2.jpg', 'Hits quietly, leaves a lasting impression.'),
+('P008', 'Birds Eye Gambit', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302297/alas_uploads/gzl6lzcevjp8uhyza6h8.jpg', 'Hits quietly, leaves a lasting impression.');
 
 -- Seed users
-INSERT INTO users (username, address, contact_number, role_id, email, password_hash)
+INSERT INTO users (username, address, contact_number, role_id, email, password_hash, created_at, updated_at)
 VALUES
-('walter_white', '308 Negra Arroyo Lane, Albuquerque', '5051234567', 1, 'heisenberg@bb.com', '$2b$10$HeisenbergHashPlaceholder'),
-('jesse_pinkman', '9809 Margo Street, Albuquerque', '5057654321', 2, 'yo@bb.com', '$2b$10$JesseHashPlaceholder'),
-('saul_goodman', '1000 Legal Ave, Albuquerque', '5050000000', 2, 'bettercall@saul.com', '$2b$10$SaulHashPlaceholder'),
-('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder'),
-('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder');
+('walter_white', '308 Negra Arroyo Lane, Albuquerque', '5051234567', 1, 'heisenberg@bb.com', '$2b$10$HeisenbergHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
+('jesse_pinkman', '9809 Margo Street, Albuquerque', '5057654321', 2, 'yo@bb.com', '$2b$10$JesseHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
+('saul_goodman', '1000 Legal Ave, Albuquerque', '5050000000', 2, 'bettercall@saul.com', '$2b$10$SaulHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
+('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
+('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12');
 
 -- Seed orders
 INSERT INTO orders (id, customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
@@ -256,6 +262,8 @@ INSERT INTO orders (id, customer_id, order_date, status, total_amount, discount_
 INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
 ('ALAS202505010001', 'P001', 2, 300.00, 600.00),
 ('ALAS202505020002', 'P002', 2, 400.00, 800.00),
+('ALAS202505020002', 'P005', 2, 400.00, 800.00),
+('ALAS202505020002', 'P003', 2, 400.00, 800.00),
 ('ALAS202505030003', 'P003', 3, 300.00, 900.00),
 ('ALAS202505040004', 'P004', 3, 400.00, 1200.00),
 ('ALAS202505050005', 'P005', 3, 300.00, 900.00),
