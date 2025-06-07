@@ -4,6 +4,7 @@ const productController = require('../controllers/productController');
 const { validateProduct, validateProductUpdate } = require('../validations/productValidation');
 
 router.get('/', productController.getAllProducts);
+router.get('/admin/', productController.getAllProductsAdmin);
 router.get('/:id', productController.getProductById);
 router.post('/', validateProduct, productController.createProduct);
 router.put('/:id', validateProductUpdate, productController.updateProduct);

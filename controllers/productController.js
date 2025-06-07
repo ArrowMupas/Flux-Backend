@@ -9,6 +9,12 @@ const getAllProducts = asyncHandler(async (req, res) => {
     res.status(200).json(products);
 });
 
+// Get all products
+const getAllProductsAdmin = asyncHandler(async (req, res) => {
+    const products = await productModel.getAllProductsAdmin();
+    res.status(200).json(products);
+});
+
 // Get a product by ID
 const getProductById = asyncHandler(async (req, res) => {
     const product = await productModel.getProductById(req.params.id);
@@ -103,4 +109,5 @@ module.exports = {
     deleteProduct,
     updateProductActiveStatus,
     updateProductStockAndPrice,
+    getAllProductsAdmin,
 };

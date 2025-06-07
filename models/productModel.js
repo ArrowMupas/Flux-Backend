@@ -1,8 +1,12 @@
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 
-// Function to get all products
 const getAllProducts = async () => {
+    const [products] = await pool.query('SELECT * FROM products WHERE is_active = TRUE');
+    return products;
+};
+
+const getAllProductsAdmin = async () => {
     const [products] = await pool.query('SELECT * FROM products');
     return products;
 };
@@ -111,4 +115,5 @@ module.exports = {
     getProductPrice,
     updateProductActiveStatus,
     updateProductStockAndPrice,
+    getAllProductsAdmin,
 };
