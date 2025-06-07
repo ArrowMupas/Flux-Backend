@@ -79,10 +79,47 @@ const createUser = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'User created', user);
 });
 
+// POST /admin/users  – create many users at once
+const createUsersWithDates = asyncHandler(async (req, res) => {
+    const rawUsers = req.body;
+
+    // 1️⃣ Ensure we actually received an array
+    if (!Array.isArray(rawUsers) || rawUsers.length === 0) {
+        throw new HttpError(400, 'Request body must be a non-empty array of users');
+    }
+
+    // 2️⃣ Check duplicates & hash passwords up-front
+    const usersToInsert = [];
+
+    for (const user of rawUsers) {
+        const { username, email, password, role, created_at, updated_at } = user;
+
+        // Duplicate?
+        if (await adminUserModel.getUserByUsername(username)) {
+            throw new HttpError(400, `User already exists: ${username}`);
+        }
+
+        usersToInsert.push({
+            username,
+            email,
+            passwordHash: await bcrypt.hash(password, 10),
+            role,
+            createdAt: created_at, // rename to match model expectation
+            updatedAt: updated_at,
+        });
+    }
+
+    // 3️⃣ Bulk insert
+    const insertedUsers = await adminUserModel.createUsersWithDates(usersToInsert);
+
+    return sendResponse(res, 200, 'Users created with custom timestamps', insertedUsers);
+});
+
 module.exports = {
     getUserById,
     updateUser,
     manageUser,
     createUser,
     getUsers,
+    createUsersWithDates,
 };
