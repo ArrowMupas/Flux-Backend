@@ -116,6 +116,34 @@ const createUser = async (username, email, password, role) => {
     return newUser;
 };
 
+const createUsersWithDates = async (users) => {
+    if (!Array.isArray(users) || users.length === 0) {
+        throw new Error('Input must be a non-empty array of users');
+    }
+
+    const query = `
+        INSERT INTO users (
+            username, email, password_hash, role_id, is_verified,
+            created_at, updated_at
+        ) VALUES ?
+    `;
+
+    const values = users.map((u) => [
+        u.username,
+        u.email,
+        u.passwordHash,
+        u.role,
+        true,
+        u.createdAt,
+        u.updatedAt,
+    ]);
+
+    const [result] = await pool.query(query, [values]);
+
+    const ids = Array.from({ length: result.affectedRows }, (_, i) => result.insertId + i);
+    return Promise.all(ids.map(getUserById));
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
@@ -124,4 +152,5 @@ module.exports = {
     getUserByUsername,
     createUser,
     getUsers,
+    createUsersWithDates,
 };

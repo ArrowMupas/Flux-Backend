@@ -1,4 +1,5 @@
 const pool = require('../database/pool');
+const HttpError = require('../helpers/errorHelper');
 
 // Create a walk-in sale
 const createOrder = async (orderData, connection = pool) => {
