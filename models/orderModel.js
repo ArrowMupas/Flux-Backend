@@ -29,10 +29,17 @@ const getOrderItems = async (orderId) => {
     return items;
 };
 
-// Function to get order by id
 const getOrderById = async (orderId) => {
-    const [rows] = await pool.query(`SELECT * FROM orders WHERE id = ?`, [orderId]);
-    return rows[0];
+    const [rows] = await pool.query(
+        `
+    SELECT o.*, p.method AS payment_method
+    FROM orders o
+    LEFT JOIN payments p ON o.id = p.order_id
+    WHERE o.id = ?
+    `,
+        [orderId]
+    );
+    return rows[0] ?? null;
 };
 
 // Function to get order by user and status
