@@ -38,20 +38,30 @@ const fetchSalesSummaryByStatus = async (start, end) => {
     const [rows] = await pool.query(
         `
     SELECT 
-      grouped_status AS status,
-      COUNT(*) AS totalOrders
-    FROM (
-      SELECT 
-        CASE 
-          WHEN status = 'pending' AND cancel_requested = TRUE THEN 'cancel_requested'
-          WHEN status = 'pending' THEN 'pending'
-          ELSE status
-        END AS grouped_status
-      FROM orders
-      WHERE order_date BETWEEN ? AND ?
-        AND status IN ('pending', 'processing', 'shipping', 'delivered', 'cancelled')
-    ) AS derived
-    GROUP BY grouped_status
+  grouped_status AS status,
+  COUNT(*) AS totalOrders
+FROM (
+  SELECT 
+    CASE 
+      WHEN status = 'pending' AND cancel_requested = TRUE THEN 'cancel_requested'
+      WHEN status = 'pending' THEN 'pending'
+      ELSE status
+    END AS grouped_status
+  FROM orders
+  WHERE order_date BETWEEN ? AND ?
+    AND status IN ('pending', 'processing', 'shipping', 'delivered', 'cancelled')
+) AS derived
+GROUP BY grouped_status
+ORDER BY 
+  CASE grouped_status
+    WHEN 'pending' THEN 1
+    WHEN 'cancel_requested' THEN 2
+    WHEN 'processing' THEN 3
+    WHEN 'shipping' THEN 4
+    WHEN 'delivered' THEN 5
+    WHEN 'cancelled' THEN 6
+    ELSE 7
+  END
     `,
         [start, end]
     );

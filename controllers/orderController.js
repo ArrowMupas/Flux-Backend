@@ -1,6 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
+const orderModel = require('../models/orderModel');
 const orderService = require('../services/orderService');
+const HttpError = require('../helpers/errorHelper');
 
 // Create order
 const createOrder = asyncHandler(async (req, res) => {
@@ -44,9 +46,28 @@ const cancelOrder = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, message);
 });
 
+const getOrderById = asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
+
+    const order = await orderModel.getOrderById(orderId);
+    if (!order) {
+        throw new HttpError(404, 'No order');
+    }
+
+    const items = await orderModel.getOrderItems(orderId);
+
+    const result = {
+        ...order,
+        items,
+    };
+
+    return sendResponse(res, 200, 'Order retrieved', result);
+});
+
 module.exports = {
     createOrder,
     getOrders,
     getOrderStatusHistory,
     cancelOrder,
+    getOrderById,
 };
