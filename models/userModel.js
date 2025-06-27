@@ -8,8 +8,10 @@ const getUserById = async (id) => {
             roles.name AS role_name, 
             username, 
             address, 
-            contact_number, 
+            contact_number,
             email,
+            is_active,
+            is_verified,
             created_at,
             updated_at
          FROM users 
@@ -81,6 +83,7 @@ const resetUserPassword = async (userId, newPasswordHash) => {
     return await getUserById(userId);
 };
 
+// Function to save email verification token
 const saveVerificationToken = async (userId, token) => {
     await pool.query(`INSERT INTO email_verification_tokens (user_id, token) VALUES (?, ?)`, [
         userId,
@@ -88,6 +91,7 @@ const saveVerificationToken = async (userId, token) => {
     ]);
 };
 
+// Function to get user by verification token
 const getUserByVerificationToken = async (token) => {
     const [rows] = await pool.query(
         `SELECT users.*, roles.name AS role_name
@@ -101,14 +105,17 @@ const getUserByVerificationToken = async (token) => {
     return rows[0];
 };
 
+// Function to verify user by ID
 const verifyUser = async (userId) => {
     await pool.query(`UPDATE users SET is_verified = 1 WHERE id = ?`, [userId]);
 };
 
+// Function to delete verification token
 const deleteVerificationToken = async (token) => {
     await pool.query(`DELETE FROM email_verification_tokens WHERE token = ?`, [token]);
 };
 
+// Function to save password reset token
 const savePasswordResetToken = async (userId, token, expires_at) => {
     await pool.query(
         `INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`,
@@ -116,6 +123,7 @@ const savePasswordResetToken = async (userId, token, expires_at) => {
     );
 };
 
+// Function to get user by password reset token
 const getUserByPasswordResetToken = async (token) => {
     const [rows] = await pool.query(
         `SELECT users.*, roles.name AS role_name
@@ -129,6 +137,7 @@ const getUserByPasswordResetToken = async (token) => {
     return rows[0];
 };
 
+// Function to check if user has an active password reset request
 const hasActivePasswordResetRequest = async (userId) => {
     const [rows] = await pool.query(
         `SELECT id FROM password_reset_tokens 
@@ -139,6 +148,7 @@ const hasActivePasswordResetRequest = async (userId) => {
     return rows.length > 0;
 };
 
+// Function to delete password reset token
 const deletePasswordResetToken = async (userId) => {
     await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = ?`, [userId]);
 };
@@ -150,7 +160,6 @@ module.exports = {
     createUser,
     updateUser,
     resetUserPassword,
-    getUserByUsername,
     saveVerificationToken,
     getUserByVerificationToken,
     verifyUser,

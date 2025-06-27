@@ -29,6 +29,7 @@ const getOrderItems = async (orderId) => {
     return items;
 };
 
+// Function to get order by ID
 const getOrderById = async (orderId) => {
     const [rows] = await pool.query(
         `
@@ -118,6 +119,7 @@ const createCancelRequest = async (orderId, notes, connection = pool) => {
     );
 };
 
+// Function to get today's order count for a user
 const getTodayOrderCountByUser = async (userId, connection = pool) => {
     const [[{ count }]] = await connection.query(
         `
@@ -131,6 +133,7 @@ const getTodayOrderCountByUser = async (userId, connection = pool) => {
     return count;
 };
 
+// Function to create a reservation for a product
 const createReservation = async (product_id, order_id, quantity, connection = pool) => {
     await connection.query(
         `
@@ -141,6 +144,7 @@ const createReservation = async (product_id, order_id, quantity, connection = po
     );
 };
 
+// Function to get reserved quantity for a product
 const getReservedQuantityByProductId = async (product_id, connection = pool) => {
     const [[{ reserved }]] = await connection.query(
         `
@@ -153,6 +157,7 @@ const getReservedQuantityByProductId = async (product_id, connection = pool) => 
     return reserved;
 };
 
+// Function to deduct stock for an order
 const deductStockForOrder = async (order_id, connection = pool) => {
     await connection.query(
         `
@@ -165,6 +170,7 @@ const deductStockForOrder = async (order_id, connection = pool) => {
     );
 };
 
+// Function to delete reservations by order ID
 const deleteReservationsByOrderId = async (order_id, connection = pool) => {
     await connection.query(
         `

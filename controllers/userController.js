@@ -15,7 +15,13 @@ const registerUser = asyncHandler(async (req, res) => {
     // Check for existing user
     const userExists = await userModel.getUserByUsername(username);
     if (userExists) {
-        throw new HttpError(401, `User already exists`);
+        throw new HttpError(401, `${username} is already taken`);
+    }
+
+    // Check for existing email
+    const emailExists = await userModel.getUserByEmail(email);
+    if (emailExists) {
+        throw new HttpError(401, `Email ${email} is already registered`);
     }
 
     // Create user with hashed password
@@ -49,23 +55,13 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
     const user = await userModel.getUserByUsername(username);
-
-    entityExistHelper(user, res, 404, 'User not found');
-
-    if (!user.is_verified) {
-        throw new HttpError(403, `Email not verified`);
-    }
-
-    // Check if user is active
-    if (!user.is_active) {
-        throw new HttpError(403, `Account is inactive`);
-    }
+    if (!user) throw new HttpError(404, `User ${username} not found`);
+    if (!user.is_active) throw new HttpError(403, `Account is inactive`);
+    if (!user.is_verified) throw new HttpError(403, `Email not verified`);
 
     //Bcrypt authentication
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-        throw new HttpError(401, 'Invalid credentials');
-    }
+    if (!isMatch) throw new HttpError(401, 'Invalid credentials');
 
     await userModel.logUserLogin(user.id, user.username);
 
@@ -81,8 +77,10 @@ const loginUser = asyncHandler(async (req, res) => {
     });
 });
 
+// Verify user email
 const verifyEmail = asyncHandler(async (req, res) => {
     const { token } = req.query;
+
     const user = await userModel.getUserByVerificationToken(token);
     if (!user) throw new HttpError(400, 'Invalid or expired token');
 
@@ -133,7 +131,8 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
 const getUserProfile = asyncHandler(async (req, res) => {
     const user = await userModel.getUserById(req.user.id);
 
-    entityExistHelper(user, res, 404, 'User not found');
+    if (!user) throw new HttpError(404, 'User not found');
+    if (!user.is_active) throw new HttpError(403, `Account is inactive`);
 
     res.json({
         id: user.id,
@@ -162,7 +161,7 @@ const updateUser = asyncHandler(async (req, res) => {
 
 // Reset user password
 const resetUserPassword = asyncHandler(async (req, res) => {
-    const { username, password, newPassword, confirmPassword } = req.body;
+    const { username, password, newPassword } = req.body;
 
     const user = await userModel.getUserByUsername(username);
 
@@ -194,6 +193,7 @@ const resetUserPassword = asyncHandler(async (req, res) => {
     });
 });
 
+// Request password reset
 const requestPasswordReset = asyncHandler(async (req, res) => {
     const { email } = req.body;
     const user = await userModel.getUserByEmail(email);
@@ -216,6 +216,7 @@ const requestPasswordReset = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Password reset email sent' });
 });
 
+// Verify password reset token
 const verifyResetToken = asyncHandler(async (req, res) => {
     const { token } = req.query;
 
@@ -229,7 +230,7 @@ const verifyResetToken = asyncHandler(async (req, res) => {
 
 // Reset user password
 const changeUserPassword = asyncHandler(async (req, res) => {
-    const { email, newPassword, confirmPassword } = req.body;
+    const { email, newPassword } = req.body;
 
     const user = await userModel.getUserByEmail(email);
 

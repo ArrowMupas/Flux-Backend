@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 
+// Function to get all orders with optional filters
 const getOrders = async (status = null, start = null, end = null) => {
     end = end + ` 23:59:59`;
 

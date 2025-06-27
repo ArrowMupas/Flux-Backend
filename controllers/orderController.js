@@ -46,6 +46,7 @@ const cancelOrder = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, message);
 });
 
+// Get order by ID
 const getOrderById = asyncHandler(async (req, res) => {
     const orderId = req.params.id;
 

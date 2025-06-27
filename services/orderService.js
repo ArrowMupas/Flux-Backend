@@ -6,6 +6,7 @@ const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
 
+// Logic of creating an order
 const createOrder = async (
     userId,
     { payment_method, address, notes, reference_number, account_name }
