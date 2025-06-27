@@ -13,6 +13,7 @@ const addOrderItem = async (itemData, connection = pool) => {
     return result.insertId;
 };
 
+// Deduct stock for a product when an item is added to the order
 const deductStock = async (productId, quantity, connection) => {
     const [rows] = await connection.query(
         `
@@ -46,6 +47,7 @@ const deductStock = async (productId, quantity, connection) => {
     );
 };
 
+// Update the total amount of a walk-in sale
 const updateOrderTotal = async (saleId, totalAmount, connection = pool) => {
     const [result] = await connection.query(
         `UPDATE walk_in_sales SET total_amount = ? WHERE id = ?`,
@@ -59,6 +61,7 @@ const updateOrderTotal = async (saleId, totalAmount, connection = pool) => {
     return result;
 };
 
+// Get all walk-in sales with their items
 const getAllWalkInSalesWithItems = async () => {
     const connection = await pool.getConnection();
 

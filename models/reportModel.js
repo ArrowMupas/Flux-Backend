@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 
+// Function to fetch sales summary for a given date range
 const fetchSalesSummary = async (start, end) => {
     end = end + ` 23:59:59`;
 
@@ -32,43 +33,45 @@ const fetchSalesSummary = async (start, end) => {
     };
 };
 
+// Function to fetch sales summary by status for a given date range
 const fetchSalesSummaryByStatus = async (start, end) => {
     end = end + ` 23:59:59`;
 
     const [rows] = await pool.query(
         `
-    SELECT 
-  grouped_status AS status,
-  COUNT(*) AS totalOrders
-FROM (
-  SELECT 
-    CASE 
-      WHEN status = 'pending' AND cancel_requested = TRUE THEN 'cancel_requested'
-      WHEN status = 'pending' THEN 'pending'
-      ELSE status
-    END AS grouped_status
-  FROM orders
-  WHERE order_date BETWEEN ? AND ?
-    AND status IN ('pending', 'processing', 'shipping', 'delivered', 'cancelled')
-) AS derived
-GROUP BY grouped_status
-ORDER BY 
-  CASE grouped_status
-    WHEN 'pending' THEN 1
-    WHEN 'cancel_requested' THEN 2
-    WHEN 'processing' THEN 3
-    WHEN 'shipping' THEN 4
-    WHEN 'delivered' THEN 5
-    WHEN 'cancelled' THEN 6
-    ELSE 7
-  END
-    `,
+        SELECT 
+            grouped_status AS status,
+            COUNT(*) AS totalOrders
+        FROM (
+            SELECT 
+                CASE 
+                    WHEN status = 'pending' AND cancel_requested = TRUE THEN 'cancel_requested'
+                    WHEN status = 'pending' THEN 'pending'
+                    ELSE status
+                END AS grouped_status
+            FROM orders
+            WHERE order_date BETWEEN ? AND ?
+              AND status IN ('pending', 'processing', 'shipping', 'delivered', 'cancelled')
+        ) AS derived
+        GROUP BY grouped_status
+        ORDER BY 
+            CASE grouped_status
+                WHEN 'pending' THEN 1
+                WHEN 'cancel_requested' THEN 2
+                WHEN 'processing' THEN 3
+                WHEN 'shipping' THEN 4
+                WHEN 'delivered' THEN 5
+                WHEN 'cancelled' THEN 6
+                ELSE 7
+            END
+        `,
         [start, end]
     );
 
     return rows;
 };
 
+// Function to fetch top 10 products sold in a given date range
 const fetchTopProducts = async (start, end) => {
     end = end + ` 23:59:59`;
 
@@ -92,6 +95,7 @@ const fetchTopProducts = async (start, end) => {
     return rows;
 };
 
+// Function to fetch sales per day for a given date range
 const fetchSalesPerDay = async (start, end) => {
     end = end + ` 23:59:59`;
 
@@ -110,6 +114,7 @@ const fetchSalesPerDay = async (start, end) => {
     return rows;
 };
 
+// Function to fetch user report for a given date range
 const fetchUserReport = async (start, end) => {
     end = end + ' 23:59:59';
 

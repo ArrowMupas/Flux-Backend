@@ -45,6 +45,7 @@ const changeOrderStatus = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order status updated', order);
 });
 
+// Admin cancel order
 const adminCancelOrder = asyncHandler(async (req, res) => {
     const orderId = req.params.orderId;
     const { notes } = req.body;
@@ -53,6 +54,7 @@ const adminCancelOrder = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order cancelled by admin');
 });
 
+// Admin process refund/return request
 const adminRefundReturnProcess = asyncHandler(async (req, res) => {
     const requestId = req.params.id;
 
@@ -60,6 +62,7 @@ const adminRefundReturnProcess = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order processed');
 });
 
+// Admin complete refund/return request
 const adminRefundReturnComplete = asyncHandler(async (req, res) => {
     const requestId = req.params.id;
     const { notes } = req.body;

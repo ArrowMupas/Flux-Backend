@@ -26,27 +26,27 @@ const addProduct = async (id, name, category, stock_quantity, price, image, desc
     return result;
 };
 
+// Function to update a product
+const updateProduct = async (id, name, category, price, image, description) => {
+    const [result] = await pool.query(
+        'UPDATE products SET name = ?, category = ?, price = ?, image = ?, description = ? WHERE id = ?',
+        [name, category, price, image, description, id]
+    );
+    return result;
+};
+
 // Function to update is_active status of a product
 const updateProductActiveStatus = async (productId, isActive) => {
     await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [isActive, productId]);
 };
 
-// Function to update a product
-const updateProduct = async (
-    id,
-    name,
-    category,
-    stock_quantity,
-    price,
-    image,
-    description,
-    is_active
-) => {
-    const [result] = await pool.query(
-        'UPDATE products SET name = ?, category = ?, stock_quantity = ?, price = ?, image = ?, description = ?, is_active = ? WHERE id = ?',
-        [name, category, stock_quantity, price, image, description, is_active, id]
-    );
-    return result;
+// Function to update stock quantity and price of a product
+const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
+    await pool.query('UPDATE products SET stock_quantity = ?, price = ? WHERE id = ?', [
+        stockQuantity,
+        price,
+        productId,
+    ]);
 };
 
 // Function to delete a product
@@ -55,6 +55,7 @@ const deleteProduct = async (id) => {
     return result;
 };
 
+// Function to check and reserve stock for a product
 const checkAndReserveStock = async (productId, quantity, orderId, connection) => {
     const [rows] = await connection.query(
         `
@@ -95,14 +96,6 @@ const getProductPrice = async (productId, connection = pool) => {
     }
 
     return rows[0].price;
-};
-
-const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
-    await pool.query('UPDATE products SET stock_quantity = ?, price = ? WHERE id = ?', [
-        stockQuantity,
-        price,
-        productId,
-    ]);
 };
 
 module.exports = {

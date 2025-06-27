@@ -1,7 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const adminUserModel = require('../models/adminUserModel');
-const entityExistHelper = require('../helpers/entityExistHelper');
 const bcrypt = require('bcrypt');
 const HttpError = require('../helpers/errorHelper');
 
@@ -17,26 +16,15 @@ const getUsers = asyncHandler(async (req, res) => {
 const getUserById = asyncHandler(async (req, res) => {
     const id = req.params.id;
     const user = await adminUserModel.getUserById(id);
-    if (!user) throw new HttpError(404, `No user found with ID: ${id}`);
     return sendResponse(res, 200, 'User fetched', user);
 });
 
 // Admin update users
 const updateUser = asyncHandler(async (req, res) => {
     const id = req.params.id;
-    const { username, email, address, contact_number, role_id } = req.body;
+    const { username, email, address, contact_number } = req.body;
 
-    const user = await adminUserModel.getUserById(id);
-    if (!user) throw new HttpError(404, `No user found with ID: ${id}`);
-
-    const result = await adminUserModel.updateUser(
-        id,
-        username,
-        email,
-        address,
-        contact_number,
-        role_id
-    );
+    const result = await adminUserModel.updateUser(id, username, email, address, contact_number);
 
     return sendResponse(res, 200, 'User updated', result);
 });
@@ -46,16 +34,19 @@ const manageUser = asyncHandler(async (req, res) => {
     const id = req.params.id;
     const { is_active } = req.body;
 
-    // Make sure request is true or false
-    if (typeof is_active !== 'boolean') {
-        throw new HttpError(400, 'Value must be true or false');
+    const user = await adminUserModel.getUserById(id);
+    if (!user) throw new HttpError(404, 'User not found');
+
+    user.is_active = Boolean(user.is_active);
+
+    if (user.role === 'admin' && is_active === false) {
+        throw new HttpError(403, 'Cannot deactivate an admin user');
+    }
+    if (user.is_active === is_active) {
+        throw new HttpError(400, `User is already ${is_active ? 'active' : 'inactive'}`);
     }
 
-    const result = await adminUserModel.manageUser(id, is_active);
-
-    if (result.affectedRows === 0) {
-        throw new HttpError(404, `No user found with ID: ${id}`);
-    }
+    await adminUserModel.manageUser(id, is_active);
 
     res.status(200).json({
         message: `User ${is_active ? 'activated' : 'deactivated'} successfully`,
@@ -68,9 +59,9 @@ const createUser = asyncHandler(async (req, res) => {
 
     // Check for existing user
     const userExists = await adminUserModel.getUserByUsername(username);
-    if (userExists) {
-        throw new HttpError(400, 'User already exists');
-    }
+    if (userExists) throw new HttpError(400, 'Username already in use');
+    const emailExists = await adminUserModel.getUserByEmail(email);
+    if (emailExists) throw new HttpError(400, 'Email already in use');
 
     // Create user with hashed password
     const hashedPassword = await bcrypt.hash(password, 10); // Combines password with salt

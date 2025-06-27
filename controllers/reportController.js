@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const reportModel = require('../models/reportModel');
 
+// Generate sales summary report
 const getSalesSummary = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
     const summary = await reportModel.fetchSalesSummary(start, end);
@@ -15,6 +16,7 @@ const getSalesSummary = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Sales Summary Generated', result);
 });
 
+// Generate sales summary report by status
 const getSalesSummaryByStatus = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
 
@@ -29,6 +31,7 @@ const getSalesSummaryByStatus = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Sales Summary Generated', result);
 });
 
+// Get top products sold
 const getTopProducts = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
     const summary = await reportModel.fetchTopProducts(start, end);
@@ -42,6 +45,7 @@ const getTopProducts = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Top Products Retrieved', result);
 });
 
+// Get sales per day report
 const getSalesPerDay = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
     const summary = await reportModel.fetchSalesPerDay(start, end);
@@ -55,6 +59,7 @@ const getSalesPerDay = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Daily Sales Data Retrieved', result);
 });
 
+// Get user report
 const getUserReport = asyncHandler(async (req, res) => {
     const { start, end } = req.query;
     const summary = await reportModel.fetchUserReport(start, end);
