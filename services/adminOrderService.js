@@ -107,6 +107,7 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
     }
 };
 
+// Logic for admin cancelling an order
 const adminCancelOrder = async (orderId, notes) => {
     const connection = await pool.getConnection();
 
@@ -139,6 +140,7 @@ const adminCancelOrder = async (orderId, notes) => {
     }
 };
 
+// Logic for marking refund/return request as pending
 const markRefundReturnPending = async (requestId) => {
     const connection = await pool.getConnection();
     try {
@@ -158,6 +160,7 @@ const markRefundReturnPending = async (requestId) => {
     }
 };
 
+// Logic for marking refund/return request as completed
 const markRefundReturnCompleted = async (requestId, notes) => {
     const connection = await pool.getConnection();
     try {

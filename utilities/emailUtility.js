@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 
 let transporter;
 
+// Function to create and return a nodemailer transporter
 async function getTransporter() {
     if (transporter) return transporter;
 
@@ -16,6 +17,7 @@ async function getTransporter() {
     return transporter;
 }
 
+// Function to send an email
 async function sendEmail({ to, subject, html }) {
     const transporter = await getTransporter();
 

@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
 
+// Function to create a payment
 const createPayment = async (
     order_id,
     method,
@@ -15,6 +16,7 @@ const createPayment = async (
     return result.insertId;
 };
 
+// Function to get payment details by order ID
 const getPaymentByOrderId = async (orderId, connection = pool) => {
     const [rows] = await connection.query(
         `SELECT 

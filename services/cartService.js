@@ -14,6 +14,7 @@ const getCartItems = async (userId) => {
     return cartItems;
 };
 
+// Logic of adding item to cart
 const addToCart = async (userId, productId, quantity = 1) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
@@ -32,18 +33,11 @@ const addToCart = async (userId, productId, quantity = 1) => {
         }
 
         const existing = await cartModel.getCartItem(connection, userId, productId);
-        let result;
 
         if (existing.length > 0) {
-            result = await cartModel.updateCartItem(
-                connection,
-                userId,
-                productId,
-                quantity,
-                availableStock
-            );
+            await cartModel.updateCartItem(connection, userId, productId, quantity, availableStock);
         } else {
-            result = await cartModel.insertCartItem(connection, userId, productId, quantity);
+            await cartModel.insertCartItem(connection, userId, productId, quantity);
         }
 
         await connection.commit();
@@ -56,6 +50,7 @@ const addToCart = async (userId, productId, quantity = 1) => {
     }
 };
 
+// Logic of updating cart item quantity
 const updateCartItemQuantity = async (userId, productId, quantity) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();

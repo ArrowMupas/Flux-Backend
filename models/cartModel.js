@@ -35,6 +35,7 @@ const getCartItemsByUserId = async (userId) => {
     };
 };
 
+// Function to get product stock by product ID
 const getProductStock = async (connection, productId) => {
     const [rows] = await connection.query('SELECT stock_quantity FROM products WHERE id = ?', [
         productId,
@@ -42,6 +43,7 @@ const getProductStock = async (connection, productId) => {
     return rows;
 };
 
+// Function to get a specific cart item by user ID and product ID
 const getCartItem = async (connection, userId, productId) => {
     const [rows] = await connection.query(
         'SELECT * FROM cart WHERE user_id = ? AND product_id = ?',
@@ -50,14 +52,7 @@ const getCartItem = async (connection, userId, productId) => {
     return rows;
 };
 
-const updateCartItem = async (connection, userId, productId, quantity, availableStock) => {
-    const [result] = await connection.query(
-        'UPDATE cart SET quantity = LEAST(quantity + ?, ?) WHERE user_id = ? AND product_id = ?',
-        [quantity, availableStock, userId, productId]
-    );
-    return result;
-};
-
+// Function to insert a new cart item
 const insertCartItem = async (connection, userId, productId, quantity) => {
     const [result] = await connection.query(
         'INSERT INTO cart (user_id, product_id, quantity) VALUES (?, ?, ?)',
@@ -66,6 +61,16 @@ const insertCartItem = async (connection, userId, productId, quantity) => {
     return result;
 };
 
+// Function to update or insert cart item
+const updateCartItem = async (connection, userId, productId, quantity, availableStock) => {
+    const [result] = await connection.query(
+        'UPDATE cart SET quantity = LEAST(quantity + ?, ?) WHERE user_id = ? AND product_id = ?',
+        [quantity, availableStock, userId, productId]
+    );
+    return result;
+};
+
+// Function to update cart item quantity
 const updateCartQuantity = async (connection, userId, productId, quantity) => {
     const [result] = await connection.query(
         'UPDATE cart SET quantity = ? WHERE user_id = ? AND product_id = ?',

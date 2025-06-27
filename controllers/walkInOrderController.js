@@ -17,6 +17,7 @@ const createWalkInSale = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Walk-in Order Created', result);
 });
 
+// Get all walk-in orders
 const getAllWalkInOrders = asyncHandler(async (req, res) => {
     const orders = await walkInOrderService.getAllWalkInSales();
     return sendResponse(res, 200, 'All walk-in sales retrieved', orders);
