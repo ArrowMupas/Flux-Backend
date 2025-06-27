@@ -1,5 +1,4 @@
 const { hasUserPermission } = require('../models/permissionModel');
-const pool = require('../database/pool');
 
 const authorizeAccess = (allowedRoles = [], requiredPermission = null) => {
     return async (req, res, next) => {

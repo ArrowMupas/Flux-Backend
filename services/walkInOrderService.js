@@ -4,6 +4,7 @@ const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
 
+// Logic to create a walk-in sale
 const createWalkInSale = async (name, email, items, discount_amount = 0, notes = '') => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
@@ -59,6 +60,7 @@ const createWalkInSale = async (name, email, items, discount_amount = 0, notes =
     }
 };
 
+// Logic to get all walk-in sales with their items
 const getAllWalkInSales = async () => {
     return await walkInOrderModel.getAllWalkInSalesWithItems();
 };

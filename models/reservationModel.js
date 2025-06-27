@@ -1,5 +1,3 @@
-const pool = require('../database/pool');
-
 const deductReservedStock = async (orderId, connection) => {
     await connection.query(
         `

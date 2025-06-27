@@ -28,45 +28,22 @@ const getProductById = asyncHandler(async (req, res) => {
 const createProduct = asyncHandler(async (req, res) => {
     const { id, name, category, stock_quantity, price, image, description } = req.body;
 
-    const result = await productModel.addProduct(
-        id,
-        name,
-        category,
-        stock_quantity,
-        price,
-        image,
-        description
-    );
+    await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
 
     res.status(201).json({ id, ...req.body });
 });
 
-// Update product is_active status
-const updateProductActiveStatus = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { is_active } = req.body;
-
-    if (typeof is_active !== 'boolean') {
-        return res.status(400).json({ message: 'is_active must be a boolean' });
-    }
-
-    await productModel.updateProductActiveStatus(id, is_active);
-    res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
-});
-
 // Update a product
 const updateProduct = asyncHandler(async (req, res) => {
-    const { name, category, stock_quantity, price, image, description, is_active } = req.body;
+    const { name, category, price, image, description } = req.body;
 
     const result = await productModel.updateProduct(
         req.params.id,
         name,
         category,
-        stock_quantity,
         price,
         image,
-        description,
-        is_active
+        description
     );
 
     if (result.affectedRows === 0) {
@@ -76,6 +53,37 @@ const updateProduct = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Product updated successfully' });
 });
 
+// Update product is_active status
+const updateProductActiveStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    await productModel.updateProductActiveStatus(id, is_active);
+    res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
+});
+
+// Update product stock and price
+const updateProductStockAndPrice = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { restock_quantity, price } = req.body;
+
+    // Get current product
+    const product = await productModel.getProductById(id);
+    if (!product) {
+        throw new HttpError(404, `Product with ID ${id} not found`);
+    }
+
+    // Add to current stock
+    const newStock = product.stock_quantity + restock_quantity;
+    if (newStock < 0) {
+        throw new HttpError(400, `Resulting stock cannot be negative`);
+    }
+
+    await productModel.updateProductStockAndPrice(id, newStock, price);
+
+    res.status(200).json({ message: `Product ${id} updated with new stock and price.` });
+});
+
 // Delete a product
 const deleteProduct = asyncHandler(async (req, res) => {
     const result = await productModel.deleteProduct(req.params.id);
@@ -83,22 +91,6 @@ const deleteProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
     res.status(200).json({ message: 'Product deleted successfully' });
-});
-
-const updateProductStockAndPrice = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const { stock_quantity, price } = req.body;
-
-    if (typeof stock_quantity !== 'number' || stock_quantity < 0) {
-        return res.status(400).json({ message: 'Invalid stock_quantity' });
-    }
-    if (typeof price !== 'number' || price < 0) {
-        return res.status(400).json({ message: 'Invalid price' });
-    }
-
-    await productModel.updateProductStockAndPrice(id, stock_quantity, price);
-
-    res.status(200).json({ message: `Product ${id} updated with new stock and price.` });
 });
 
 module.exports = {

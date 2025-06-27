@@ -5,7 +5,7 @@ const getAllUsers = async () => {
     const [users] = await pool.query(
         `SELECT 
            u.id, 
-             u.username,
+            u.username,
             u.email,
             r.name AS role_name, 
             u.is_active,
@@ -27,7 +27,7 @@ const getUserById = async (userId) => {
             u.id, 
             u.username,
             u.email,
-            r.name AS role_name, 
+            r.name AS role, 
             u.is_active,
             u.contact_number, 
             u.address, 
@@ -38,7 +38,14 @@ const getUserById = async (userId) => {
         WHERE u.id = ?`,
         [userId]
     );
-    return user[0];
+
+    return user[0] || null;
+};
+
+// Function to get a user by email
+const getUserByEmail = async (email) => {
+    const [user] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    return user[0] || null;
 };
 
 // Function to get users with optional filters
@@ -81,21 +88,18 @@ const getUsers = async ({ role, is_active, is_verified }) => {
 };
 
 // Function to update a user
-const updateUser = async (id, username, email, address, contact_number, role_id) => {
-    const [result] = await pool.query(
-        'UPDATE users SET username = ?, email = ?, address = ?, contact_number = ?, role_id = ? WHERE id = ?',
-        [username, email, address, contact_number, role_id, id]
+const updateUser = async (id, username, email, address, contact_number) => {
+    await pool.query(
+        'UPDATE users SET username = ?, email = ?, address = ?, contact_number = ? WHERE id = ?',
+        [username, email, address, contact_number, id]
     );
     return await getUserById(id);
 };
 
 // Function to deactivate or activate a user
 const manageUser = async (id, isActive) => {
-    const [result] = await pool.query('UPDATE users SET is_active = ? WHERE id = ?', [
-        isActive,
-        id,
-    ]);
-    return result;
+    await pool.query('UPDATE users SET is_active = ? WHERE id = ?', [isActive, id]);
+    return;
 };
 
 // Function to get a user by email
@@ -116,6 +120,7 @@ const createUser = async (username, email, password, role) => {
     return newUser;
 };
 
+// Function to create multiple users with specific dates
 const createUsersWithDates = async (users) => {
     if (!Array.isArray(users) || users.length === 0) {
         throw new Error('Input must be a non-empty array of users');
@@ -147,6 +152,7 @@ const createUsersWithDates = async (users) => {
 module.exports = {
     getAllUsers,
     getUserById,
+    getUserByEmail,
     updateUser,
     manageUser,
     getUserByUsername,

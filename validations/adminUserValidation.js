@@ -29,7 +29,6 @@ const userSchema = Joi.object({
         .pattern(/^\+?[0-9]{7,15}$/)
         .message('Contact number must be a valid international format')
         .optional(),
-    role_id: Joi.valid('1', '2', '3').required(),
 }).unknown();
 
 const statusSchema = Joi.object({
