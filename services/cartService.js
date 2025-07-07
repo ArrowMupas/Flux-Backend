@@ -6,11 +6,6 @@ const HttpError = require('../helpers/errorHelper');
 const getCartItems = async (userId) => {
     const cartItems = await cartModel.getCartItemsByUserId(userId);
 
-    // Return error if cart has no items
-    if (!cartItems.items || cartItems.items.length === 0) {
-        throw new HttpError(404, 'No items found in the cart');
-    }
-
     return cartItems;
 };
 

@@ -14,9 +14,9 @@ const createOrder = async (
     const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
     const todayCount = await orderModel.getTodayOrderCountByUser(userId);
-    if (todayCount >= 100)
+    if (todayCount >= 100) {
         throw new HttpError(429, 'You’ve reached your 3 orders today. Try again tomorrow.');
-
+    }
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 

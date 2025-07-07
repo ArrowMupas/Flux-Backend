@@ -8,6 +8,7 @@ const errorMiddleware = (err, req, res, next) => {
         success: false,
         status: statusCode,
         message: err.message,
+        error: err.error || undefined,
         // Show stack trace only in development
         stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     });
