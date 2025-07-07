@@ -9,6 +9,10 @@ const getUsers = asyncHandler(async (req, res) => {
     const { role, is_active, is_verified } = req.query;
 
     const users = await adminUserModel.getUsers({ role, is_active, is_verified });
+    if (!users || users.length === 0) {
+        throw new HttpError(404, 'No users found');
+    }
+
     return sendResponse(res, 200, 'Users fetched', users);
 });
 
@@ -16,6 +20,7 @@ const getUsers = asyncHandler(async (req, res) => {
 const getUserById = asyncHandler(async (req, res) => {
     const id = req.params.id;
     const user = await adminUserModel.getUserById(id);
+    if (!user) throw new HttpError(404, 'User not found');
     return sendResponse(res, 200, 'User fetched', user);
 });
 
@@ -25,6 +30,7 @@ const updateUser = asyncHandler(async (req, res) => {
     const { username, email, address, contact_number } = req.body;
 
     const result = await adminUserModel.updateUser(id, username, email, address, contact_number);
+    if (!result) throw new HttpError(404, 'User not found');
 
     return sendResponse(res, 200, 'User updated', result);
 });
