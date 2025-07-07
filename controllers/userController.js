@@ -25,15 +25,18 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // Create user with hashed password
-    const hashedPassword = await bcrypt.hash(password, 10); // Combines password with salt
+    const hashedPassword = await bcrypt.hash(password, 10);
     const user = await userModel.createUser(username, email, hashedPassword);
 
+    // Create and store verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await userModel.saveVerificationToken(user.id, verificationToken);
 
+    // Build the verification link
     const verificationLink = `${process.env.BASE_URL}/api/users/verify-email?token=${verificationToken}`;
 
-    await sendEmail({
+    // Start sending the email, but don't await it
+    sendEmail({
         to: email,
         subject: 'Verify your email',
         html: `
@@ -41,12 +44,16 @@ const registerUser = asyncHandler(async (req, res) => {
       <p>Please verify your email by clicking the button below:</p>
       <a href="${verificationLink}" style="background:#4CAF50;color:#fff;padding:10px 15px;text-decoration:none;border-radius:5px;">Verify Email</a>
     `,
+    }).catch((err) => {
+        console.error('Error sending verification email:', err);
     });
 
+    // Respond immediately
     res.status(201).json({
         id: user.id,
         username: user.username,
         email: user.email,
+        message: 'User created successfully. Verification email will be sent.',
     });
 });
 
