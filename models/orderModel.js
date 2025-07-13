@@ -18,7 +18,10 @@ const getOrderItems = async (orderId) => {
         `
     SELECT 
       oi.*, 
-      p.name AS product_name
+      p.name AS product_name,
+      p.category,
+      p.description,
+      p.image
     FROM order_items oi
     JOIN products p ON oi.product_id = p.id
     WHERE oi.order_id = ?
@@ -33,7 +36,11 @@ const getOrderItems = async (orderId) => {
 const getOrderById = async (orderId) => {
     const [rows] = await pool.query(
         `
-    SELECT o.*, p.method AS payment_method
+    SELECT o.*, 
+    p.method AS payment_method,
+    p.reference_number,
+    p.account_name,
+    p.address
     FROM orders o
     LEFT JOIN payments p ON o.id = p.order_id
     WHERE o.id = ?
