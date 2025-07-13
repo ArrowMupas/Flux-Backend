@@ -51,9 +51,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     const orderId = req.params.id;
 
     const order = await orderModel.getOrderById(orderId);
-    if (!order) {
-        throw new HttpError(404, 'No order');
-    }
+    if (!order) throw new HttpError(404, 'No order');
 
     const items = await orderModel.getOrderItems(orderId);
 
