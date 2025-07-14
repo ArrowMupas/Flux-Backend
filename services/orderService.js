@@ -9,14 +9,25 @@ const { generateOrderId } = require('../helpers/orderIdHelper');
 // Logic of creating an order
 const createOrder = async (
     userId,
-    { payment_method, address, notes, reference_number, account_name }
+    { payment_method, address, notes, reference_number, account_name, couponCode }
 ) => {
-    const cart = await cartModel.getCartItemsByUserId(userId);
+    // Pass couponCode to getCartItemsByUserId
+    const cart = await cartModel.getCartItemsByUserId(userId, couponCode);
     if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
     const todayCount = await orderModel.getTodayOrderCountByUser(userId);
     if (todayCount >= 100) {
         throw new HttpError(429, 'You’ve reached your 3 orders today. Try again tomorrow.');
     }
+
+    // If couponCode is provided but not valid, throw error
+    if (couponCode && !cart.coupon) {
+        throw new HttpError(400, 'Invalid or expired coupon code.');
+    }
+
+    // Use the actual coupon code from the validated coupon (if any)
+    const coupon_code_to_save = cart.coupon ? cart.coupon.code : null;
+    const discount_amount_to_save = cart.discount || 0;
+
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
@@ -26,7 +37,9 @@ const createOrder = async (
             {
                 id: generatedID,
                 customer_id: userId,
-                total_amount: cart.cart_total,
+                total_amount: cart.total_after_discount, // use discounted total
+                discount_amount: discount_amount_to_save, // save discount
+                coupon_code: coupon_code_to_save,         // save coupon code (validated)
                 status: 'pending',
                 notes,
             },
