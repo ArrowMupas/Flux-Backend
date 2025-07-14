@@ -8,5 +8,6 @@ router.post('/:id', validateCartItem, cartController.addToCart);
 router.put('/:id', validateCartItem, cartController.updateCartItemQuantity);
 router.delete('/:id', cartController.removeCartItem);
 router.delete('/clear/:id', cartController.clearCart);
+router.post('/user/:userId/apply-coupon', cartController.applyCouponToUserCart);
 
 module.exports = router;

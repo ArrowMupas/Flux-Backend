@@ -92,6 +92,8 @@ CREATE TABLE IF NOT EXISTS cart (
     quantity INT NOT NULL DEFAULT 1,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    coupon_code VARCHAR(50),
+    discount_amount DECIMAL(10,2) DEFAULT 0,
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
@@ -99,13 +101,15 @@ CREATE TABLE IF NOT EXISTS cart (
     INDEX (product_id)
 );
 
+
 CREATE TABLE IF NOT EXISTS orders (
     id VARCHAR(50) PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded', 'returned') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
-    discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    coupon_code VARCHAR(50) DEFAULT NULL,
+    discount_amount DECIMAL(10,2) DEFAULT 0,
     notes TEXT,
     cancel_requested BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (customer_id) REFERENCES users(id),
@@ -213,12 +217,14 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id VARCHAR(50) NOT NULL,
+    order_id VARCHAR(50) NOT NULL,
     review_text TEXT,
     rating INT CHECK (rating BETWEEN 1 AND 5),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
 -- Seeds for easier testing (why did we not do this earlier)
