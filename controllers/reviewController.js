@@ -5,10 +5,10 @@ const HttpError = require('../helpers/errorHelper');
 
 // Create a new review
 const createReview = asyncHandler(async (req, res) => {
-    const { user_id, order_id, reviews } = req.body;
+    const { user_id, reviews } = req.body;
 
-    if (!user_id || !order_id || !Array.isArray(reviews) || reviews.length === 0) {
-        throw new HttpError(400, 'user_id, order_id, and reviews array are required.');
+    if (!user_id || !Array.isArray(reviews) || reviews.length === 0) {
+        throw new HttpError(400, 'user_id and reviews array are required.');
     }
 
     // Validate each review object
@@ -21,7 +21,7 @@ const createReview = asyncHandler(async (req, res) => {
     // Add each review
     await Promise.all(
         reviews.map(({ product_id, rating, review_text }) =>
-            reviewModel.addReview({ user_id, product_id, rating, review_text, order_id })
+            reviewModel.addReview({ user_id, product_id, rating, review_text, order_id: null })
         )
     );
 

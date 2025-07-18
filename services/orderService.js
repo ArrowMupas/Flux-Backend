@@ -2,6 +2,7 @@ const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
 const paymentModel = require('../models/paymentModel');
 const productModel = require('../models/productModel');
+const couponService = require('./couponService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
@@ -11,23 +12,18 @@ const createOrder = async (
     userId,
     { payment_method, address, notes, reference_number, account_name, couponCode }
 ) => {
-    // Pass couponCode to getCartItemsByUserId
-    const cart = await cartModel.getCartItemsByUserId(userId, couponCode);
+    // Get cart items (no coupon logic here)
+    const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
+    
     const todayCount = await orderModel.getTodayOrderCountByUser(userId);
     if (todayCount >= 100) {
-        throw new HttpError(429, 'You’ve reached your 3 orders today. Try again tomorrow.');
+        throw new HttpError(429, 'You\'ve reached your 3 orders today. Try again tomorrow.');
     }
 
-    // If couponCode is provided but not valid, throw error
-    if (couponCode && !cart.coupon) {
-        throw new HttpError(400, 'Invalid or expired coupon code.');
-    }
-
-    // Use the actual coupon code from the validated coupon (if any)
-    const coupon_code_to_save = cart.coupon ? cart.coupon.code : null;
-    const discount_amount_to_save = cart.discount || 0;
-
+    // Apply coupon logic in order service
+    const couponResult = await couponService.applyCouponToTotal(couponCode, cart.cart_total);
+    
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
@@ -37,9 +33,9 @@ const createOrder = async (
             {
                 id: generatedID,
                 customer_id: userId,
-                total_amount: cart.total_after_discount, // use discounted total
-                discount_amount: discount_amount_to_save, // save discount
-                coupon_code: coupon_code_to_save,         // save coupon code (validated)
+                total_amount: couponResult.finalTotal,
+                discount_amount: couponResult.discount,
+                coupon_code: couponResult.coupon ? couponResult.coupon.code : null,
                 status: 'pending',
                 notes,
             },

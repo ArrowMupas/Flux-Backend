@@ -1,6 +1,6 @@
 const pool = require('../database/pool');
 
-const addReview = async ({ user_id, product_id, rating, review_text, order_id }) => {
+const addReview = async ({ user_id, product_id, rating, review_text, order_id = null }) => {
     await pool.query(
         `INSERT INTO product_reviews (user_id, product_id, rating, review_text, order_id)
          VALUES (?, ?, ?, ?, ?)`,

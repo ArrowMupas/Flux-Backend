@@ -10,5 +10,7 @@ router.delete('/:id', couponController.deleteCoupon);
 
 // Public
 router.get('/apply/:code', couponController.applyCouponByCode);
+router.post('/validate', couponController.validateCouponForCart);
+router.post('/remove', couponController.removeCouponFromCart);
 
 module.exports = router;
