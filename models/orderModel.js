@@ -82,6 +82,33 @@ const getAllOrdersByUser = async (userId) => {
     return rows;
 };
 
+const getFilteredOrders = async (userId, statuses = [], paymentMethods = []) => {
+    let query = `
+        SELECT 
+            o.*, 
+            p.method AS payment_method
+        FROM orders o
+        LEFT JOIN payments p ON o.id = p.order_id
+        WHERE o.customer_id = ?
+    `;
+
+    const params = [userId];
+
+    // Add filters dynamically
+    if (statuses.length) {
+        query += ` AND o.status IN (${statuses.map(() => '?').join(',')})`;
+        params.push(...statuses);
+    }
+
+    if (paymentMethods.length) {
+        query += ` AND p.method IN (${paymentMethods.map(() => '?').join(',')})`;
+        params.push(...paymentMethods);
+    }
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+};
+
 // Function to create initial order status
 const createOrderStatus = async ({ orderId, newStatus, notes }, connection = pool) => {
     await connection.query(`UPDATE orders SET status = ? WHERE id = ?`, [newStatus, orderId]);
@@ -194,6 +221,7 @@ module.exports = {
     createOrderStatus,
     getOrderById,
     getOrderItems,
+    getFilteredOrders,
     getOrderStatusHistory,
     getOrdersByUserAndStatus,
     getAllOrdersByUser,
