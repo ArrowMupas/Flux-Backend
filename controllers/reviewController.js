@@ -5,27 +5,39 @@ const HttpError = require('../helpers/errorHelper');
 
 // Create a new review
 const createReview = asyncHandler(async (req, res) => {
-    const { user_id, reviews } = req.body;
+    const { user_id, product_id, rating, review_text } = req.body;
 
-    if (!user_id || !Array.isArray(reviews) || reviews.length === 0) {
-        throw new HttpError(400, 'user_id and reviews array are required.');
+    if (!user_id || !product_id || !rating) {
+        throw new HttpError(400, 'user_id, product_id, and rating are required.');
     }
 
-    // Validate each review object
-    for (const review of reviews) {
-        if (!review.product_id || !review.rating) {
-            throw new HttpError(400, 'Each review must have product_id and rating.');
-        }
+    // Validate rating range
+    if (rating < 1 || rating > 5) {
+        throw new HttpError(400, 'Rating must be between 1 and 5.');
     }
 
-    // Add each review
-    await Promise.all(
-        reviews.map(({ product_id, rating, review_text }) =>
-            reviewModel.addReview({ user_id, product_id, rating, review_text, order_id: null })
-        )
-    );
+    // Check if user has purchased this product
+    const hasPurchased = await reviewModel.hasUserPurchasedProduct(user_id, product_id);
+    if (!hasPurchased) {
+        throw new HttpError(403, 'You can only review products you have purchased and received.');
+    }
 
-    return sendResponse(res, 201, 'Reviews created.');
+    // Check if user has already reviewed this product
+    const hasReviewed = await reviewModel.hasUserReviewedProduct(user_id, product_id);
+    if (hasReviewed) {
+        throw new HttpError(409, 'You have already reviewed this product.');
+    }
+
+    // Add single review
+    await reviewModel.addReview({ 
+        user_id, 
+        product_id, 
+        rating, 
+        review_text: review_text || null, 
+        order_id: null 
+    });
+
+    return sendResponse(res, 201, 'Review created successfully.');
 });
 
 // Get all reviews for a product

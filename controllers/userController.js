@@ -168,35 +168,38 @@ const updateUser = asyncHandler(async (req, res) => {
 
 // Reset user password
 const resetUserPassword = asyncHandler(async (req, res) => {
-    const { username, password, newPassword } = req.body;
+    const { password, newPassword } = req.body;
 
-    const user = await userModel.getUserByUsername(username);
+    // Get user from authenticated session (req.user is set by auth middleware)
+    const user = await userModel.getUserById(req.user.id);
 
-    entityExistHelper(user, res, 404, 'User not found');
+    if (!user) {
+        throw new HttpError(404, 'User not found');
+    }
 
     // Check if user is active
     if (!user.is_active) {
-        throw new HttpError(403, `Account is inactive`);
+        throw new HttpError(403, 'Account is inactive');
     }
 
-    // Bcrypt authentication
+    // Verify current password
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-        throw new HttpError(401, `Invalid Credentials`);
+        throw new HttpError(401, 'Current password is incorrect');
     }
 
     // Check if new password is same as old password
     const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
     if (isSamePassword) {
-        throw new HttpError(400, `New password must be different from the old password`);
+        throw new HttpError(400, 'New password must be different from the current password');
     }
 
-    // Create user with hashed password
-    const hashedPassword = await bcrypt.hash(newPassword, 10); // Combines password with salt
-    userModel.resetUserPassword(user.id, hashedPassword);
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await userModel.resetUserPassword(user.id, hashedPassword);
 
     res.status(200).json({
-        message: 'Password reset successful',
+        message: 'Password updated successfully',
     });
 });
 

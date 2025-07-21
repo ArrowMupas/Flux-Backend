@@ -21,13 +21,13 @@ const createOrder = async (
         throw new HttpError(429, 'You\'ve reached your 3 orders today. Try again tomorrow.');
     }
 
-    // Apply coupon logic in order service
-    const couponResult = await couponService.applyCouponToTotal(couponCode, cart.cart_total);
-    
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
+        // Apply coupon logic INSIDE the transaction to ensure consistency
+        const couponResult = await couponService.applyCouponToOrder(couponCode, cart.cart_total);
+        
         const generatedID = generateOrderId();
         const orderId = await orderModel.createOrder(
             {
@@ -41,6 +41,12 @@ const createOrder = async (
             },
             connection
         );
+
+        // If coupon was used, mark it as used (if you have usage tracking)
+        if (couponResult.coupon && couponResult.discount > 0) {
+            // Optional: Add coupon usage tracking here if needed
+            console.log(`Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`);
+        }
 
         for (const item of cart.items) {
             await orderModel.addOrderItem(
