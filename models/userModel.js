@@ -10,6 +10,7 @@ const getUserById = async (id) => {
             address, 
             contact_number,
             email,
+            password_hash,
             is_active,
             is_verified,
             created_at,

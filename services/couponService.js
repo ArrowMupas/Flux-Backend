@@ -2,57 +2,11 @@ const couponModel = require('../models/couponModel');
 const HttpError = require('../helpers/errorHelper');
 
 /**
- * Validates and applies a coupon to a cart total
- * @param {string} couponCode - The coupon code to apply
- * @param {number} cartTotal - The cart total amount
- * @returns {object} - Contains coupon info, discount amount, and final total
- */
-const applyCouponToTotal = async (couponCode, cartTotal) => {
-    console.log('applyCouponToTotal called with:', { couponCode, cartTotal });
-    
-    if (!couponCode) {
-        return {
-            coupon: null,
-            discount: 0,
-            finalTotal: cartTotal
-        };
-    }
-
-    const coupon = await couponModel.findValidCoupon(couponCode);
-    console.log('Found coupon:', JSON.stringify(coupon, null, 2));
-    
-    if (!coupon) {
-        throw new HttpError(400, 'Invalid or expired coupon code');
-    }
-
-    let discount = 0;
-    if (coupon.type === 'PERCENTAGE') {
-        discount = (cartTotal * coupon.amount) / 100;
-        console.log('Percentage discount calculation:', { cartTotal, amount: coupon.amount, discount });
-    } else if (coupon.type === 'FIXED') {
-        discount = Math.min(coupon.amount, cartTotal); // Don't exceed cart total
-        console.log('Fixed discount calculation:', { amount: coupon.amount, cartTotal, discount });
-    }
-
-    const finalTotal = Math.max(0, cartTotal - discount); // Ensure non-negative
-    
-    const result = {
-        coupon,
-        discount,
-        finalTotal
-    };
-    
-    console.log('Final coupon result:', JSON.stringify(result, null, 2));
-    
-    return result;
-};
-
-/**
- * Validates a coupon without applying it
+ * Validates a coupon and returns coupon details for frontend calculation
  * @param {string} couponCode - The coupon code to validate
  * @returns {object} - Coupon details if valid
  */
-const validateCoupon = async (couponCode) => {
+const validateCouponCode = async (couponCode) => {
     if (!couponCode) {
         throw new HttpError(400, 'Coupon code is required');
     }
@@ -62,7 +16,54 @@ const validateCoupon = async (couponCode) => {
         throw new HttpError(400, 'Invalid or expired coupon code');
     }
 
-    return coupon;
+    return coupon; // Let frontend calculate the discount
+};
+
+/**
+ * Applies a validated coupon during order creation (server-side verification)
+ * @param {string} couponCode - The coupon code to apply
+ * @param {number} cartTotal - The cart total amount
+ * @returns {object} - Contains coupon info, discount amount, and final total
+ */
+const applyCouponToOrder = async (couponCode, cartTotal) => {
+    if (!couponCode) {
+        return {
+            coupon: null,
+            discount: 0,
+            finalTotal: cartTotal
+        };
+    }
+
+    // Re-validate coupon on server side for security
+    const coupon = await couponModel.findValidCoupon(couponCode);
+    if (!coupon) {
+        throw new HttpError(400, 'Invalid or expired coupon code');
+    }
+
+    // Server-side calculation for final verification
+    let discount = 0;
+    if (coupon.type === 'PERCENTAGE') {
+        discount = (cartTotal * coupon.amount) / 100;
+    } else if (coupon.type === 'FIXED') {
+        discount = Math.min(coupon.amount, cartTotal);
+    }
+
+    const finalTotal = Math.max(0, cartTotal - discount);
+    
+    return {
+        coupon,
+        discount,
+        finalTotal
+    };
+};
+
+/**
+ * Validates a coupon without applying it (alias for backward compatibility)
+ * @param {string} couponCode - The coupon code to validate
+ * @returns {object} - Coupon details if valid
+ */
+const validateCoupon = async (couponCode) => {
+    return await validateCouponCode(couponCode);
 };
 
 /**
@@ -99,8 +100,9 @@ const getStoredCouponForUser = async (userId) => {
 };
 
 module.exports = {
-    applyCouponToTotal,
-    validateCoupon,
+    validateCouponCode,
+    applyCouponToOrder,
+    validateCoupon, // For backward compatibility
     storeCouponForUser,
     getStoredCouponForUser
 };

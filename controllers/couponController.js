@@ -43,7 +43,7 @@ const applyCouponByCode = asyncHandler(async (req, res) => {
 
 const validateCouponForCart = asyncHandler(async (req, res) => {
     const { couponCode } = req.body;
-    const userId = req.user?.id || req.body.userId; // Support both auth and manual userId
+    const userId = req.user?.id || req.body.userId;
     
     if (!userId) {
         throw new HttpError(400, 'User ID is required');
@@ -53,28 +53,21 @@ const validateCouponForCart = asyncHandler(async (req, res) => {
         throw new HttpError(400, 'Coupon code is required');
     }
     
-    // Get cart total
+    // Get cart total for reference
     const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) {
         throw new HttpError(404, 'Cart is empty');
     }
     
-    console.log('Cart data:', JSON.stringify(cart, null, 2));
-    
-    // Apply coupon to calculate discount preview
-    const couponResult = await couponService.applyCouponToTotal(couponCode, cart.cart_total);
-    
-    console.log('Coupon result:', JSON.stringify(couponResult, null, 2));
+    // Only validate coupon - let frontend calculate discount
+    const coupon = await couponService.validateCouponCode(couponCode);
     
     const response = {
         items: cart.items,
-        originalTotal: parseFloat(cart.cart_total) || 0,
-        discount: parseFloat(couponResult.discount) || 0,
-        finalTotal: parseFloat(couponResult.finalTotal) || 0,
-        appliedCoupon: couponResult.coupon
+        cartTotal: parseFloat(cart.cart_total) || 0,
+        validCoupon: coupon
+        // Frontend will calculate: discount and estimatedTotal
     };
-    
-    console.log('Response being sent:', JSON.stringify(response, null, 2));
     
     return sendResponse(res, 200, 'Coupon validated successfully.', response);
 });
