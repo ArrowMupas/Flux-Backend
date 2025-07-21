@@ -3,7 +3,7 @@ const regexValidation = (fields) => {
         const { username, email, password } = req.body;
 
         // Validate input fields
-        for (let field of fields) {
+        for (const field of fields) {
             if (!req.body[field]) {
                 res.status(400);
                 return next(new Error(`Please provide a valid ${field}`));
