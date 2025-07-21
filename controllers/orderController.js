@@ -19,11 +19,16 @@ const createOrder = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order Created', result);
 });
 
-// Get order by status
+// Get orders with optional filters
 const getOrders = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const status = req.params.status || req.query.status;
-    const data = await orderService.getOrders(userId, status);
+
+    // Normalize to arrays always
+    const status = [].concat(req.query.status || []);
+    const paymentMethods = [].concat(req.query.payment_method || []);
+
+    const data = await orderService.getOrders(userId, { status, payment_methods: paymentMethods });
+
     return sendResponse(res, 200, 'Orders retrieved', data);
 });
 
