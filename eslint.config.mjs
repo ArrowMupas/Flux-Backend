@@ -27,6 +27,17 @@ export default defineConfig([
             'prefer-const': 'error',
             eqeqeq: ['error', 'always'],
             curly: ['error', 'multi-line'],
+            'no-console': 'warn',
+            'no-debugger': 'error',
+            'consistent-return': 'warn',
+            'no-duplicate-imports': 'error',
+            'object-shorthand': ['error', 'always'],
+            'prefer-template': 'warn',
+            'no-useless-catch': 'warn',
+            'no-unused-vars': [
+                'warn',
+                { vars: 'all', args: 'after-used', ignoreRestSiblings: false },
+            ],
         },
     },
 ]);

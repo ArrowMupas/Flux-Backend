@@ -12,7 +12,7 @@ cloudinary.config({
 
 // Configure Cloudinary storage for multer
 const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
+    cloudinary,
     params: {
         folder: 'alas_uploads',
         allowed_formats: ['jpg', 'png', 'jpeg'],
