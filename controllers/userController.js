@@ -18,15 +18,17 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new HttpError(401, `${username} is already taken`);
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check for existing email
-    const emailExists = await userModel.getUserByEmail(email);
+    const emailExists = await userModel.getUserByEmail(normalizedEmail);
     if (emailExists) {
-        throw new HttpError(401, `Email ${email} is already registered`);
+        throw new HttpError(401, `Email ${normalizedEmail} is already registered`);
     }
 
     // Create user with hashed password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await userModel.createUser(username, email, hashedPassword);
+    const user = await userModel.createUser(username, normalizedEmail, hashedPassword);
 
     // Create and store verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -37,7 +39,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Start sending the email, but don't await it
     sendEmail({
-        to: email,
+        to: normalizedEmail,
         subject: 'Verify your email',
         html: `
       <h2>Welcome, ${username}!</h2>
@@ -62,13 +64,23 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
     const user = await userModel.getUserByUsername(username);
-    if (!user) throw new HttpError(404, `User ${username} not found`);
-    if (!user.is_active) throw new HttpError(403, `Account is inactive`);
-    if (!user.is_verified) throw new HttpError(403, `Email not verified`);
+    if (!user) {
+        throw new HttpError(404, `User ${username} not found`);
+    }
+
+    if (!user.is_active) {
+        throw new HttpError(403, `Account is inactive`);
+    }
+
+    if (!user.is_verified) {
+        throw new HttpError(403, `Email not verified`);
+    }
 
     //Bcrypt authentication
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) throw new HttpError(401, 'Invalid credentials');
+    if (!isMatch) {
+        throw new HttpError(401, 'Invalid credentials');
+    }
 
     await userModel.logUserLogin(user.id, user.username);
 
@@ -79,9 +91,27 @@ const loginUser = asyncHandler(async (req, res) => {
         { expiresIn: '1d' }
     );
 
+    // ✅ Set the JWT as an HTTP-only cookie
+    res.cookie('token', token, {
+        httpOnly: true, // Not accessible via JavaScript
+        secure: process.env.NODE_ENV === 'production', // Only send via HTTPS in production
+        sameSite: 'lax', // Helps prevent CSRF
+        maxAge: 24 * 60 * 60 * 1000, // 1 day in ms
+    });
+
     res.json({
         token,
     });
+});
+
+const logoutUser = asyncHandler(async (req, res) => {
+    res.clearCookie('token', {
+        httpOnly: true,
+        sameSite: 'Lax',
+        secure: process.env.NODE_ENV === 'production', // Set true in production
+    });
+
+    res.status(200).json({ message: 'Logged out successfully' });
 });
 
 // Verify user email
@@ -89,7 +119,9 @@ const verifyEmail = asyncHandler(async (req, res) => {
     const { token } = req.query;
 
     const user = await userModel.getUserByVerificationToken(token);
-    if (!user) throw new HttpError(400, 'Invalid or expired token');
+    if (!user) {
+        throw new HttpError(400, 'Invalid or expired token');
+    }
 
     await userModel.verifyUser(user.id);
     await userModel.deleteVerificationToken(token);
@@ -267,6 +299,7 @@ const changeUserPassword = asyncHandler(async (req, res) => {
 module.exports = {
     registerUser,
     loginUser,
+    logoutUser,
     getUserProfile,
     updateUser,
     resetUserPassword,

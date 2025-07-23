@@ -1,26 +1,42 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
-    // Get 'authentication' header value
-    const bearerHeader = req.headers['authorization'];
+    const authHeader = req.headers['authorization'];
+    const tokenFromHeader =
+        authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
-    // Check if bearer is undefined
-    if (typeof bearerHeader !== 'undefined') {
-        // Split at the space
-        const bearer = bearerHeader.split(' ');
-        const bearerToken = bearer[1];
-        req.token = bearerToken;
-
-        jwt.verify(req.token, process.env.SECRET_KEY, (err, decoded) => {
-            if (err) {
-                return res.status(403).json({ message: 'Invalid or expired token' });
-            }
-            req.user = decoded; // Attach decoded payload to request
-            next();
-        });
-    } else {
-        res.status(403).json({ message: 'Token is required' });
+    if (!req.cookies) {
+        console.warn(
+            'Warning: req.cookies is undefined. Did you forget to use cookie-parser middleware?'
+        );
     }
+
+    const tokenFromCookie = req.cookies?.token || null;
+
+    const tryVerify = (token) => {
+        try {
+            return jwt.verify(token, process.env.SECRET_KEY);
+        } catch (err) {
+            return null;
+        }
+    };
+
+    let decoded = null;
+
+    if (tokenFromHeader) {
+        decoded = tryVerify(tokenFromHeader);
+    }
+
+    if (!decoded && tokenFromCookie) {
+        decoded = tryVerify(tokenFromCookie);
+    }
+
+    if (!decoded) {
+        return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+
+    req.user = decoded;
+    next();
 };
 
 module.exports = verifyToken;
