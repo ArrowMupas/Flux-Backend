@@ -3,6 +3,8 @@ const sendResponse = require('../middlewares/responseMiddleware');
 const adminUserModel = require('../models/adminUserModel');
 const bcrypt = require('bcrypt');
 const HttpError = require('../helpers/errorHelper');
+const { logUserAction } = require('../helpers/smartActivityLogger');
+const { ACTION_TYPES } = require('../helpers/activityLogHelper');
 
 // Admin get users with optional filters
 const getUsers = asyncHandler(async (req, res) => {
@@ -29,8 +31,26 @@ const updateUser = asyncHandler(async (req, res) => {
     const id = req.params.id;
     const { username, email, address, contact_number } = req.body;
 
+    // Get current user data for logging
+    const currentUser = await adminUserModel.getUserById(id);
+    if (!currentUser) throw new HttpError(404, 'User not found');
+
     const result = await adminUserModel.updateUser(id, username, email, address, contact_number);
-    if (!result) throw new HttpError(404, 'User not found');
+
+    // 🎯 SIMPLE ONE-LINER LOGGING!
+    await logUserAction({
+        req,
+        actionType: ACTION_TYPES.UPDATE_USER,
+        userId: id,
+        username: username,
+        before: {
+            username: currentUser.username,
+            email: currentUser.email,
+            address: currentUser.address,
+            contact_number: currentUser.contact_number
+        },
+        after: { username, email, address, contact_number }
+    });
 
     return sendResponse(res, 200, 'User updated', result);
 });
@@ -54,6 +74,17 @@ const manageUser = asyncHandler(async (req, res) => {
 
     await adminUserModel.manageUser(id, is_active);
 
+    // SIMPLE ONE-LINER LOGGING!
+    await logUserAction({
+        req,
+        actionType: is_active ? ACTION_TYPES.ACTIVATE_USER : ACTION_TYPES.DEACTIVATE_USER,
+        userId: id,
+        username: user.username,
+        before: { is_active: user.is_active },
+        after: { is_active: is_active },
+        details: `User ${is_active ? 'activated' : 'deactivated'}`
+    });
+
     res.status(200).json({
         message: `User ${is_active ? 'activated' : 'deactivated'} successfully`,
     });
@@ -72,6 +103,16 @@ const createUser = asyncHandler(async (req, res) => {
     // Create user with hashed password
     const hashedPassword = await bcrypt.hash(password, 10); // Combines password with salt
     const user = await adminUserModel.createUser(username, email, hashedPassword, role);
+
+    // SIMPLE ONE-LINER LOGGING!
+    await logUserAction({
+        req,
+        actionType: ACTION_TYPES.CREATE_USER,
+        userId: user.insertId || user.id,
+        username: username,
+        before: null,
+        after: { username, email, role }
+    });
 
     return sendResponse(res, 200, 'User created', user);
 });
