@@ -20,20 +20,24 @@ const getUsers = asyncHandler(async (req, res) => {
 
 // Admin get users by ID
 const getUserById = asyncHandler(async (req, res) => {
-    const id = req.params.id;
+    const { id } = req.params;
     const user = await adminUserModel.getUserById(id);
-    if (!user) throw new HttpError(404, 'User not found');
+    if (!user) {
+        throw new HttpError(404, 'User not found');
+    }
     return sendResponse(res, 200, 'User fetched', user);
 });
 
 // Admin update users
 const updateUser = asyncHandler(async (req, res) => {
-    const id = req.params.id;
+    const { id } = req.params;
     const { username, email, address, contact_number } = req.body;
 
     // Get current user data for logging
     const currentUser = await adminUserModel.getUserById(id);
-    if (!currentUser) throw new HttpError(404, 'User not found');
+    if (!currentUser) {
+        throw new HttpError(404, 'User not found');
+    }
 
     const result = await adminUserModel.updateUser(id, username, email, address, contact_number);
 
@@ -42,14 +46,14 @@ const updateUser = asyncHandler(async (req, res) => {
         req,
         actionType: ACTION_TYPES.UPDATE_USER,
         userId: id,
-        username: username,
+        username,
         before: {
             username: currentUser.username,
             email: currentUser.email,
             address: currentUser.address,
-            contact_number: currentUser.contact_number
+            contact_number: currentUser.contact_number,
         },
-        after: { username, email, address, contact_number }
+        after: { username, email, address, contact_number },
     });
 
     return sendResponse(res, 200, 'User updated', result);
@@ -57,11 +61,13 @@ const updateUser = asyncHandler(async (req, res) => {
 
 // Admin activate/deactivate user
 const manageUser = asyncHandler(async (req, res) => {
-    const id = req.params.id;
+    const { id } = req.params;
     const { is_active } = req.body;
 
     const user = await adminUserModel.getUserById(id);
-    if (!user) throw new HttpError(404, 'User not found');
+    if (!user) {
+        throw new HttpError(404, 'User not found');
+    }
 
     user.is_active = Boolean(user.is_active);
 
@@ -81,8 +87,8 @@ const manageUser = asyncHandler(async (req, res) => {
         userId: id,
         username: user.username,
         before: { is_active: user.is_active },
-        after: { is_active: is_active },
-        details: `User ${is_active ? 'activated' : 'deactivated'}`
+        after: { is_active },
+        details: `User ${is_active ? 'activated' : 'deactivated'}`,
     });
 
     res.status(200).json({
@@ -96,9 +102,13 @@ const createUser = asyncHandler(async (req, res) => {
 
     // Check for existing user
     const userExists = await adminUserModel.getUserByUsername(username);
-    if (userExists) throw new HttpError(400, 'Username already in use');
+    if (userExists) {
+        throw new HttpError(400, 'Username already in use');
+    }
     const emailExists = await adminUserModel.getUserByEmail(email);
-    if (emailExists) throw new HttpError(400, 'Email already in use');
+    if (emailExists) {
+        throw new HttpError(400, 'Email already in use');
+    }
 
     // Create user with hashed password
     const hashedPassword = await bcrypt.hash(password, 10); // Combines password with salt
@@ -109,9 +119,9 @@ const createUser = asyncHandler(async (req, res) => {
         req,
         actionType: ACTION_TYPES.CREATE_USER,
         userId: user.insertId || user.id,
-        username: username,
+        username,
         before: null,
-        after: { username, email, role }
+        after: { username, email, role },
     });
 
     return sendResponse(res, 200, 'User created', user);

@@ -44,46 +44,46 @@ const applyCouponByCode = asyncHandler(async (req, res) => {
 const validateCouponForCart = asyncHandler(async (req, res) => {
     const { couponCode } = req.body;
     const userId = req.user?.id || req.body.userId;
-    
+
     if (!userId) {
         throw new HttpError(400, 'User ID is required');
     }
-    
+
     if (!couponCode) {
         throw new HttpError(400, 'Coupon code is required');
     }
-    
+
     // Get cart total for reference
     const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) {
         throw new HttpError(404, 'Cart is empty');
     }
-    
+
     // Only validate coupon - let frontend calculate discount
     const coupon = await couponService.validateCouponCode(couponCode);
-    
+
     const response = {
         items: cart.items,
         cartTotal: parseFloat(cart.cart_total) || 0,
-        validCoupon: coupon
+        validCoupon: coupon,
         // Frontend will calculate: discount and estimatedTotal
     };
-    
+
     return sendResponse(res, 200, 'Coupon validated successfully.', response);
 });
 
 const removeCouponFromCart = asyncHandler(async (req, res) => {
     const userId = req.user?.id || req.body.userId;
-    
+
     // Get cart without coupon
     const cart = await cartModel.getCartItemsByUserId(userId);
-    
+
     return sendResponse(res, 200, 'Coupon removed successfully.', {
         originalTotal: cart.cart_total,
         discount: 0,
         finalTotal: cart.cart_total,
         coupon: null,
-        items: cart.items
+        items: cart.items,
     });
 });
 

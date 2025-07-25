@@ -14,11 +14,13 @@ const createOrder = async (
 ) => {
     // Get cart items (no coupon logic here)
     const cart = await cartModel.getCartItemsByUserId(userId);
-    if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
-    
+    if (!cart.items || cart.items.length === 0) {
+        throw new HttpError(404, 'Cart is empty');
+    }
+
     const todayCount = await orderModel.getTodayOrderCountByUser(userId);
     if (todayCount >= 100) {
-        throw new HttpError(429, 'You\'ve reached your 3 orders today. Try again tomorrow.');
+        throw new HttpError(429, "You've reached your 3 orders today. Try again tomorrow.");
     }
 
     const connection = await pool.getConnection();
@@ -27,7 +29,7 @@ const createOrder = async (
     try {
         // Apply coupon logic INSIDE the transaction to ensure consistency
         const couponResult = await couponService.applyCouponToOrder(couponCode, cart.cart_total);
-        
+
         const generatedID = generateOrderId();
         const orderId = await orderModel.createOrder(
             {
@@ -45,7 +47,9 @@ const createOrder = async (
         // If coupon was used, mark it as used (if you have usage tracking)
         if (couponResult.coupon && couponResult.discount > 0) {
             // Optional: Add coupon usage tracking here if needed
-            console.log(`Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`);
+            console.log(
+                `Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`
+            );
         }
 
         for (const item of cart.items) {
@@ -108,23 +112,25 @@ const getOrders = async (userId, filters = {}) => {
 
     const orders = await orderModel.getFilteredOrders(userId, status, payment_methods);
 
-    const detailed = await Promise.all(
+    return await Promise.all(
         orders.map(async (o) => ({
             ...o,
             items: await orderModel.getOrderItems(o.id),
         }))
     );
-
-    return detailed;
 };
 
 // Logic of getting order status history
 const getOrderStatusHistory = async (userId, orderId) => {
     const order = await orderModel.getOrderById(orderId);
-    if (!order) throw new HttpError(404, 'Order not found');
+    if (!order) {
+        throw new HttpError(404, 'Order not found');
+    }
 
-    // Makes sure user is accesing own order
-    if (order.customer_id !== userId) throw new HttpError(403, 'Not Authorized');
+    // Makes sure user is accessing own order
+    if (order.customer_id !== userId) {
+        throw new HttpError(403, 'Not Authorized');
+    }
 
     return await orderModel.getOrderStatusHistory(orderId);
 };
@@ -136,7 +142,9 @@ const cancelOrder = async (userId, orderId, notes) => {
 
     try {
         const order = await orderModel.getOrderById(orderId, connection);
-        if (!order) throw new HttpError(404, 'Order not found');
+        if (!order) {
+            throw new HttpError(404, 'Order not found');
+        }
         if (order.customer_id !== userId) {
             throw new HttpError(403, 'You are not allowed to cancel this order');
         }
