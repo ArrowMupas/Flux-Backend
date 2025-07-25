@@ -33,14 +33,13 @@ const createProduct = asyncHandler(async (req, res) => {
 
     await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
 
-    // 🎯 SIMPLE ONE-LINER LOGGING!
     await logProductAction({
         req,
         actionType: ACTION_TYPES.ADD_PRODUCT,
         productId: id,
         productName: name,
         before: null,
-        after: { id, name, category, stock_quantity, price, image, description }
+        after: { id, name, category, stock_quantity, price, image, description },
     });
 
     sendResponse(res, 201, 'Product created successfully', { id, ...req.body });
@@ -69,7 +68,13 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
-    // SIMPLE ONE-LINER LOGGING!
+    const truncate = (text, maxLength = 100) => {
+        if (!text) {
+            return '';
+        }
+        return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+    };
+
     await logProductAction({
         req,
         actionType: ACTION_TYPES.UPDATE_PRODUCT,
@@ -80,9 +85,15 @@ const updateProduct = asyncHandler(async (req, res) => {
             category: currentProduct.category,
             price: currentProduct.price,
             image: currentProduct.image,
-            description: currentProduct.description
+            description: truncate(currentProduct.description),
         },
-        after: { name, category, price, image, description }
+        after: {
+            name,
+            category,
+            price,
+            image,
+            description: truncate(description),
+        },
     });
 
     sendResponse(res, 200, 'Product updated successfully');
@@ -101,22 +112,14 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
 
     await productModel.updateProductActiveStatus(id, is_active);
 
-    // Log activity for admin/staff users
-    if (req.user) {
-        const actionType = is_active ? ACTION_TYPES.ACTIVATE_PRODUCT : ACTION_TYPES.DEACTIVATE_PRODUCT;
-        const beforeData = { is_active: currentProduct.is_active };
-        const afterData = { is_active };
-        
-        await logActivity(
-            req.user,
-            actionType,
-            ENTITY_TYPES.PRODUCT,
-            id,
-            createDescription(actionType, ENTITY_TYPES.PRODUCT, id, `Product: ${currentProduct.name}`),
-            beforeData,
-            afterData
-        );
-    }
+    await logProductAction({
+        req,
+        actionType: is_active ? ACTION_TYPES.ACTIVATE_PRODUCT : ACTION_TYPES.DEACTIVATE_PRODUCT,
+        productId: id,
+        productName: currentProduct.name,
+        before: { is_active: currentProduct.is_active },
+        after: { is_active },
+    });
 
     res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
 });
@@ -140,7 +143,6 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
 
     await productModel.updateProductStockAndPrice(id, newStock, price);
 
-    
     await logProductAction({
         req,
         actionType: ACTION_TYPES.ADJUST_STOCK,
@@ -148,7 +150,7 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         productName: product.name,
         before: { stock_quantity: product.stock_quantity, price: product.price },
         after: { stock_quantity: newStock, price },
-        details: `Stock: ${product.stock_quantity} → ${newStock}, Price: ₱${product.price} → ₱${price}`
+        details: `Stock: ${product.stock_quantity} → ${newStock}, Price: ₱${product.price} → ₱${price}`,
     });
 
     sendResponse(res, 200, `Product ${id} updated with new stock and price.`);
@@ -167,14 +169,13 @@ const deleteProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
 
-    
     await logProductAction({
         req,
         actionType: ACTION_TYPES.DELETE_PRODUCT,
         productId: req.params.id,
         productName: currentProduct.name,
         before: currentProduct,
-        after: null
+        after: null,
     });
 
     sendResponse(res, 200, 'Product deleted successfully');

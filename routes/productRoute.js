@@ -10,26 +10,58 @@ const {
     statusSchema,
     restockSchema,
 } = require('../validations/productValidation');
+const ROLES = require('../constants/roles');
 
+// Public Routes
 router.get('/', productController.getAllProducts);
-router.get('/admin/', verifyToken, authorizeAccess(['admin', 'staff']), productController.getAllProductsAdmin);
-router.get('/:id', productController.getProductById);
-router.post('/', verifyToken, authorizeAccess(['admin', 'staff']), validate(productSchema), productController.createProduct);
-router.put('/:id', verifyToken, authorizeAccess(['admin', 'staff']), validate(updateProductSchema), productController.updateProduct);
-router.delete('/:id', verifyToken, authorizeAccess(['admin', 'staff']), productController.deleteProduct);
-router.patch(
-    '/toggle-status/:id',
+
+// Protected routes
+router.get(
+    '/admin/',
     verifyToken,
-    authorizeAccess(['admin', 'staff']),
-    validate(statusSchema),
-    productController.updateProductActiveStatus
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    productController.getAllProductsAdmin
 );
+
+router.post(
+    '/',
+    verifyToken,
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    validate(productSchema),
+    productController.createProduct
+);
+
+router.put(
+    '/:id',
+    verifyToken,
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    validate(updateProductSchema),
+    productController.updateProduct
+);
+
 router.patch(
     '/stock-price/:id',
     verifyToken,
-    authorizeAccess(['admin', 'staff']),
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(restockSchema),
     productController.updateProductStockAndPrice
 );
+
+router.patch(
+    '/toggle-status/:id',
+    verifyToken,
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    validate(statusSchema),
+    productController.updateProductActiveStatus
+);
+
+router.delete(
+    '/:id',
+    verifyToken,
+    authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    productController.deleteProduct
+);
+
+router.get('/:id', productController.getProductById);
 
 module.exports = router;
