@@ -2,6 +2,9 @@ const asyncHandler = require('express-async-handler');
 const productModel = require('../models/productModel');
 const entityExistHelper = require('../helpers/entityExistHelper');
 const HttpError = require('../helpers/errorHelper');
+const { logProductAction } = require('../helpers/smartActivityLogger');
+const { ACTION_TYPES } = require('../helpers/activityLogHelper');
+const sendResponse = require('../middlewares/responseMiddleware');
 
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
@@ -30,12 +33,28 @@ const createProduct = asyncHandler(async (req, res) => {
 
     await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
 
-    res.status(201).json({ id, ...req.body });
+    // 🎯 SIMPLE ONE-LINER LOGGING!
+    await logProductAction({
+        req,
+        actionType: ACTION_TYPES.ADD_PRODUCT,
+        productId: id,
+        productName: name,
+        before: null,
+        after: { id, name, category, stock_quantity, price, image, description }
+    });
+
+    sendResponse(res, 201, 'Product created successfully', { id, ...req.body });
 });
 
 // Update a product
 const updateProduct = asyncHandler(async (req, res) => {
     const { name, category, price, image, description } = req.body;
+
+    // Get current product data for logging
+    const currentProduct = await productModel.getProductById(req.params.id);
+    if (!currentProduct) {
+        throw new HttpError(404, `Cannot find product with ID ${req.params.id}`);
+    }
 
     const result = await productModel.updateProduct(
         req.params.id,
@@ -50,7 +69,23 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
-    res.status(200).json({ message: 'Product updated successfully' });
+    // SIMPLE ONE-LINER LOGGING!
+    await logProductAction({
+        req,
+        actionType: ACTION_TYPES.UPDATE_PRODUCT,
+        productId: req.params.id,
+        productName: name,
+        before: {
+            name: currentProduct.name,
+            category: currentProduct.category,
+            price: currentProduct.price,
+            image: currentProduct.image,
+            description: currentProduct.description
+        },
+        after: { name, category, price, image, description }
+    });
+
+    sendResponse(res, 200, 'Product updated successfully');
 });
 
 // Update product is_active status
@@ -58,7 +93,31 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
 
+    // Get current product data for logging
+    const currentProduct = await productModel.getProductById(id);
+    if (!currentProduct) {
+        throw new HttpError(404, `Product with ID ${id} not found`);
+    }
+
     await productModel.updateProductActiveStatus(id, is_active);
+
+    // Log activity for admin/staff users
+    if (req.user) {
+        const actionType = is_active ? ACTION_TYPES.ACTIVATE_PRODUCT : ACTION_TYPES.DEACTIVATE_PRODUCT;
+        const beforeData = { is_active: currentProduct.is_active };
+        const afterData = { is_active };
+        
+        await logActivity(
+            req.user,
+            actionType,
+            ENTITY_TYPES.PRODUCT,
+            id,
+            createDescription(actionType, ENTITY_TYPES.PRODUCT, id, `Product: ${currentProduct.name}`),
+            beforeData,
+            afterData
+        );
+    }
+
     res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
 });
 
@@ -81,16 +140,44 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
 
     await productModel.updateProductStockAndPrice(id, newStock, price);
 
-    res.status(200).json({ message: `Product ${id} updated with new stock and price.` });
+    
+    await logProductAction({
+        req,
+        actionType: ACTION_TYPES.ADJUST_STOCK,
+        productId: id,
+        productName: product.name,
+        before: { stock_quantity: product.stock_quantity, price: product.price },
+        after: { stock_quantity: newStock, price },
+        details: `Stock: ${product.stock_quantity} → ${newStock}, Price: ₱${product.price} → ₱${price}`
+    });
+
+    sendResponse(res, 200, `Product ${id} updated with new stock and price.`);
 });
 
 // Delete a product
 const deleteProduct = asyncHandler(async (req, res) => {
+    // Get current product data for logging
+    const currentProduct = await productModel.getProductById(req.params.id);
+    if (!currentProduct) {
+        throw new HttpError(404, `Cannot find product with ID ${req.params.id}`);
+    }
+
     const result = await productModel.deleteProduct(req.params.id);
     if (result.affectedRows === 0) {
         throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
-    res.status(200).json({ message: 'Product deleted successfully' });
+
+    
+    await logProductAction({
+        req,
+        actionType: ACTION_TYPES.DELETE_PRODUCT,
+        productId: req.params.id,
+        productName: currentProduct.name,
+        before: currentProduct,
+        after: null
+    });
+
+    sendResponse(res, 200, 'Product deleted successfully');
 });
 
 module.exports = {

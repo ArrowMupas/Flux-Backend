@@ -2,6 +2,7 @@ const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
 const paymentModel = require('../models/paymentModel');
 const productModel = require('../models/productModel');
+const couponService = require('./couponService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
@@ -9,29 +10,43 @@ const { generateOrderId } = require('../helpers/orderIdHelper');
 // Logic of creating an order
 const createOrder = async (
     userId,
-    { payment_method, address, notes, reference_number, account_name }
+    { payment_method, address, notes, reference_number, account_name, couponCode }
 ) => {
+    // Get cart items (no coupon logic here)
     const cart = await cartModel.getCartItemsByUserId(userId);
     if (!cart.items || cart.items.length === 0) throw new HttpError(404, 'Cart is empty');
+    
     const todayCount = await orderModel.getTodayOrderCountByUser(userId);
     if (todayCount >= 100) {
-        throw new HttpError(429, 'You’ve reached your 3 orders today. Try again tomorrow.');
+        throw new HttpError(429, 'You\'ve reached your 3 orders today. Try again tomorrow.');
     }
+
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
+        // Apply coupon logic INSIDE the transaction to ensure consistency
+        const couponResult = await couponService.applyCouponToOrder(couponCode, cart.cart_total);
+        
         const generatedID = generateOrderId();
         const orderId = await orderModel.createOrder(
             {
                 id: generatedID,
                 customer_id: userId,
-                total_amount: cart.cart_total,
+                total_amount: couponResult.finalTotal,
+                discount_amount: couponResult.discount,
+                coupon_code: couponResult.coupon ? couponResult.coupon.code : null,
                 status: 'pending',
                 notes,
             },
             connection
         );
+
+        // If coupon was used, mark it as used (if you have usage tracking)
+        if (couponResult.coupon && couponResult.discount > 0) {
+            // Optional: Add coupon usage tracking here if needed
+            console.log(`Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`);
+        }
 
         for (const item of cart.items) {
             await orderModel.addOrderItem(

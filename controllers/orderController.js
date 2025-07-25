@@ -7,7 +7,7 @@ const HttpError = require('../helpers/errorHelper');
 // Create order
 const createOrder = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { payment_method, address, notes, reference_number, account_name } = req.body;
+    const { payment_method, address, notes, reference_number, account_name, couponCode } = req.body;
 
     const result = await orderService.createOrder(userId, {
         payment_method,
@@ -15,6 +15,7 @@ const createOrder = asyncHandler(async (req, res) => {
         notes,
         reference_number,
         account_name,
+        couponCode,
     });
     return sendResponse(res, 200, 'Order Created', result);
 });

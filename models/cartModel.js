@@ -1,6 +1,6 @@
 const pool = require('../database/pool');
 
-// Function to get a cart by user ID
+// Function to get cart items by user ID - simplified, no coupon logic
 const getCartItemsByUserId = async (userId) => {
     const [items] = await pool.query(
         `SELECT 
@@ -22,9 +22,9 @@ const getCartItemsByUserId = async (userId) => {
     const [[total]] = await pool.query(
         `SELECT 
          SUM(cart.quantity * products.price) AS cart_total
-     FROM cart
-     JOIN products ON cart.product_id = products.id
-     WHERE cart.user_id = ?`,
+         FROM cart
+         JOIN products ON cart.product_id = products.id
+         WHERE cart.user_id = ?`,
         [userId]
     );
 
@@ -76,6 +76,10 @@ const updateCartQuantity = async (connection, userId, productId, quantity) => {
         'UPDATE cart SET quantity = ? WHERE user_id = ? AND product_id = ?',
         [quantity, userId, productId]
     );
+    // If this is the main pool, return updated cart
+    if (connection === pool) {
+        return await getCartItemsByUserId(userId);
+    }
     return result;
 };
 
@@ -91,6 +95,10 @@ const removeCartItem = async (userId, productId) => {
 // Function to clear cart
 const clearCart = async (userId, connection = pool) => {
     const [result] = await connection.query('DELETE FROM cart WHERE user_id = ?', [userId]);
+    // If this is the main pool, return updated cart (should be empty)
+    if (connection === pool) {
+        return await getCartItemsByUserId(userId);
+    }
     return result;
 };
 

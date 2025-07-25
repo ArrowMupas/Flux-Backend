@@ -32,7 +32,7 @@ const verifyToken = (req, res, next) => {
     }
 
     if (!decoded) {
-        return res.status(401).json({ message: 'Invalid or expired token' });
+        return res.status(403).json({ message: 'Token is required' });
     }
 
     req.user = decoded;
