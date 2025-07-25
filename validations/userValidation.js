@@ -32,15 +32,10 @@ const loginSchema = Joi.object({
 }).unknown();
 
 const resetPasswordSchema = Joi.object({
-    username: Joi.string().alphanum().min(4).max(15).required().messages({
-        'string.alphanum': 'Username must only contain letters and numbers.',
-        'string.min': 'Username must be at least 4 characters long.',
-        'string.max': 'Username must not exceed 15 characters.',
-    }),
-
     password: Joi.string().pattern(passwordRegex).required().messages({
         'string.pattern.base':
-            'Password must be at least 8 characters and include uppercase, lowercase, and a number.',
+            'Current password must be at least 8 characters and include uppercase, lowercase, and a number.',
+        'any.required': 'Current password is required.',
     }),
 
     newPassword: Joi.string()

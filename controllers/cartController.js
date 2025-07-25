@@ -1,6 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const cartService = require('../services/cartService');
+const cartModel = require('../models/cartModel');
+const HttpError = require('../helpers/errorHelper');
 
 // Get all cart items by user ID
 const getCartItems = asyncHandler(async (req, res) => {
@@ -40,10 +42,32 @@ const clearCart = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Cart cleared.', result);
 });
 
+const applyCoupon = asyncHandler(async (req, res) => {
+    const { cartId } = req.params;
+    const { couponCode } = req.body;
+
+    const result = await cartModel.applyCouponToCart(cartId, couponCode);
+    if (result.error) throw new HttpError(400, result.error);
+
+    return sendResponse(res, 200, 'Coupon applied to cart.', result);
+});
+
+const applyCouponToUserCart = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+    const { couponCode } = req.body;
+    const result = await cartModel.applyCouponToUserCart(userId, couponCode);
+    if (result.error) {
+        return sendResponse(res, 400, result.error);
+    }
+    return sendResponse(res, 200, 'Coupon applied to user cart.', result);
+});
+
 module.exports = {
     getCartItems,
     addToCart,
     updateCartItemQuantity,
     removeCartItem,
     clearCart,
+    applyCoupon,
+    applyCouponToUserCart,
 };
