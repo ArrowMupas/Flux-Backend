@@ -43,7 +43,7 @@ const clearCart = asyncHandler(async (req, res) => {
 });
 
 const applyCoupon = asyncHandler(async (req, res) => {
-    const { cartId } = req.user.id;
+    const { cartId } = req.params;
     const { couponCode } = req.body;
 
     const result = await cartModel.applyCouponToCart(cartId, couponCode);
@@ -55,7 +55,7 @@ const applyCoupon = asyncHandler(async (req, res) => {
 });
 
 const applyCouponToUserCart = asyncHandler(async (req, res) => {
-    const { userId } = req.user.id;
+    const { userId } = req.params;
     const { couponCode } = req.body;
     const result = await cartModel.applyCouponToUserCart(userId, couponCode);
     if (result.error) {
