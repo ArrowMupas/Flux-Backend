@@ -103,11 +103,10 @@ const createOrder = async (
 };
 
 // Logic of getting orders
-const getOrders = async (userId, status) => {
-    // Get order based on status
-    const orders = status
-        ? await orderModel.getOrdersByUserAndStatus(userId, status)
-        : await orderModel.getAllOrdersByUser(userId); // If no status get all orders
+const getOrders = async (userId, filters = {}) => {
+    const { status = [], payment_methods = [] } = filters;
+
+    const orders = await orderModel.getFilteredOrders(userId, status, payment_methods);
 
     const detailed = await Promise.all(
         orders.map(async (o) => ({
@@ -138,8 +137,9 @@ const cancelOrder = async (userId, orderId, notes) => {
     try {
         const order = await orderModel.getOrderById(orderId, connection);
         if (!order) throw new HttpError(404, 'Order not found');
-        if (order.customer_id !== userId)
+        if (order.customer_id !== userId) {
             throw new HttpError(403, 'You are not allowed to cancel this order');
+        }
 
         let message = '';
 

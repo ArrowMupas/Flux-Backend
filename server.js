@@ -2,13 +2,14 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 // route import
 const userRoute = require('./routes/userRoute');
 const productRoute = require('./routes/productRoute');
 const cartRoute = require('./routes/cartRoute');
-const admiUserRoute = require('./routes/adminUserRoute');
+const adminUserRoute = require('./routes/adminUserRoute');
 const orderRoute = require('./routes/orderRoute');
 const adminOrderRoute = require('./routes/adminOrderRoute');
 const paymentRoute = require('./routes/paymentRoute');
@@ -25,14 +26,18 @@ const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
 
+// Cookies
+app.use(cookieParser());
+
 // CORS
 const FRONTEND = process.env.FRONTEND;
-const corOptions = {
+const corsOptions = {
     origin: FRONTEND,
+    credentials: true,
     optionsSuccessStatus: 200,
 };
 
-app.use(cors(corOptions));
+app.use(cors(corsOptions));
 
 // uses JSON
 app.use(express.json());
@@ -42,7 +47,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api/products', productRoute);
 app.use('/api/users', userRoute);
 app.use('/api/cart', cartRoute);
-app.use('/api/adminUser', admiUserRoute);
+app.use('/api/adminUser', adminUserRoute);
 app.use('/api/orders', orderRoute);
 app.use('/api/adminOrder', adminOrderRoute);
 app.use('/api/payments', paymentRoute);
