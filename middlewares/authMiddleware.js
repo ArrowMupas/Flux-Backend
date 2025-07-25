@@ -6,7 +6,7 @@ const verifyToken = (req, res, next) => {
 
     // Check if bearer is undefined
     if (typeof bearerHeader !== 'undefined') {
-        // Split at the space
+
         const bearer = bearerHeader.split(' ');
         const bearerToken = bearer[1];
         req.token = bearerToken;
@@ -15,7 +15,7 @@ const verifyToken = (req, res, next) => {
             if (err) {
                 return res.status(403).json({ message: 'Invalid or expired token' });
             }
-            req.user = decoded; // Attach decoded payload to request
+            req.user = decoded;
             next();
         });
     } else {

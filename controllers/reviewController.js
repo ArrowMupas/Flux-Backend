@@ -3,7 +3,6 @@ const sendResponse = require('../middlewares/responseMiddleware');
 const reviewModel = require('../models/reviewModel');
 const HttpError = require('../helpers/errorHelper');
 
-// Create a new review
 const createReview = asyncHandler(async (req, res) => {
     const { user_id, product_id, rating, review_text } = req.body;
 
@@ -11,24 +10,20 @@ const createReview = asyncHandler(async (req, res) => {
         throw new HttpError(400, 'user_id, product_id, and rating are required.');
     }
 
-    // Validate rating range
     if (rating < 1 || rating > 5) {
         throw new HttpError(400, 'Rating must be between 1 and 5.');
     }
 
-    // Check if user has purchased this product
     const hasPurchased = await reviewModel.hasUserPurchasedProduct(user_id, product_id);
     if (!hasPurchased) {
         throw new HttpError(403, 'You can only review products you have purchased and received.');
     }
 
-    // Check if user has already reviewed this product
     const hasReviewed = await reviewModel.hasUserReviewedProduct(user_id, product_id);
     if (hasReviewed) {
         throw new HttpError(409, 'You have already reviewed this product.');
     }
 
-    // Add single review
     await reviewModel.addReview({ 
         user_id, 
         product_id, 
@@ -47,15 +42,12 @@ const getReviewsByProduct = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Product reviews retrieved.', reviews);
 });
 
-// Delete a review
 const deleteReview = asyncHandler(async (req, res) => {
     const { review_id } = req.params;
     await reviewModel.deleteReview(review_id);
     return sendResponse(res, 200, 'Review deleted.');
 });
 
-
-// Get reviewed products for a user and order
 const getReviewedProductsByOrderAndUser = asyncHandler(async (req, res) => {
     const { order_id, user_id } = req.params;
     if (!order_id || !user_id) {

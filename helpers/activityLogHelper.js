@@ -1,9 +1,7 @@
 const adminActivityLogModel = require('../models/adminActivityLogModel');
 
-// Helper function to log admin activities
 const logActivity = async (user, actionType, entityType, entityId, description, beforeData = null, afterData = null) => {
     try {
-        // Only log if user is admin or staff (check both role and role_name for flexibility)
         const userRole = user.role || user.role_name;
         if (userRole === 'admin' || userRole === 'staff') {
             await adminActivityLogModel.logAdminActivity(
@@ -17,18 +15,13 @@ const logActivity = async (user, actionType, entityType, entityId, description, 
                 beforeData,
                 afterData
             );
-        } else {
-            // Silently skip non-admin/staff users
         }
     } catch (error) {
         console.error('❌ Error logging admin activity:', error);
-        // Don't throw error to avoid disrupting the main operation
     }
 };
 
-// Action types constants for consistency
 const ACTION_TYPES = {
-    // Product actions
     ADD_PRODUCT: 'ADD_PRODUCT',
     UPDATE_PRODUCT: 'UPDATE_PRODUCT',
     DELETE_PRODUCT: 'DELETE_PRODUCT',
@@ -37,7 +30,6 @@ const ACTION_TYPES = {
     ACTIVATE_PRODUCT: 'ACTIVATE_PRODUCT',
     DEACTIVATE_PRODUCT: 'DEACTIVATE_PRODUCT',
     
-    // User management actions
     CREATE_USER: 'CREATE_USER',
     UPDATE_USER: 'UPDATE_USER',
     DELETE_USER: 'DELETE_USER',
@@ -45,35 +37,29 @@ const ACTION_TYPES = {
     DEACTIVATE_USER: 'DEACTIVATE_USER',
     CHANGE_USER_ROLE: 'CHANGE_USER_ROLE',
     
-    // Order actions
     UPDATE_ORDER_STATUS: 'UPDATE_ORDER_STATUS',
     CANCEL_ORDER: 'CANCEL_ORDER',
     REFUND_ORDER: 'REFUND_ORDER',
     
-    // Coupon actions
     CREATE_COUPON: 'CREATE_COUPON',
     UPDATE_COUPON: 'UPDATE_COUPON',
     DELETE_COUPON: 'DELETE_COUPON',
     ACTIVATE_COUPON: 'ACTIVATE_COUPON',
     DEACTIVATE_COUPON: 'DEACTIVATE_COUPON',
     
-    // Bundle actions
     CREATE_BUNDLE: 'CREATE_BUNDLE',
     UPDATE_BUNDLE: 'UPDATE_BUNDLE',
     DELETE_BUNDLE: 'DELETE_BUNDLE',
     
-    // Special offer actions
     CREATE_SPECIAL_OFFER: 'CREATE_SPECIAL_OFFER',
     UPDATE_SPECIAL_OFFER: 'UPDATE_SPECIAL_OFFER',
     DELETE_SPECIAL_OFFER: 'DELETE_SPECIAL_OFFER',
     
-    // System actions
     SYSTEM_CONFIGURATION: 'SYSTEM_CONFIGURATION',
     BACKUP_DATABASE: 'BACKUP_DATABASE',
     RESTORE_DATABASE: 'RESTORE_DATABASE'
 };
 
-// Entity types constants
 const ENTITY_TYPES = {
     PRODUCT: 'product',
     USER: 'user',

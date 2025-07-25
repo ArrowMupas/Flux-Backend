@@ -1,16 +1,14 @@
 const pool = require('../database/pool');
 
-// Helper function to safely parse JSON
 const safeJsonParse = (jsonString) => {
     try {
         return jsonString ? JSON.parse(jsonString) : null;
     } catch (error) {
         console.error('Error parsing JSON:', error, 'Data:', jsonString);
-        return jsonString; // Return original string if parsing fails
+        return jsonString;
     }
 };
 
-// Function to log admin/staff activity
 const logAdminActivity = async (userId, username, role, actionType, entityType, entityId, description, beforeData = null, afterData = null) => {
     const [result] = await pool.query(
         `INSERT INTO admin_activity_logs 
@@ -31,7 +29,6 @@ const logAdminActivity = async (userId, username, role, actionType, entityType, 
     return result.insertId;
 };
 
-// Function to get all admin activity logs with pagination
 const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
     const offset = (page - 1) * limit;
     let whereClause = 'WHERE 1=1';
