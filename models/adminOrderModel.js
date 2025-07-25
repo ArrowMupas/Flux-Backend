@@ -2,7 +2,7 @@ const pool = require('../database/pool');
 
 // Function to get all orders with optional filters
 const getOrders = async (status = null, start = null, end = null) => {
-    end = end + ` 23:59:59`;
+    end = `${end  } 23:59:59`;
 
     let query = `
         SELECT 
@@ -29,7 +29,7 @@ const getOrders = async (status = null, start = null, end = null) => {
     }
 
     if (conditions.length > 0) {
-        query += ` WHERE ` + conditions.join(' AND ');
+        query += ` WHERE ${  conditions.join(' AND ')}`;
     }
 
     query += ` ORDER BY o.order_date DESC`;
