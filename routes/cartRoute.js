@@ -2,12 +2,18 @@ const express = require('express');
 const router = express.Router();
 const cartController = require('../controllers/cartController');
 const { validateCartItem } = require('../validations/cartValidation');
+const verifyToken = require('../middlewares/authMiddleware');
+const authorizeAccess = require('../middlewares/accessMiddleware');
+const ROLES = require('../constants/roles');
 
-router.get('/:id', cartController.getCartItems);
-router.post('/:id', validateCartItem, cartController.addToCart);
-router.put('/:id', validateCartItem, cartController.updateCartItemQuantity);
-router.delete('/:id', cartController.removeCartItem);
-router.delete('/clear/:id', cartController.clearCart);
-router.post('/user/:userId/apply-coupon', cartController.applyCouponToUserCart);
+router.use(verifyToken);
+router.use(authorizeAccess([ROLES.CUSTOMER]));
+
+router.get('/me', cartController.getCartItems);
+router.post('/me', validateCartItem, cartController.addToCart);
+router.put('/me', validateCartItem, cartController.updateCartItemQuantity);
+router.delete('/me', cartController.removeCartItem);
+router.delete('/clear', cartController.clearCart);
+router.post('/apply-coupon', cartController.applyCouponToUserCart); // Optional: rename if needed
 
 module.exports = router;

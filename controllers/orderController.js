@@ -55,9 +55,17 @@ const cancelOrder = asyncHandler(async (req, res) => {
 // Get order by ID
 const getOrderById = asyncHandler(async (req, res) => {
     const orderId = req.params.id;
+    const { id } = req.user;
 
     const order = await orderModel.getOrderById(orderId);
-    if (!order) throw new HttpError(404, 'No order');
+    if (!order) {
+        throw new HttpError(404, 'No order');
+    }
+
+    // Makes sure user is accessing own order
+    if (order.customer_id !== id) {
+        throw new HttpError(403, 'Not Authorized');
+    }
 
     const items = await orderModel.getOrderItems(orderId);
 
