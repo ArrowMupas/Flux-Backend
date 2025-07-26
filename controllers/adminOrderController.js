@@ -30,7 +30,7 @@ const getOrdersByUserId = asyncHandler(async (req, res) => {
 
 // Admin get order status history
 const getOrderStatusHistory = asyncHandler(async (req, res) => {
-    const orderId = req.params.orderId;
+    const { orderId } = req.params;
 
     const history = await adminOrderService.getOrderStatusHistory(orderId);
     return sendResponse(res, 200, 'Order status history retrieved', history);
@@ -39,15 +39,16 @@ const getOrderStatusHistory = asyncHandler(async (req, res) => {
 // Admin change status of order
 const changeOrderStatus = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
+    const { id } = req.user;
     const { status, notes } = req.body;
 
-    const order = await adminOrderService.changeOrderStatus(orderId, status, notes);
+    const order = await adminOrderService.changeOrderStatus(orderId, status, notes, id);
     return sendResponse(res, 200, 'Order status updated', order);
 });
 
 // Admin cancel order
 const adminCancelOrder = asyncHandler(async (req, res) => {
-    const orderId = req.params.orderId;
+    const { orderId } = req.params;
     const { notes } = req.body;
 
     await adminOrderService.adminCancelOrder(orderId, notes);

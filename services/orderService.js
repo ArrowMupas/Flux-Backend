@@ -6,6 +6,8 @@ const couponService = require('./couponService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
+const { logInventoryChange } = require('../utilities/inventoryLogUtility');
+const INVENTORY_ACTIONS = require('../constants/inventoryActions');
 
 // Logic of creating an order
 const createOrder = async (
@@ -14,7 +16,7 @@ const createOrder = async (
 ) => {
     // Get cart items (no coupon logic here)
     const cart = await cartModel.getCartItemsByUserId(userId);
-    if (!cart.items || cart.items.length === 0) {
+    if (!cart || !cart.items || cart.items.length === 0) {
         throw new HttpError(404, 'Cart is empty');
     }
 
@@ -46,7 +48,6 @@ const createOrder = async (
 
         // If coupon was used, mark it as used (if you have usage tracking)
         if (couponResult.coupon && couponResult.discount > 0) {
-            // Optional: Add coupon usage tracking here if needed
             console.log(
                 `Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`
             );
@@ -64,12 +65,27 @@ const createOrder = async (
                 connection
             );
 
-            await productModel.checkAndReserveStock(
-                item.product_id,
-                item.quantity,
+            const { oldAvailable, newAvailable, oldReserved, newReserved } =
+                await productModel.checkAndReserveStock(
+                    item.product_id,
+                    item.quantity,
+                    orderId,
+                    connection
+                );
+
+            await logInventoryChange({
+                productId: item.product_id,
                 orderId,
-                connection
-            );
+                userId,
+                action: INVENTORY_ACTIONS.RESERVE,
+                changeAvailable: -item.quantity,
+                oldAvailable,
+                newAvailable,
+                changeReserved: item.quantity,
+                oldReserved,
+                newReserved,
+                dbConnection: connection,
+            });
         }
 
         await orderModel.createOrderStatus(
@@ -96,7 +112,13 @@ const createOrder = async (
         );
 
         await cartModel.clearCart(userId, connection);
-        await connection.commit();
+        try {
+            await connection.commit();
+        } catch (commitError) {
+            console.error('Commit failed: ', commitError);
+            await connection.rollback();
+            throw commitError;
+        }
         return { orderId, paymentId };
     } catch (error) {
         await connection.rollback();
