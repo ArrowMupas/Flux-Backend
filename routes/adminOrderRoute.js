@@ -10,6 +10,7 @@ router.get('/user/:id', adminOrderController.getOrdersByUserId);
 router.get('/status-history/:orderId', adminOrderController.getOrderStatusHistory);
 router.patch(
     '/status-update/:orderId',
+    verifyToken,
     validateStatusUpdate,
     adminOrderController.changeOrderStatus
 );
