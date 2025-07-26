@@ -3,19 +3,19 @@ const reservationModel = require('../models/reservationModel');
 const afterSalesModel = require('../models/afterSalesModel');
 const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
+const { logInventoryChange } = require('../utilities/inventoryLogUtility');
+const INVENTORY_ACTIONS = require('../constants/inventoryActions');
 
 // Logic for getting all orders
 const getAllOrders = async (status, startDate = null, endDate = null) => {
-    orders = await adminOrderModel.getOrders(status, startDate, endDate);
+    const orders = await adminOrderModel.getOrders(status, startDate, endDate);
 
-    const detailed = await Promise.all(
+    return await Promise.all(
         orders.map(async (o) => ({
             ...o,
             items: await adminOrderModel.getOrderItems(o.id),
         }))
     );
-
-    return detailed;
 };
 
 // Logic for getting order by ID
@@ -23,7 +23,9 @@ const getOrderById = async (orderId) => {
     const order = await adminOrderModel.getOrderById(orderId);
 
     // Check if order exist
-    if (!order) throw new HttpError(404, 'Order not found');
+    if (!order) {
+        throw new HttpError(404, 'Order not found');
+    }
 
     const items = await adminOrderModel.getOrderItems(order.id);
 
@@ -42,33 +44,35 @@ const getOrdersByUserId = async (userId) => {
         throw new HttpError(404, 'No order found for this user');
     }
 
-    const detailed = await Promise.all(
+    return await Promise.all(
         orders.map(async (order) => ({
             ...order,
             items: await adminOrderModel.getOrderItems(order.id),
         }))
     );
-
-    return detailed;
 };
 
 // Logic for getting order status history
 const getOrderStatusHistory = async (orderId) => {
     const order = await adminOrderModel.getOrderById(orderId);
-    if (!order) throw new Error('Order not found');
+    if (!order) {
+        throw new Error('Order not found');
+    }
 
     return await adminOrderModel.getOrderStatusHistory(orderId);
 };
 
 // Logic for changing order status
-const changeOrderStatus = async (orderId, newStatus, notes) => {
+const changeOrderStatus = async (orderId, newStatus, notes, id) => {
     const connection = await pool.getConnection();
 
     try {
         await connection.beginTransaction();
 
         const order = await adminOrderModel.getOrderById(orderId);
-        if (!order) throw new HttpError(404, 'No order found');
+        if (!order) {
+            throw new HttpError(404, 'No order found');
+        }
 
         const currentStatus = order.status;
 
@@ -92,7 +96,29 @@ const changeOrderStatus = async (orderId, newStatus, notes) => {
         }
 
         if (currentStatus === 'pending' && newStatus === 'processing') {
-            await reservationModel.deductReservedStock(orderId, connection);
+            // 🔁 Get inventory changes
+            const inventoryChanges = await reservationModel.deductReservedStock(
+                orderId,
+                connection
+            );
+
+            // 🧾 Log each change
+            for (const change of inventoryChanges) {
+                await logInventoryChange({
+                    productId: change.productId,
+                    orderId,
+                    adminId: id ?? null,
+                    action: INVENTORY_ACTIONS.CONFIRM,
+                    changeAvailable: change.changeAvailable,
+                    changeReserved: change.changeReserved,
+                    oldAvailable: change.oldAvailable,
+                    newAvailable: change.newAvailable,
+                    oldReserved: change.oldReserved,
+                    newReserved: change.newReserved,
+                    reason: 'Stock moved from reserved to sold',
+                    dbConnection: connection,
+                });
+            }
         }
 
         await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
@@ -115,7 +141,9 @@ const adminCancelOrder = async (orderId, notes) => {
         await connection.beginTransaction();
 
         const order = await adminOrderModel.getOrderById(orderId, connection);
-        if (!order) throw new HttpError(404, 'Order not found');
+        if (!order) {
+            throw new HttpError(404, 'Order not found');
+        }
 
         if (order.status !== 'pending') {
             throw new HttpError(400, 'Only pending orders can be cancelled');
@@ -147,7 +175,9 @@ const markRefundReturnPending = async (requestId) => {
         await connection.beginTransaction();
 
         const request = await afterSalesModel.getRefundById(requestId, connection);
-        if (!request) throw new HttpError(404, 'Request not found');
+        if (!request) {
+            throw new HttpError(404, 'Request not found');
+        }
 
         await afterSalesModel.updateRequestStatus(requestId, 'pending', connection);
 
@@ -168,7 +198,9 @@ const markRefundReturnCompleted = async (requestId, notes) => {
 
         const request = await afterSalesModel.getRefundById(requestId, connection);
 
-        if (!request) throw new HttpError(404, 'Refund request not found');
+        if (!request) {
+            throw new HttpError(404, 'Refund request not found');
+        }
 
         await afterSalesModel.updateRequestStatus(requestId, 'completed', connection);
 
@@ -178,8 +210,6 @@ const markRefundReturnCompleted = async (requestId, notes) => {
         } else if (request.type === 'return') {
             newStatus = 'returned';
         }
-
-        console.log(newStatus);
 
         await adminOrderModel.changeOrderStatus(request.order_id, newStatus, notes, connection);
 
