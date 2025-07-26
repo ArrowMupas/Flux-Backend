@@ -5,6 +5,7 @@ const HttpError = require('../helpers/errorHelper');
 const { logProductAction } = require('../helpers/smartActivityLogger');
 const { ACTION_TYPES } = require('../helpers/activityLogHelper');
 const sendResponse = require('../middlewares/responseMiddleware');
+const { logInventoryChange } = require('../utilities/inventoryLogUtility');
 
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
@@ -22,7 +23,9 @@ const getAllProductsAdmin = asyncHandler(async (req, res) => {
 const getProductById = asyncHandler(async (req, res) => {
     const product = await productModel.getProductById(req.params.id);
 
-    entityExistHelper(product, res, 404, `Cannot find product with ID ${req.params.id}`);
+    if (!product) {
+        throw new HttpError(404, 'Product not found');
+    }
 
     res.status(200).json(product);
 });
@@ -142,6 +145,16 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
     }
 
     await productModel.updateProductStockAndPrice(id, newStock, price);
+
+    await logInventoryChange({
+        productId: id,
+        adminId: req.user?.id || null,
+        action: 'add_stock',
+        changeAvailable: restock_quantity,
+        oldAvailable: product.stock_quantity,
+        newAvailable: newStock,
+        reason: `Stock restocked by ${restock_quantity}`,
+    });
 
     await logProductAction({
         req,

@@ -37,7 +37,11 @@ const updateProduct = async (id, name, category, price, image, description) => {
 
 // Function to update is_active status of a product
 const updateProductActiveStatus = async (productId, isActive) => {
-    await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [isActive, productId]);
+    const [result] = await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [
+        isActive,
+        productId,
+    ]);
+    return result;
 };
 
 // Function to update stock quantity and price of a product
@@ -56,35 +60,59 @@ const deleteProduct = async (id) => {
 };
 
 // Function to check and reserve stock for a product
+/* I know this code is bad and breaks all standard but I just want it to work
+I will refactor this once time is better, I wanna watch Dexter Resurrection */
 const checkAndReserveStock = async (productId, quantity, orderId, connection) => {
+    // Lock product row for update
     const [rows] = await connection.query(
         `
         SELECT 
-            p.stock_quantity - IFNULL(SUM(r.quantity), 0) AS available_stock
+            stock_quantity,
+            reserved_quantity
         FROM 
-            products p
-        LEFT JOIN 
-            product_reservations r ON p.id = r.product_id
+            products
         WHERE 
-            p.id = ?
-        GROUP BY 
-            p.id
+            id = ?
         FOR UPDATE
         `,
         [productId]
     );
 
-    const availableStock = rows[0]?.available_stock ?? 0;
-    if (availableStock < quantity) {
+    if (rows.length === 0) {
+        throw new HttpError(404, `Product ${productId} not found`);
+    }
+
+    const { stock_quantity, reserved_quantity } = rows[0];
+
+    const oldAvailable = stock_quantity - reserved_quantity;
+    const oldReserved = reserved_quantity;
+
+    if (oldAvailable < quantity) {
         throw new HttpError(400, `Not enough available stock for product ${productId}`);
     }
 
-    // Reserve stock
+    const newReserved = reserved_quantity + quantity;
+    const newAvailable = stock_quantity - newReserved;
+
+    // Update reserved quantity in products table
+    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [
+        newReserved,
+        productId,
+    ]);
+
+    // Add product reservation entry
     await connection.query(
         `INSERT INTO product_reservations (product_id, order_id, quantity)
          VALUES (?, ?, ?)`,
         [productId, orderId, quantity]
     );
+
+    return {
+        oldAvailable,
+        newAvailable,
+        oldReserved,
+        newReserved,
+    };
 };
 
 // Get price of a product
@@ -92,7 +120,7 @@ const getProductPrice = async (productId, connection = pool) => {
     const [rows] = await connection.query('SELECT price FROM products WHERE id = ?', [productId]);
 
     if (rows.length === 0) {
-        throw new Error(`Product with ID ${productId} not found.`);
+        throw new HttpError(404, `Product ${productId} not found`);
     }
 
     return rows[0].price;

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS products (
     name VARCHAR(255) NOT NULL,
     category VARCHAR(100),
     stock_quantity INT NOT NULL DEFAULT 0,
+    reserved_quantity INT NOT NULL DEFAULT 0,
     price DECIMAL(10,2) NOT NULL,
     image VARCHAR(255),
     description TEXT,
@@ -99,7 +100,6 @@ CREATE TABLE IF NOT EXISTS cart (
     INDEX (product_id)
 );
 
-
 CREATE TABLE IF NOT EXISTS orders (
     id VARCHAR(50) PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS orders (
     coupon_code VARCHAR(50) DEFAULT NULL,
     discount_amount DECIMAL(10,2) DEFAULT 0,
     notes TEXT,
+    address TEXT,
     cancel_requested BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (customer_id) REFERENCES users(id),
     INDEX (customer_id),
@@ -358,4 +359,26 @@ CREATE TABLE IF NOT EXISTS admin_activity_logs (
     INDEX idx_action_type (action_type),
     INDEX idx_entity_type (entity_type),
     INDEX idx_created_at (created_at)
+);
+
+CREATE TABLE inventory_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id VARCHAR(255) NOT NULL,
+    order_id VARCHAR(50) NULL,
+    user_id INT NULL,
+    admin_id INT NULL,
+    action ENUM('add_stock', 'reserve', 'confirm', 'cancel_reserve') NOT NULL,
+    change_available INT NOT NULL,
+    change_reserved INT NOT NULL,
+    old_available INT NOT NULL,
+    old_reserved INT NOT NULL,
+    new_available INT NOT NULL,
+    new_reserved INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT,
+
+    CONSTRAINT fk_inventory_product FOREIGN KEY (product_id) REFERENCES products(id),
+    CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_inventory_admin FOREIGN KEY (admin_id) REFERENCES users(id),
+    CONSTRAINT fk_inventory_order FOREIGN KEY (order_id) REFERENCES orders(id)
 );
