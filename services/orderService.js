@@ -1,124 +1,54 @@
 const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
-const paymentModel = require('../models/paymentModel');
-const productModel = require('../models/productModel');
-const couponService = require('./couponService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
-const { generateOrderId } = require('../helpers/orderIdHelper');
-const { logInventoryChange } = require('../utilities/inventoryLogUtility');
-const INVENTORY_ACTIONS = require('../constants/inventoryActions');
+const {
+    validateCart,
+    enforceOrderLimit,
+    applyCoupon,
+    createNewOrder,
+    addItemsAndReserveStock,
+    createInitialOrderStatus,
+    handlePayment,
+} = require('../workflows/createOrderWorkflow');
 
 // Logic of creating an order
 const createOrder = async (
     userId,
     { payment_method, address, notes, reference_number, account_name, couponCode }
 ) => {
-    // Get cart items (no coupon logic here)
-    const cart = await cartModel.getCartItemsByUserId(userId);
-    if (!cart || !cart.items || cart.items.length === 0) {
-        throw new HttpError(404, 'Cart is empty');
-    }
-
-    const todayCount = await orderModel.getTodayOrderCountByUser(userId);
-    if (todayCount >= 100) {
-        throw new HttpError(429, "You've reached your 3 orders today. Try again tomorrow.");
-    }
+    const cart = await validateCart(userId);
+    await enforceOrderLimit(userId);
 
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
-        // Apply coupon logic INSIDE the transaction to ensure consistency
-        const couponResult = await couponService.applyCouponToOrder(couponCode, cart.cart_total);
+        const { finalTotal, discount, coupon } = await applyCoupon(couponCode, cart.cart_total);
 
-        const generatedID = generateOrderId();
-        const orderId = await orderModel.createOrder(
-            {
-                id: generatedID,
-                customer_id: userId,
-                total_amount: couponResult.finalTotal,
-                discount_amount: couponResult.discount,
-                coupon_code: couponResult.coupon ? couponResult.coupon.code : null,
-                status: 'pending',
-                notes,
-            },
-            connection
-        );
+        const orderId = await createNewOrder({
+            userId,
+            total: finalTotal,
+            discount,
+            coupon,
+            notes,
+            connection,
+        });
 
-        // If coupon was used, mark it as used (if you have usage tracking)
-        if (couponResult.coupon && couponResult.discount > 0) {
-            console.log(
-                `Coupon ${couponResult.coupon.code} applied to order ${orderId} with discount ${couponResult.discount}`
-            );
-        }
+        await addItemsAndReserveStock({ cart, orderId, userId, connection });
+        await createInitialOrderStatus(orderId, connection);
 
-        for (const item of cart.items) {
-            await orderModel.addOrderItem(
-                {
-                    order_id: orderId,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                    unit_price: item.price,
-                    subtotal: item.price * item.quantity,
-                },
-                connection
-            );
-
-            const { oldAvailable, newAvailable, oldReserved, newReserved } =
-                await productModel.checkAndReserveStock(
-                    item.product_id,
-                    item.quantity,
-                    orderId,
-                    connection
-                );
-
-            await logInventoryChange({
-                productId: item.product_id,
-                orderId,
-                userId,
-                action: INVENTORY_ACTIONS.RESERVE,
-                changeAvailable: -item.quantity,
-                oldAvailable,
-                newAvailable,
-                changeReserved: item.quantity,
-                oldReserved,
-                newReserved,
-                dbConnection: connection,
-            });
-        }
-
-        await orderModel.createOrderStatus(
-            {
-                orderId,
-                newStatus: 'pending',
-                notes: 'pending',
-            },
-            connection
-        );
-
-        const existingPayment = await paymentModel.getPaymentByOrderId(orderId, connection);
-        if (existingPayment) {
-            throw new HttpError(400, 'Payment for this order already submitted');
-        }
-
-        const paymentId = await paymentModel.createPayment(
+        const paymentId = await handlePayment({
             orderId,
             payment_method,
             reference_number,
             account_name,
             address,
-            connection
-        );
+            connection,
+        });
 
         await cartModel.clearCart(userId, connection);
-        try {
-            await connection.commit();
-        } catch (commitError) {
-            console.error('Commit failed: ', commitError);
-            await connection.rollback();
-            throw commitError;
-        }
+        await connection.commit();
         return { orderId, paymentId };
     } catch (error) {
         await connection.rollback();
