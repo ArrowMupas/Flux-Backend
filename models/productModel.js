@@ -59,9 +59,18 @@ const deleteProduct = async (id) => {
     return result;
 };
 
+// Get price of a product
+const getProductPrice = async (productId, connection = pool) => {
+    const [rows] = await connection.query('SELECT price FROM products WHERE id = ?', [productId]);
+
+    if (rows.length === 0) {
+        throw new HttpError(404, `Product ${productId} not found`);
+    }
+
+    return rows[0].price;
+};
+
 // Function to check and reserve stock for a product
-/* I know this code is bad and breaks all standard but I just want it to work
-I will refactor this once time is better, I wanna watch Dexter Resurrection */
 const checkAndReserveStock = async (productId, quantity, orderId, connection) => {
     // Lock product row for update
     const [rows] = await connection.query(
@@ -115,15 +124,35 @@ const checkAndReserveStock = async (productId, quantity, orderId, connection) =>
     };
 };
 
-// Get price of a product
-const getProductPrice = async (productId, connection = pool) => {
-    const [rows] = await connection.query('SELECT price FROM products WHERE id = ?', [productId]);
+// Refactor starts here
+const getProductStockForUpdate = async (productId, connection) => {
+    const [rows] = await connection.query(
+        `
+        SELECT stock_quantity, reserved_quantity
+        FROM products
+        WHERE id = ?
+        FOR UPDATE
+        `,
+        [productId]
+    );
+    return rows[0] || null;
+};
 
-    if (rows.length === 0) {
-        throw new HttpError(404, `Product ${productId} not found`);
-    }
+const updateReservedQuantity = async (productId, newReserved, connection) => {
+    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [
+        newReserved,
+        productId,
+    ]);
+};
 
-    return rows[0].price;
+const createProductReservation = async (productId, orderId, quantity, connection) => {
+    await connection.query(
+        `
+        INSERT INTO product_reservations (product_id, order_id, quantity)
+        VALUES (?, ?, ?)
+        `,
+        [productId, orderId, quantity]
+    );
 };
 
 module.exports = {
@@ -137,4 +166,7 @@ module.exports = {
     updateProductActiveStatus,
     updateProductStockAndPrice,
     getAllProductsAdmin,
+    getProductStockForUpdate,
+    updateReservedQuantity,
+    createProductReservation,
 };
