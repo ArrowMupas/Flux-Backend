@@ -9,7 +9,17 @@ const safeJsonParse = (jsonString) => {
     }
 };
 
-const logAdminActivity = async (userId, username, role, actionType, entityType, entityId, description, beforeData = null, afterData = null) => {
+const logAdminActivity = async (
+    userId,
+    username,
+    role,
+    actionType,
+    entityType,
+    entityId,
+    description,
+    beforeData = null,
+    afterData = null
+) => {
     const [result] = await pool.query(
         `INSERT INTO admin_activity_logs 
          (user_id, username, role, action_type, entity_type, entity_id, description, before_data, after_data)
@@ -23,7 +33,7 @@ const logAdminActivity = async (userId, username, role, actionType, entityType, 
             entityId,
             description,
             beforeData ? JSON.stringify(beforeData) : null,
-            afterData ? JSON.stringify(afterData) : null
+            afterData ? JSON.stringify(afterData) : null,
         ]
     );
     return result.insertId;
@@ -89,29 +99,37 @@ const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
         queryParams
     );
 
-    // Parse JSON data
-    const parsedLogs = logs.map(log => {
+    // Parse JSON data safely
+    const parsedLogs = logs.map((log) => {
         let beforeData = null;
         let afterData = null;
-        
+
         try {
-            beforeData = log.before_data ? JSON.parse(log.before_data) : null;
+            if (typeof log.before_data === 'string') {
+                beforeData = JSON.parse(log.before_data);
+            } else {
+                beforeData = log.before_data;
+            }
         } catch (error) {
             console.error('Error parsing before_data JSON for log ID', log.id, ':', error);
-            beforeData = log.before_data; // Keep original if parsing fails
+            beforeData = log.before_data;
         }
-        
+
         try {
-            afterData = log.after_data ? JSON.parse(log.after_data) : null;
+            if (typeof log.after_data === 'string') {
+                afterData = JSON.parse(log.after_data);
+            } else {
+                afterData = log.after_data;
+            }
         } catch (error) {
             console.error('Error parsing after_data JSON for log ID', log.id, ':', error);
-            afterData = log.after_data; // Keep original if parsing fails
+            afterData = log.after_data;
         }
-        
+
         return {
             ...log,
             before_data: beforeData,
-            after_data: afterData
+            after_data: afterData,
         };
     });
 
@@ -121,15 +139,15 @@ const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
             current_page: page,
             total_pages: Math.ceil(total / limit),
             total_records: total,
-            per_page: limit
-        }
+            per_page: limit,
+        },
     };
 };
 
 // Function to get admin activity logs by user ID
 const getAdminActivityLogsByUserId = async (userId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-    
+
     const [logs] = await pool.query(
         `SELECT 
             id,
@@ -151,10 +169,10 @@ const getAdminActivityLogsByUserId = async (userId, page = 1, limit = 10) => {
     );
 
     // Parse JSON data
-    const parsedLogs = logs.map(log => ({
+    const parsedLogs = logs.map((log) => ({
         ...log,
         before_data: safeJsonParse(log.before_data),
-        after_data: safeJsonParse(log.after_data)
+        after_data: safeJsonParse(log.after_data),
     }));
 
     return parsedLogs;
@@ -182,10 +200,10 @@ const getAdminActivityLogsByEntity = async (entityType, entityId) => {
     );
 
     // Parse JSON data
-    const parsedLogs = logs.map(log => ({
+    const parsedLogs = logs.map((log) => ({
         ...log,
         before_data: safeJsonParse(log.before_data),
-        after_data: safeJsonParse(log.after_data)
+        after_data: safeJsonParse(log.after_data),
     }));
 
     return parsedLogs;
@@ -214,5 +232,5 @@ module.exports = {
     getAllAdminActivityLogs,
     getAdminActivityLogsByUserId,
     getAdminActivityLogsByEntity,
-    getActivitySummary
+    getActivitySummary,
 };
