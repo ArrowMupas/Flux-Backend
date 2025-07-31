@@ -104,6 +104,9 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = []) => 
         params.push(...paymentMethods);
     }
 
+    // Sort by newest first
+    query += ` ORDER BY o.order_date DESC`;
+
     const [rows] = await pool.query(query, params);
     return rows;
 };

@@ -2,6 +2,7 @@ const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
 const paymentModel = require('../models/paymentModel');
 const productModel = require('../models/productModel');
+const couponModel = require('../models/couponModel');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
@@ -22,6 +23,9 @@ const validateCart = async (userId) => {
         cart_id: cart.id,
         user_id: userId,
         cart_total: cartData.cart_total,
+        final_total: cartData.final_total,
+        coupon_code: cartData.coupon_code,
+        discount: cartData.discount,
         items: cartData.items,
     };
 };
@@ -33,18 +37,36 @@ const enforceOrderLimit = async (userId) => {
     }
 };
 
-const createNewOrder = async ({ userId, total, notes, connection }) => {
+const createNewOrder = async ({
+    userId,
+    subtotal,
+    total,
+    discount = 0,
+    coupon_code = null,
+    notes,
+    connection,
+}) => {
     const orderId = generateOrderId();
+
     await orderModel.createOrder(
         {
             id: orderId,
             customer_id: userId,
+            subtotal,
             total_amount: total,
+            discount_amount: discount,
+            coupon_code,
             status: 'pending',
             notes,
         },
         connection
     );
+
+    if (coupon_code) {
+        await couponModel.incrementUsage(coupon_code, connection);
+        await couponModel.logUserCouponUsage(userId, coupon_code, connection);
+    }
+
     return orderId;
 };
 
