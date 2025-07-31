@@ -25,7 +25,10 @@ const createOrder = async (
     try {
         const orderId = await createNewOrder({
             userId,
-            total: cart.cart_total,
+            subtotal: cart.cart_total,
+            total: cart.final_total,
+            discount: cart.discount,
+            coupon_code: cart.coupon_code,
             notes,
             connection,
         });

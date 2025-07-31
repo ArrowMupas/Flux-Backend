@@ -24,6 +24,7 @@ const bundleRoute = require('./routes/bundleRoute');
 const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
+const couponRoute = require('./routes/couponRoute');
 
 // Cookies
 app.use(cookieParser());
@@ -60,6 +61,7 @@ app.use('/api/special-offers', specialOfferRoute);
 app.use('/api/bundles', bundleRoute);
 app.use('/api/notifications', notificationRoute);
 app.use('/api/admin-activity-logs', adminActivityLogRoute);
+app.use('/api/coupons', couponRoute);
 app.use('/api', uploadRoute);
 
 // error middleware

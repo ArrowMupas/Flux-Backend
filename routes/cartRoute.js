@@ -14,5 +14,7 @@ router.post('/me', validateCartItem, cartController.addToCart);
 router.put('/me', validateCartItem, cartController.updateCartItemQuantity);
 router.delete('/me', cartController.removeCartItem);
 router.delete('/clear', cartController.clearCart);
+router.post('/apply-coupon', cartController.applyCouponToCart);
+router.delete('/coupon', cartController.removeCoupon);
 
 module.exports = router;
