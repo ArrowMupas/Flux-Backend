@@ -86,18 +86,26 @@ CREATE TABLE IF NOT EXISTS user_permissions (
     FOREIGN KEY (permission_id) REFERENCES staff_permissions(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS cart (
+CREATE TABLE IF NOT EXISTS carts (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
     product_id VARCHAR(50) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    CONSTRAINT unique_user_product UNIQUE (user_id, product_id),
-    INDEX (product_id)
+    CONSTRAINT unique_cart_product UNIQUE (cart_id, product_id)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -106,12 +114,13 @@ CREATE TABLE IF NOT EXISTS orders (
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded', 'returned') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
-    coupon_code VARCHAR(50) DEFAULT NULL,
     discount_amount DECIMAL(10,2) DEFAULT 0,
     notes TEXT,
     address TEXT,
     cancel_requested BOOLEAN DEFAULT FALSE,
+
     FOREIGN KEY (customer_id) REFERENCES users(id),
+
     INDEX (customer_id),
     INDEX (order_date),
     INDEX (status)
@@ -293,25 +302,7 @@ CREATE TABLE IF NOT EXISTS special_offers (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
-CREATE TABLE IF NOT EXISTS coupons (
-    coupon_id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    description TEXT,
-    type ENUM('PERCENTAGE', 'FIXED', 'SPECIAL') NOT NULL,
-    amount DECIMAL(10,2) DEFAULT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    start_date DATETIME,
-    end_date DATETIME
-);
 
-CREATE TABLE IF NOT EXISTS coupon_usage (
-    usage_id INT AUTO_INCREMENT PRIMARY KEY,
-    coupon_id INT,
-    user_id INT,
-    used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
 
 CREATE TABLE IF NOT EXISTS bundles (
     bundle_id INT AUTO_INCREMENT PRIMARY KEY,

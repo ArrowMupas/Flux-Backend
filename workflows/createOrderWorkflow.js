@@ -2,18 +2,28 @@ const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
 const paymentModel = require('../models/paymentModel');
 const productModel = require('../models/productModel');
-const couponService = require('../services/couponService');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
 const INVENTORY_ACTIONS = require('../constants/inventoryActions');
 
 const validateCart = async (userId) => {
-    const cart = await cartModel.getCartItemsByUserId(userId);
-    if (!cart || !cart.items || cart.items.length === 0) {
+    const cart = await cartModel.getCartByUserId(userId);
+    if (!cart) {
+        throw new HttpError(404, 'Cart not found');
+    }
+
+    const cartData = await cartModel.getCartItemsByCartId(cart.id);
+    if (!cartData.items || cartData.items.length === 0) {
         throw new HttpError(404, 'Cart is empty');
     }
-    return cart;
+
+    return {
+        cart_id: cart.id,
+        user_id: userId,
+        cart_total: cartData.cart_total,
+        items: cartData.items,
+    };
 };
 
 const enforceOrderLimit = async (userId) => {
@@ -23,19 +33,13 @@ const enforceOrderLimit = async (userId) => {
     }
 };
 
-const applyCoupon = async (code, cartTotal) => {
-    return await couponService.applyCouponToOrder(code, cartTotal);
-};
-
-const createNewOrder = async ({ userId, total, discount, coupon, notes, connection }) => {
+const createNewOrder = async ({ userId, total, notes, connection }) => {
     const orderId = generateOrderId();
     await orderModel.createOrder(
         {
             id: orderId,
             customer_id: userId,
             total_amount: total,
-            discount_amount: discount,
-            coupon_code: coupon ? coupon.code : null,
             status: 'pending',
             notes,
         },
@@ -164,7 +168,6 @@ const handlePayment = async ({
 module.exports = {
     validateCart,
     enforceOrderLimit,
-    applyCoupon,
     createNewOrder,
     addItemsAndReserveStock,
     addOrderItem,
