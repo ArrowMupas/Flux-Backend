@@ -1,55 +1,73 @@
 const pool = require('../database/pool');
 
-const getAllCoupons = async () => {
-    const [rows] = await pool.query(`SELECT * FROM coupons`);
-    return rows;
-};
+const insertCoupon = async (coupon) => {
+    const {
+        code,
+        description,
+        discount_type,
+        discount_value,
+        is_active,
+        starts_at,
+        expires_at,
+        usage_limit,
+        per_user_limit,
+    } = coupon;
 
-const createCoupon = async (data) => {
-    const { code, description, type, amount, is_active = true, start_date, end_date } = data;
-
-    await pool.query(
-        `
-    INSERT INTO coupons (code, description, type, amount, is_active, start_date, end_date)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [code, description, type, amount, is_active, start_date, end_date]
+    const [result] = await pool.execute(
+        `INSERT INTO coupons (
+      code, description, discount_type, discount_value,
+      is_active, starts_at, expires_at, usage_limit, per_user_limit
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            code,
+            description || null,
+            discount_type,
+            discount_value,
+            is_active,
+            starts_at || null,
+            expires_at || null,
+            usage_limit || null,
+            per_user_limit || null,
+        ]
     );
+
+    return result.insertId;
 };
 
-const updateCoupon = async (id, data) => {
-    const { code, description, type, amount, is_active = true, start_date, end_date } = data;
-
-    await pool.query(
-        `
-    UPDATE coupons SET code = ?, description = ?, type = ?, amount = ?, 
-    is_active = ?, start_date = ?, end_date = ?
-    WHERE coupon_id = ?`,
-        [code, description, type, amount, is_active, start_date, end_date, id]
-    );
+const getCouponById = async (id) => {
+    const [rows] = await pool.execute('SELECT * FROM coupons WHERE id = ?', [id]);
+    return rows[0];
 };
 
-const deleteCoupon = async (id) => {
-    await pool.query(`DELETE FROM coupons WHERE coupon_id = ?`, [id]);
+const getCouponByCode = async (code) => {
+    const [rows] = await pool.execute('SELECT * FROM coupons WHERE code = ?', [code]);
+    return rows[0];
 };
 
-const findValidCoupon = async (code) => {
+const incrementUsage = async (code, connection = pool) => {
+    await connection.query(`UPDATE coupons SET times_used = times_used + 1 WHERE code = ?`, [code]);
+};
+
+const logUserCouponUsage = async (userId, couponCode, connection = pool) => {
+    await connection.query(`INSERT INTO coupon_usages (user_id, coupon_code) VALUES (?, ?)`, [
+        userId,
+        couponCode,
+    ]);
+};
+
+const getUserCouponUsageCount = async (userId, couponCode) => {
     const [rows] = await pool.query(
-        `
-    SELECT * FROM coupons
-    WHERE code = ?
-      AND is_active = TRUE
-      AND NOW() BETWEEN start_date AND end_date
-    LIMIT 1`,
-        [code]
+        `SELECT COUNT(*) AS usage_count FROM coupon_usages WHERE user_id = ? AND coupon_code = ?`,
+        [userId, couponCode]
     );
-
-    return rows[0] || null;
+    return rows[0]?.usage_count || 0;
 };
 
 module.exports = {
-    getAllCoupons,
-    createCoupon,
-    updateCoupon,
-    deleteCoupon,
-    findValidCoupon,
+    insertCoupon,
+    getCouponById,
+    getCouponByCode,
+    incrementUsage,
+    logUserCouponUsage,
+    getUserCouponUsageCount,
 };

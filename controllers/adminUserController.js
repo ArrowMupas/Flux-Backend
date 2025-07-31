@@ -3,6 +3,7 @@ const sendResponse = require('../middlewares/responseMiddleware');
 const adminUserModel = require('../models/adminUserModel');
 const bcrypt = require('bcrypt');
 const HttpError = require('../helpers/errorHelper');
+
 const { logUserAction } = require('../helpers/smartActivityLogger');
 const { ACTION_TYPES } = require('../helpers/activityLogHelper');
 

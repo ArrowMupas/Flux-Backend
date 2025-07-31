@@ -1,13 +1,13 @@
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const cartService = require('../services/cartService');
-const cartModel = require('../models/cartModel');
-const HttpError = require('../helpers/errorHelper');
 
 // Get all cart items by user ID
 const getCartItems = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const cartItems = await cartService.getCartItems(userId);
+    const cart = await cartService.getOrCreateCart(userId); // new helper
+
+    const cartItems = await cartService.getCartItemsByCartId(cart.id);
     return sendResponse(res, 200, 'Cart retrieved.', cartItems);
 });
 
@@ -15,7 +15,10 @@ const getCartItems = asyncHandler(async (req, res) => {
 const addToCart = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { productId, quantity } = req.body;
-    const result = await cartService.addToCart(userId, productId, quantity);
+
+    const cart = await cartService.getOrCreateCart(userId);
+    const result = await cartService.addToCart(cart.id, productId, quantity);
+
     return sendResponse(res, 201, 'Added to cart', result);
 });
 
@@ -23,45 +26,49 @@ const addToCart = asyncHandler(async (req, res) => {
 const updateCartItemQuantity = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { productId, quantity } = req.body;
-    const result = await cartService.updateCartItemQuantity(userId, productId, quantity);
-    return sendResponse(res, 200, 'Cart Updated', result);
+
+    const cart = await cartService.getOrCreateCart(userId);
+    const result = await cartService.updateCartItemQuantity(cart.id, productId, quantity);
+
+    return sendResponse(res, 200, 'Cart updated', result);
 });
 
 // Remove item from cart
 const removeCartItem = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { productId } = req.body;
-    const result = await cartService.removeCartItem(userId, productId);
+
+    const cart = await cartService.getOrCreateCart(userId);
+    const result = await cartService.removeCartItem(cart.id, productId);
+
     return sendResponse(res, 201, 'Item removed from cart', result);
 });
 
 // Clear all item from a user cart
 const clearCart = asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const result = await cartService.clearCart(userId);
+
+    const cart = await cartService.getOrCreateCart(userId);
+    const result = await cartService.clearCart(cart.id);
+
     return sendResponse(res, 200, 'Cart cleared.', result);
 });
 
-const applyCoupon = asyncHandler(async (req, res) => {
-    const { cartId } = req.params;
-    const { couponCode } = req.body;
+const applyCouponToCart = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { coupon_code } = req.body;
 
-    const result = await cartModel.applyCouponToCart(cartId, couponCode);
-    if (result.error) {
-        throw new HttpError(400, result.error);
-    }
+    const result = await cartService.applyCouponToCart(userId, coupon_code);
 
-    return sendResponse(res, 200, 'Coupon applied to cart.', result);
+    return sendResponse(res, 200, 'Coupon applied to cart', result);
 });
 
-const applyCouponToUserCart = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const { couponCode } = req.body;
-    const result = await cartModel.applyCouponToUserCart(userId, couponCode);
-    if (result.error) {
-        return sendResponse(res, 400, result.error);
-    }
-    return sendResponse(res, 200, 'Coupon applied to user cart.', result);
+const removeCoupon = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+
+    const updatedCart = await cartService.removeCoupon(userId);
+
+    return sendResponse(res, 200, 'Coupon removed from cart', updatedCart);
 });
 
 module.exports = {
@@ -70,6 +77,6 @@ module.exports = {
     updateCartItemQuantity,
     removeCartItem,
     clearCart,
-    applyCoupon,
-    applyCouponToUserCart,
+    applyCouponToCart,
+    removeCoupon,
 };

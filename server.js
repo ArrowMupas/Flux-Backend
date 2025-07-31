@@ -20,11 +20,11 @@ const permissionRoute = require('./routes/permissionRoute');
 const afterSalesRoute = require('./routes/afterSalesRoute');
 const walkInOrderRoute = require('./routes/walkInOrderRoute');
 const specialOfferRoute = require('./routes/specialOfferRoute');
-const couponRoute = require('./routes/couponRoute');
 const bundleRoute = require('./routes/bundleRoute');
 const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
+const couponRoute = require('./routes/couponRoute');
 
 // Cookies
 app.use(cookieParser());
@@ -58,10 +58,10 @@ app.use('/api/permissions', permissionRoute);
 app.use('/api/afterSales', afterSalesRoute);
 app.use('/api/walkInOrders', walkInOrderRoute);
 app.use('/api/special-offers', specialOfferRoute);
-app.use('/api/coupons', couponRoute);
 app.use('/api/bundles', bundleRoute);
 app.use('/api/notifications', notificationRoute);
 app.use('/api/admin-activity-logs', adminActivityLogRoute);
+app.use('/api/coupons', couponRoute);
 app.use('/api', uploadRoute);
 
 // error middleware

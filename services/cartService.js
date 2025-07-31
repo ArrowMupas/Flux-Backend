@@ -1,105 +1,218 @@
-const cartModel = require('../models/cartModel');
 const pool = require('../database/pool');
+const cartModel = require('../models/cartModel');
+const couponModel = require('../models/couponModel');
 const HttpError = require('../helpers/errorHelper');
 
-// Logic of getting orders
-const getCartItems = async (userId) => {
-    const cartItems = await cartModel.getCartItemsByUserId(userId);
-
-    return cartItems;
+// Get or create cart for user
+const getOrCreateCart = async (userId) => {
+    let cart = await cartModel.getCartByUserId(userId);
+    if (!cart) {
+        await cartModel.createCart(userId);
+        cart = await cartModel.getCartByUserId(userId);
+    }
+    return cart;
 };
 
-// Logic of adding item to cart
-const addToCart = async (userId, productId, quantity = 1) => {
+// Get all items in a cart
+const getCartItemsByCartId = async (cartId) => {
+    const cart = await cartModel.getCartItemsByCartId(cartId);
+
+    if (cart?.coupon_code && cart?.user_id) {
+        try {
+            await applyCouponToCart(cart.user_id, cart.coupon_code);
+            return await cartModel.getCartItemsByCartId(cartId);
+        } catch (err) {
+            console.warn('Coupon removed due to invalidation:', err.message);
+            await cartModel.removeCouponFromCart(cart.user_id);
+            return await cartModel.getCartItemsByCartId(cartId);
+        }
+    }
+
+    return cart;
+};
+
+// Add product to cart
+const addToCart = async (cartId, productId, quantity = 1) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
         const product = await cartModel.getProductStock(connection, productId);
-
-        if (product.length === 0) {
+        if (!product || product.length === 0) {
             throw new HttpError(404, 'Product not found');
         }
 
-        const availableStock = product[0].stock_quantity;
-
-        if (quantity > availableStock) {
+        const stockQty = product[0].stock_quantity;
+        if (quantity > stockQty) {
             throw new HttpError(400, 'Requested quantity exceeds stock');
         }
 
-        const existing = await cartModel.getCartItem(connection, userId, productId);
-
-        if (existing.length > 0) {
-            await cartModel.updateCartItem(connection, userId, productId, quantity, availableStock);
+        const existingItem = await cartModel.getCartItem(connection, cartId, productId);
+        if (existingItem.length > 0) {
+            // Update quantity by adding to existing
+            const newQuantity = existingItem[0].quantity + quantity;
+            if (newQuantity > stockQty) {
+                throw new HttpError(400, 'Total quantity exceeds stock');
+            }
+            await cartModel.updateCartItem(connection, cartId, productId, newQuantity);
         } else {
-            await cartModel.insertCartItem(connection, userId, productId, quantity);
+            await cartModel.insertCartItem(connection, cartId, productId, quantity);
         }
 
         await connection.commit();
-        return await cartModel.getCartItemsByUserId(userId);
-    } catch (error) {
+        return await getCartItemsByCartId(cartId);
+    } catch (err) {
         await connection.rollback();
-        throw error;
+        throw err;
     } finally {
         connection.release();
     }
 };
 
-// Logic of updating cart item quantity
-const updateCartItemQuantity = async (userId, productId, quantity) => {
+// Update cart item quantity (directly sets it)
+const updateCartItemQuantity = async (cartId, productId, quantity) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
         const product = await cartModel.getProductStock(connection, productId);
-
-        if (product.length === 0) {
+        if (!product || product.length === 0) {
             throw new HttpError(404, 'Product not found');
         }
 
-        const availableStock = product[0].stock_quantity;
+        const stockQty = product[0].stock_quantity;
 
-        if (quantity > availableStock) {
+        if (quantity > stockQty) {
             throw new HttpError(400, 'Requested quantity exceeds stock');
         }
 
-        const result = await cartModel.updateCartQuantity(connection, userId, productId, quantity);
+        let result;
+
+        if (quantity <= 0) {
+            // Remove item if quantity is 0 or less
+            result = await cartModel.removeCartItemByCartId(connection, cartId, productId);
+        } else {
+            // Update quantity normally
+            result = await cartModel.updateCartItem(connection, cartId, productId, quantity);
+        }
 
         if (result.affectedRows === 0) {
-            throw new HttpError(400, 'Cart item not found or no changes made.');
+            throw new HttpError(404, 'Cart item not found');
         }
 
         await connection.commit();
-        const updatedCart = await cartModel.getCartItemsByUserId(userId);
-        return updatedCart;
-    } catch (error) {
+        return await getCartItemsByCartId(cartId);
+    } catch (err) {
         await connection.rollback();
-        throw error;
+        throw err;
     } finally {
         connection.release();
     }
 };
 
-// Logic of getting orders
-const removeCartItem = async (userId, productId) => {
-    const result = await cartModel.removeCartItem(userId, productId);
-
+// Remove a product from the cart
+const removeCartItem = async (cartId, productId) => {
+    const result = await cartModel.removeCartItem(cartId, productId);
     if (result.affectedRows === 0) {
-        throw new HttpError(404, 'Product not found');
+        throw new HttpError(404, 'Cart item not found');
     }
-
     return result;
 };
 
-// Logic of getting orders
-const clearCart = async (userId) => {
-    const result = await cartModel.clearCart(userId);
-
+// Clear all items from the cart
+const clearCart = async (cartId) => {
+    const result = await cartModel.clearCart(cartId);
     if (result.affectedRows === 0) {
-        throw new HttpError(404, `No items to clear in cart`);
+        throw new HttpError(404, 'Cart is already empty');
     }
-
     return result;
 };
 
-module.exports = { getCartItems, addToCart, updateCartItemQuantity, removeCartItem, clearCart };
+const applyCouponToCart = async (userId, code) => {
+    const cart = await cartModel.getCartByUserId(userId);
+    if (!cart) {
+        throw new HttpError(404, 'Cart not found');
+    }
+
+    const cartData = await cartModel.getCartItemsByCartId(cart.id);
+    if (!cartData.items || cartData.items.length === 0) {
+        throw new HttpError(400, 'Cannot apply a coupon to an empty cart');
+    }
+
+    const coupon = await couponModel.getCouponByCode(code);
+    if (!coupon || !coupon.is_active) {
+        throw new HttpError(400, 'Invalid or inactive coupon');
+    }
+
+    if (coupon.usage_limit !== null && coupon.times_used >= coupon.usage_limit) {
+        throw new HttpError(400, 'This coupon has reached its usage limit.');
+    }
+
+    const now = new Date();
+    const startsAt = coupon.starts_at && new Date(coupon.starts_at);
+    const expiresAt = coupon.expires_at && new Date(coupon.expires_at);
+
+    if ((startsAt && now < startsAt) || (expiresAt && now > expiresAt)) {
+        throw new HttpError(400, 'Coupon is not valid at this time');
+    }
+
+    if (coupon.per_user_limit) {
+        const usageCount = await couponModel.getUserCouponUsageCount(userId, code);
+        if (usageCount >= coupon.per_user_limit) {
+            throw new HttpError(
+                400,
+                'You have already used this coupon the maximum number of times allowed.'
+            );
+        }
+    }
+
+    const cartTotal = await cartModel.getCartTotal(userId);
+
+    let discount = 0;
+    if (coupon.discount_type === 'fixed') {
+        discount = coupon.discount_value;
+    } else if (coupon.discount_type === 'percentage') {
+        discount = (cartTotal * coupon.discount_value) / 100;
+    }
+
+    discount = Math.min(discount, cartTotal);
+
+    await cartModel.updateCartCoupon(userId, {
+        coupon_code: code,
+        discount_total: discount,
+    });
+
+    return {
+        coupon: {
+            code: coupon.code,
+            discount_type: coupon.discount_type,
+            discount_value: coupon.discount_value,
+        },
+        discount,
+        cartTotal,
+        finalTotal: cartTotal - discount,
+    };
+};
+
+const removeCoupon = async (userId) => {
+    const cart = await cartModel.getCartByUserId(userId);
+    if (!cart) {
+        throw new HttpError(404, 'Cart not found');
+    }
+
+    await cartModel.removeCouponFromCart(userId);
+
+    // Get updated cart info
+    return await cartModel.getCartItemsByCartId(cart.id);
+};
+
+module.exports = {
+    getOrCreateCart,
+    getCartItemsByCartId,
+    addToCart,
+    updateCartItemQuantity,
+    removeCartItem,
+    clearCart,
+    applyCouponToCart,
+    removeCoupon,
+};

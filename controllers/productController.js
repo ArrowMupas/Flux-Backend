@@ -1,11 +1,11 @@
 const asyncHandler = require('express-async-handler');
 const productModel = require('../models/productModel');
-const entityExistHelper = require('../helpers/entityExistHelper');
 const HttpError = require('../helpers/errorHelper');
-const { logProductAction } = require('../helpers/smartActivityLogger');
-const { ACTION_TYPES } = require('../helpers/activityLogHelper');
 const sendResponse = require('../middlewares/responseMiddleware');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
+
+const { logProductAction } = require('../helpers/smartActivityLogger');
+const { ACTION_TYPES } = require('../helpers/activityLogHelper');
 
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
