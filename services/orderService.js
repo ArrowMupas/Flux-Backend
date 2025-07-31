@@ -5,7 +5,6 @@ const HttpError = require('../helpers/errorHelper');
 const {
     validateCart,
     enforceOrderLimit,
-    applyCoupon,
     createNewOrder,
     addItemsAndReserveStock,
     createInitialOrderStatus,
@@ -15,7 +14,7 @@ const {
 // Logic of creating an order
 const createOrder = async (
     userId,
-    { payment_method, address, notes, reference_number, account_name, couponCode }
+    { payment_method, address, notes, reference_number, account_name }
 ) => {
     const cart = await validateCart(userId);
     await enforceOrderLimit(userId);
@@ -24,13 +23,12 @@ const createOrder = async (
     await connection.beginTransaction();
 
     try {
-        const { finalTotal, discount, coupon } = await applyCoupon(couponCode, cart.cart_total);
-
         const orderId = await createNewOrder({
             userId,
-            total: finalTotal,
-            discount,
-            coupon,
+            subtotal: cart.cart_total,
+            total: cart.final_total,
+            discount: cart.discount,
+            coupon_code: cart.coupon_code,
             notes,
             connection,
         });
@@ -47,7 +45,7 @@ const createOrder = async (
             connection,
         });
 
-        await cartModel.clearCart(userId, connection);
+        await cartModel.clearCart(cart.cart_id || cart.id, connection);
         await connection.commit();
         return { orderId, paymentId };
     } catch (error) {

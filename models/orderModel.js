@@ -1,6 +1,5 @@
 const pool = require('../database/pool');
 
-// Function to create order (now supports discount_amount and coupon_code)
 const createOrder = async (orderData, connection = pool) => {
     const [result] = await connection.query(`INSERT INTO orders SET ?`, orderData);
     return orderData.id;
@@ -104,6 +103,9 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = []) => 
         query += ` AND p.method IN (${paymentMethods.map(() => '?').join(',')})`;
         params.push(...paymentMethods);
     }
+
+    // Sort by newest first
+    query += ` ORDER BY o.order_date DESC`;
 
     const [rows] = await pool.query(query, params);
     return rows;

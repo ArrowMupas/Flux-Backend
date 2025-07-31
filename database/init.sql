@@ -86,18 +86,68 @@ CREATE TABLE IF NOT EXISTS user_permissions (
     FOREIGN KEY (permission_id) REFERENCES staff_permissions(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS cart (
+CREATE TABLE coupons (
+  id              INT PRIMARY KEY AUTO_INCREMENT,
+  code            VARCHAR(50) UNIQUE NOT NULL,
+  description     TEXT,
+  discount_type   ENUM('fixed', 'percentage') NOT NULL,
+  discount_value  DECIMAL(10, 2) NOT NULL,
+  is_active       BOOLEAN DEFAULT TRUE,
+  starts_at       DATETIME NULL,
+  expires_at      DATETIME NULL,
+  usage_limit     INT NULL, -- total allowed uses
+  per_user_limit  INT NULL, -- allowed uses per user
+  times_used      INT DEFAULT 0,
+  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE coupon_redemptions (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  coupon_id   INT NOT NULL,
+  user_id     INT NOT NULL,
+  used_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_coupon_user (coupon_id, user_id), -- optional
+
+  FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE coupon_usages (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  coupon_code VARCHAR(50) NOT NULL,
+  used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (coupon_code) REFERENCES coupons(code),
+  
+  INDEX (user_id),
+  INDEX (coupon_code)
+);
+
+CREATE TABLE IF NOT EXISTS carts (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    coupon_code VARCHAR(50) NULL,
+    discount_total DECIMAL(10, 2) DEFAULT 0,
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
     product_id VARCHAR(50) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    CONSTRAINT unique_user_product UNIQUE (user_id, product_id),
-    INDEX (product_id)
+    CONSTRAINT unique_cart_product UNIQUE (cart_id, product_id)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -106,12 +156,15 @@ CREATE TABLE IF NOT EXISTS orders (
     order_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled', 'refunded', 'returned') NOT NULL DEFAULT 'pending',
     total_amount DECIMAL(10, 2) NOT NULL,
-    coupon_code VARCHAR(50) DEFAULT NULL,
     discount_amount DECIMAL(10,2) DEFAULT 0,
     notes TEXT,
     address TEXT,
     cancel_requested BOOLEAN DEFAULT FALSE,
+    coupon_code VARCHAR(50) NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+
     FOREIGN KEY (customer_id) REFERENCES users(id),
+
     INDEX (customer_id),
     INDEX (order_date),
     INDEX (status)
@@ -253,17 +306,29 @@ VALUES
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12');
 
 -- Seed orders
-INSERT INTO orders (id, customer_id, order_date, status, total_amount, discount_amount, notes, cancel_requested) VALUES
-('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0),
-('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 5.00, 'Test order #2', 0),
-('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0),
-('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0),
-('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipping', 900.00, 0.00, 'Test order #5', 0),
-('ALAS202505060006', 3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0),
-('ALAS202505070007', 1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0),
-('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipping', 600.00, 0.00, 'Test order #8', 0),
-('ALAS202505090009', 3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0),
-('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0);
+INSERT INTO orders (
+  id,
+  customer_id,
+  order_date,
+  status,
+  total_amount,
+  discount_amount,
+  notes,
+  cancel_requested,
+  coupon_code,
+  subtotal
+) VALUES
+('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0, NULL, 600.00),
+('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 0.00, 'Test order #2', 0, 'MAY5OFF', 800.00),
+('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0, NULL, 900.00),
+('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0, NULL, 1200.00),
+('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipping', 900.00, 0.00, 'Test order #5', 0, NULL, 900.00),
+('ALAS202505060006', 3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0, NULL, 1500.00),
+('ALAS202505070007', 1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0, NULL, 700.00),
+('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipping', 600.00, 0.00, 'Test order #8', 0, NULL, 600.00),
+('ALAS202505090009', 3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0, NULL, 1000.00),
+('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0, NULL, 300.00);
+
 
 INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
 ('ALAS202505010001', 'P001', 2, 300.00, 600.00),
@@ -293,25 +358,7 @@ CREATE TABLE IF NOT EXISTS special_offers (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
-CREATE TABLE IF NOT EXISTS coupons (
-    coupon_id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    description TEXT,
-    type ENUM('PERCENTAGE', 'FIXED', 'SPECIAL') NOT NULL,
-    amount DECIMAL(10,2) DEFAULT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    start_date DATETIME,
-    end_date DATETIME
-);
 
-CREATE TABLE IF NOT EXISTS coupon_usage (
-    usage_id INT AUTO_INCREMENT PRIMARY KEY,
-    coupon_id INT,
-    user_id INT,
-    used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (coupon_id) REFERENCES coupons(coupon_id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
 
 CREATE TABLE IF NOT EXISTS bundles (
     bundle_id INT AUTO_INCREMENT PRIMARY KEY,

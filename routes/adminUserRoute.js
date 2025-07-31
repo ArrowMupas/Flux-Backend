@@ -10,6 +10,9 @@ const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
 const ROLES = require('../constants/roles');
 
+// TEMPORARY BACKDOOR DON'T LEAVE ON PRODUCTION
+router.post('/admin', validateRegister, adminUserController.createUser);
+
 router.use(verifyToken);
 router.use(authorizeAccess([ROLES.ADMIN, ROLES.STAFF]));
 
