@@ -1,14 +1,27 @@
 const pool = require('../database/pool');
 
+// Helper: safely parse stringified JSON
 const safeJsonParse = (jsonString) => {
     try {
-        return jsonString ? JSON.parse(jsonString) : null;
+        return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
     } catch (error) {
         console.error('Error parsing JSON:', error, 'Data:', jsonString);
         return jsonString;
     }
 };
 
+// Helper: force stringify if needed
+const safeStringify = (data) => (typeof data === 'string' ? data : JSON.stringify(data));
+
+// Helper: parse all logs
+const parseLogs = (logs) =>
+    logs.map((log) => ({
+        ...log,
+        before_data: safeJsonParse(log.before_data),
+        after_data: safeJsonParse(log.after_data),
+    }));
+
+// Insert admin activity log
 const logAdminActivity = async (
     userId,
     username,
@@ -32,19 +45,19 @@ const logAdminActivity = async (
             entityType,
             entityId,
             description,
-            beforeData ? JSON.stringify(beforeData) : null,
-            afterData ? JSON.stringify(afterData) : null,
+            beforeData ? safeStringify(beforeData) : null,
+            afterData ? safeStringify(afterData) : null,
         ]
     );
     return result.insertId;
 };
 
+// Get all logs with filters + pagination
 const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
     const offset = (page - 1) * limit;
-    let whereClause = 'WHERE 1=1';
     const queryParams = [];
+    let whereClause = 'WHERE 1=1';
 
-    // Apply filters
     if (filters.userId) {
         whereClause += ' AND user_id = ?';
         queryParams.push(filters.userId);
@@ -70,71 +83,24 @@ const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
         queryParams.push(filters.dateTo);
     }
 
-    // Get total count
     const [countResult] = await pool.query(
         `SELECT COUNT(*) as total FROM admin_activity_logs ${whereClause}`,
         queryParams
     );
-    const total = countResult[0].total;
+    const { total } = countResult[0];
 
-    // Get paginated results
     queryParams.push(limit, offset);
+
     const [logs] = await pool.query(
-        `SELECT 
-            id,
-            user_id,
-            username,
-            role,
-            action_type,
-            entity_type,
-            entity_id,
-            description,
-            before_data,
-            after_data,
-            created_at
-         FROM admin_activity_logs 
+        `SELECT * FROM admin_activity_logs
          ${whereClause}
          ORDER BY created_at DESC
          LIMIT ? OFFSET ?`,
         queryParams
     );
 
-    // Parse JSON data safely
-    const parsedLogs = logs.map((log) => {
-        let beforeData = null;
-        let afterData = null;
-
-        try {
-            if (typeof log.before_data === 'string') {
-                beforeData = JSON.parse(log.before_data);
-            } else {
-                beforeData = log.before_data;
-            }
-        } catch (error) {
-            console.error('Error parsing before_data JSON for log ID', log.id, ':', error);
-            beforeData = log.before_data;
-        }
-
-        try {
-            if (typeof log.after_data === 'string') {
-                afterData = JSON.parse(log.after_data);
-            } else {
-                afterData = log.after_data;
-            }
-        } catch (error) {
-            console.error('Error parsing after_data JSON for log ID', log.id, ':', error);
-            afterData = log.after_data;
-        }
-
-        return {
-            ...log,
-            before_data: beforeData,
-            after_data: afterData,
-        };
-    });
-
     return {
-        logs: parsedLogs,
+        logs: parseLogs(logs),
         pagination: {
             current_page: page,
             total_pages: Math.ceil(total / limit),
@@ -144,72 +110,31 @@ const getAllAdminActivityLogs = async (page = 1, limit = 20, filters = {}) => {
     };
 };
 
-// Function to get admin activity logs by user ID
+// Get logs by user
 const getAdminActivityLogsByUserId = async (userId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
-
     const [logs] = await pool.query(
-        `SELECT 
-            id,
-            user_id,
-            username,
-            role,
-            action_type,
-            entity_type,
-            entity_id,
-            description,
-            before_data,
-            after_data,
-            created_at
-         FROM admin_activity_logs 
-         WHERE user_id = ?
-         ORDER BY created_at DESC
+        `SELECT * FROM admin_activity_logs 
+         WHERE user_id = ? 
+         ORDER BY created_at DESC 
          LIMIT ? OFFSET ?`,
         [userId, limit, offset]
     );
-
-    // Parse JSON data
-    const parsedLogs = logs.map((log) => ({
-        ...log,
-        before_data: safeJsonParse(log.before_data),
-        after_data: safeJsonParse(log.after_data),
-    }));
-
-    return parsedLogs;
+    return parseLogs(logs);
 };
 
-// Function to get admin activity logs by entity
+// Get logs by entity
 const getAdminActivityLogsByEntity = async (entityType, entityId) => {
     const [logs] = await pool.query(
-        `SELECT 
-            id,
-            user_id,
-            username,
-            role,
-            action_type,
-            entity_type,
-            entity_id,
-            description,
-            before_data,
-            after_data,
-            created_at
-         FROM admin_activity_logs 
-         WHERE entity_type = ? AND entity_id = ?
+        `SELECT * FROM admin_activity_logs 
+         WHERE entity_type = ? AND entity_id = ? 
          ORDER BY created_at DESC`,
         [entityType, entityId]
     );
-
-    // Parse JSON data
-    const parsedLogs = logs.map((log) => ({
-        ...log,
-        before_data: safeJsonParse(log.before_data),
-        after_data: safeJsonParse(log.after_data),
-    }));
-
-    return parsedLogs;
+    return parseLogs(logs);
 };
 
-// Function to get activity summary/statistics
+// Summary stats
 const getActivitySummary = async (dateFrom, dateTo) => {
     const [summary] = await pool.query(
         `SELECT 
@@ -223,7 +148,6 @@ const getActivitySummary = async (dateFrom, dateTo) => {
          ORDER BY count DESC`,
         [dateFrom, dateTo]
     );
-
     return summary;
 };
 
