@@ -1,6 +1,5 @@
 const adminOrderModel = require('../models/adminOrderModel');
 const reservationModel = require('../models/reservationModel');
-const afterSalesModel = require('../models/afterSalesModel');
 const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
@@ -168,60 +167,6 @@ const adminCancelOrder = async (orderId, notes) => {
     }
 };
 
-// Logic for marking refund/return request as pending
-const markRefundReturnPending = async (requestId) => {
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        const request = await afterSalesModel.getRefundById(requestId, connection);
-        if (!request) {
-            throw new HttpError(404, 'Request not found');
-        }
-
-        await afterSalesModel.updateRequestStatus(requestId, 'pending', connection);
-
-        await connection.commit();
-    } catch (err) {
-        await connection.rollback();
-        throw err;
-    } finally {
-        connection.release();
-    }
-};
-
-// Logic for marking refund/return request as completed
-const markRefundReturnCompleted = async (requestId, notes) => {
-    const connection = await pool.getConnection();
-    try {
-        await connection.beginTransaction();
-
-        const request = await afterSalesModel.getRefundById(requestId, connection);
-
-        if (!request) {
-            throw new HttpError(404, 'Refund request not found');
-        }
-
-        await afterSalesModel.updateRequestStatus(requestId, 'completed', connection);
-
-        let newStatus;
-        if (request.type === 'refund') {
-            newStatus = 'refunded';
-        } else if (request.type === 'return') {
-            newStatus = 'returned';
-        }
-
-        await adminOrderModel.changeOrderStatus(request.order_id, newStatus, notes, connection);
-
-        await connection.commit();
-    } catch (err) {
-        await connection.rollback();
-        throw err;
-    } finally {
-        connection.release();
-    }
-};
-
 module.exports = {
     getAllOrders,
     getOrderById,
@@ -229,6 +174,4 @@ module.exports = {
     getOrderStatusHistory,
     changeOrderStatus,
     adminCancelOrder,
-    markRefundReturnPending,
-    markRefundReturnCompleted,
 };

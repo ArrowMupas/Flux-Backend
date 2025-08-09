@@ -218,19 +218,6 @@ CREATE TABLE IF NOT EXISTS product_reservations (
     FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
-CREATE TABLE IF NOT EXISTS after_sales_requests (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    type ENUM('refund', 'return') NOT NULL,
-    order_id VARCHAR(50) NOT NULL,
-    user_id INT NOT NULL,
-    reason TEXT NOT NULL,
-    status ENUM('requested', 'pending', 'completed') DEFAULT 'requested',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
 CREATE TABLE IF NOT EXISTS walk_in_sales (
     id VARCHAR(50) PRIMARY KEY,
     sale_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -319,7 +306,7 @@ INSERT INTO orders (
   subtotal
 ) VALUES
 ('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0, NULL, 600.00),
-('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 0.00, 'Test order #2', 0, 'MAY5OFF', 800.00),
+('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 0.00, 'Test order #2', 0, NULL, 800.00),
 ('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0, NULL, 900.00),
 ('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0, NULL, 1200.00),
 ('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipping', 900.00, 0.00, 'Test order #5', 0, NULL, 900.00),
@@ -357,8 +344,6 @@ CREATE TABLE IF NOT EXISTS special_offers (
     end_date DATETIME,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
-
-
 
 CREATE TABLE IF NOT EXISTS bundles (
     bundle_id INT AUTO_INCREMENT PRIMARY KEY,
