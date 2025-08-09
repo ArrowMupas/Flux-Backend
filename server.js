@@ -25,6 +25,8 @@ const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
 const couponRoute = require('./routes/couponRoute');
+const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
+const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
 
 // Cookies
 app.use(cookieParser());
@@ -62,6 +64,7 @@ app.use('/api/bundles', bundleRoute);
 app.use('/api/notifications', notificationRoute);
 app.use('/api/admin-activity-logs', adminActivityLogRoute);
 app.use('/api/coupons', couponRoute);
+app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api', uploadRoute);
 
 // error middleware
@@ -70,4 +73,7 @@ app.use(errorMiddleware);
 // port
 app.listen(process.env.PORT, () => {
     console.log(`Node API is running on port ${process.env.PORT}`);
+    
+    // Initialize automated inventory stock checking
+    initializeStockChecker();
 });
