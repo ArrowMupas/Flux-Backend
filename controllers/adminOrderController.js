@@ -55,23 +55,6 @@ const adminCancelOrder = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order cancelled by admin');
 });
 
-// Admin process refund/return request
-const adminRefundReturnProcess = asyncHandler(async (req, res) => {
-    const requestId = req.params.id;
-
-    await adminOrderService.markRefundReturnPending(requestId);
-    return sendResponse(res, 200, 'Order processed');
-});
-
-// Admin complete refund/return request
-const adminRefundReturnComplete = asyncHandler(async (req, res) => {
-    const requestId = req.params.id;
-    const { notes } = req.body;
-
-    await adminOrderService.markRefundReturnCompleted(requestId, notes);
-    return sendResponse(res, 200, 'Order completed');
-});
-
 module.exports = {
     getAllOrders,
     getOrderById,
@@ -79,6 +62,4 @@ module.exports = {
     getOrderStatusHistory,
     changeOrderStatus,
     adminCancelOrder,
-    adminRefundReturnProcess,
-    adminRefundReturnComplete,
 };

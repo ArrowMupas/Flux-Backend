@@ -24,6 +24,9 @@ require('dotenv').config();
             await connection.query(query);
         }
 
+        const [rows] = await connection.query('SELECT DATABASE() AS db');
+        console.log('Connected to DB:', rows[0].db);
+
         console.log('Database initialized successfully');
         await connection.end();
     } catch (error) {

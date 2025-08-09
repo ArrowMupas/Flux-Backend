@@ -15,8 +15,10 @@ router.patch(
     validateStatusUpdate,
     adminOrderController.changeOrderStatus
 );
-router.patch('/cancel/:orderId', orderCompletionStockMiddleware(), adminOrderController.adminCancelOrder);
-router.put('/requests/processing/:id', orderCompletionStockMiddleware(), adminOrderController.adminRefundReturnProcess);
-router.put('/requests/completion/:id', orderCompletionStockMiddleware(), adminOrderController.adminRefundReturnComplete);
+router.patch(
+    '/cancel/:orderId',
+    orderCompletionStockMiddleware(),
+    adminOrderController.adminCancelOrder
+);
 
 module.exports = router;
