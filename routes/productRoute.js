@@ -11,6 +11,7 @@ const {
     restockSchema,
 } = require('../validations/productValidation');
 const ROLES = require('../constants/roles');
+const { autoStockCheckMiddleware } = require('../middlewares/autoStockCheckMiddleware');
 
 // Public Routes
 router.get('/', productController.getAllProducts);
@@ -36,6 +37,7 @@ router.put(
     verifyToken,
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(updateProductSchema),
+    autoStockCheckMiddleware({ checkProducts: true, checkBundles: true }),
     productController.updateProduct
 );
 
@@ -44,6 +46,7 @@ router.patch(
     verifyToken,
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(restockSchema),
+    autoStockCheckMiddleware({ checkProducts: true, checkBundles: true }),
     productController.updateProductStockAndPrice
 );
 

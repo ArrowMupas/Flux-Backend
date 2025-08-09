@@ -394,12 +394,12 @@ CREATE TABLE IF NOT EXISTS admin_activity_logs (
     user_id INT NOT NULL,
     username VARCHAR(100) NOT NULL,
     role VARCHAR(50) NOT NULL,
-    action_type VARCHAR(100) NOT NULL, -- 'UPDATE_PRODUCT', 'ADD_PRODUCT', 'DELETE_PRODUCT', 'ADJUST_STOCK', etc.
-    entity_type VARCHAR(50) NOT NULL, -- 'product', 'user', 'order', etc.
-    entity_id VARCHAR(50) NOT NULL, -- ID of the affected entity
-    description TEXT NOT NULL, -- Human readable description of the action
-    before_data JSON, -- JSON representation of data before change
-    after_data JSON, -- JSON representation of data after change
+    action_type VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id VARCHAR(50) NOT NULL,
+    description TEXT NOT NULL,
+    before_data JSON,
+    after_data JSON,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_user_id (user_id),
@@ -428,4 +428,40 @@ CREATE TABLE inventory_logs (
     CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT fk_inventory_admin FOREIGN KEY (admin_id) REFERENCES users(id),
     CONSTRAINT fk_inventory_order FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS inventory_notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('LOW_STOCK', 'CRITICAL_STOCK', 'OUT_OF_STOCK', 'BUNDLE_LOW_STOCK', 'BUNDLE_UNAVAILABLE') NOT NULL,
+    entity_type ENUM('product', 'bundle') NOT NULL,
+    entity_id VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    priority ENUM('low', 'medium', 'high', 'critical') DEFAULT 'medium',
+    status ENUM('active', 'acknowledged', 'resolved') DEFAULT 'active',
+    metadata JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    acknowledged_at TIMESTAMP NULL,
+    acknowledged_by INT NULL,
+    resolved_at TIMESTAMP NULL,
+    resolved_by INT NULL,
+    
+    priority_order INT GENERATED ALWAYS AS (
+        CASE priority 
+            WHEN 'critical' THEN 1
+            WHEN 'high' THEN 2
+            WHEN 'medium' THEN 3
+            WHEN 'low' THEN 4
+        END
+    ) STORED,
+    
+    INDEX idx_entity (entity_type, entity_id),
+    INDEX idx_status (status),
+    INDEX idx_priority (priority),
+    INDEX idx_type (type),
+    INDEX idx_created_at (created_at),
+    INDEX idx_priority_status (priority_order, status),
+    
+    FOREIGN KEY (acknowledged_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE SET NULL
 );
