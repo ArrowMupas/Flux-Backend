@@ -68,10 +68,44 @@ const deleteBundle = async (id) => {
     await pool.query(`DELETE FROM bundles WHERE bundle_id = ?`, [id]);
 };
 
+const getBundleItemsWithProducts = async (bundleId) => {
+    const [items] = await pool.query(
+        `
+        SELECT 
+            bi.bundle_id,
+            bi.product_id,
+            bi.quantity,
+            p.name as product_name,
+            p.stock_quantity,
+            p.reserved_quantity,
+            p.price,
+            p.is_active
+        FROM bundle_items bi
+        JOIN products p ON bi.product_id = p.id
+        WHERE bi.bundle_id = ?`,
+        [bundleId]
+    );
+    return items;
+};
+
+const getBundlesByProductId = async (productId) => {
+    const [bundles] = await pool.query(
+        `
+        SELECT DISTINCT b.*
+        FROM bundles b
+        JOIN bundle_items bi ON b.bundle_id = bi.bundle_id
+        WHERE bi.product_id = ? AND b.is_active = TRUE`,
+        [productId]
+    );
+    return bundles;
+};
+
 module.exports = {
     getAllBundles,
     getBundleById,
     createBundle,
     updateBundle,
     deleteBundle,
+    getBundleItemsWithProducts,
+    getBundlesByProductId,
 };
