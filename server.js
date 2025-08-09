@@ -17,7 +17,6 @@ const limitedOfferRoute = require('./routes/limitedOfferRoute');
 const reviewRoute = require('./routes/reviewRoute');
 const reportRoute = require('./routes/reportRoute');
 const permissionRoute = require('./routes/permissionRoute');
-const afterSalesRoute = require('./routes/afterSalesRoute');
 const walkInOrderRoute = require('./routes/walkInOrderRoute');
 const specialOfferRoute = require('./routes/specialOfferRoute');
 const bundleRoute = require('./routes/bundleRoute');
@@ -57,7 +56,6 @@ app.use('/api/limited-offer', limitedOfferRoute);
 app.use('/api/reviews', reviewRoute);
 app.use('/api/reports', reportRoute);
 app.use('/api/permissions', permissionRoute);
-app.use('/api/afterSales', afterSalesRoute);
 app.use('/api/walkInOrders', walkInOrderRoute);
 app.use('/api/special-offers', specialOfferRoute);
 app.use('/api/bundles', bundleRoute);
@@ -73,7 +71,7 @@ app.use(errorMiddleware);
 // port
 app.listen(process.env.PORT, () => {
     console.log(`Node API is running on port ${process.env.PORT}`);
-    
+
     // Initialize automated inventory stock checking
     initializeStockChecker();
 });
