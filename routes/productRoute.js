@@ -4,6 +4,8 @@ const productController = require('../controllers/productController');
 const validate = require('../middlewares/validateMiddleware');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
+const adminLogMiddleware = require('../middlewares/adminLogMiddleware');
+const { ACTION_TYPES, ENTITY_TYPES } = require('../constants/adminActivityTypes');
 const {
     productSchema,
     updateProductSchema,
@@ -29,6 +31,10 @@ router.post(
     verifyToken,
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(productSchema),
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.PRODUCT,
+        action_type: ACTION_TYPES.CREATE,
+    }),
     productController.createProduct
 );
 
@@ -38,6 +44,10 @@ router.put(
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(updateProductSchema),
     autoStockCheckMiddleware({ checkProducts: true, checkBundles: true }),
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.PRODUCT,
+        action_type: ACTION_TYPES.UPDATE,
+    }),
     productController.updateProduct
 );
 
@@ -47,6 +57,10 @@ router.patch(
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(restockSchema),
     autoStockCheckMiddleware({ checkProducts: true, checkBundles: true }),
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.PRODUCT,
+        action_type: ACTION_TYPES.ADJUST_STOCK,
+    }),
     productController.updateProductStockAndPrice
 );
 
@@ -55,6 +69,11 @@ router.patch(
     verifyToken,
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
     validate(statusSchema),
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.PRODUCT,
+        action_type: (req, res) =>
+            req.body.is_active ? ACTION_TYPES.ACTIVATE_PRODUCT : ACTION_TYPES.DEACTIVATE_PRODUCT,
+    }),
     productController.updateProductActiveStatus
 );
 
@@ -62,6 +81,10 @@ router.delete(
     '/:id',
     verifyToken,
     authorizeAccess([ROLES.ADMIN, ROLES.STAFF]),
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.PRODUCT,
+        action_type: ACTION_TYPES.DELETE,
+    }),
     productController.deleteProduct
 );
 
