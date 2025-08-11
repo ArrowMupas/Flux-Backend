@@ -4,9 +4,6 @@ const HttpError = require('../helpers/errorHelper');
 const sendResponse = require('../middlewares/responseMiddleware');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
 
-const { logProductAction } = require('../helpers/smartActivityLogger');
-const { ACTION_TYPES } = require('../helpers/activityLogHelper');
-
 // Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
     const products = await productModel.getAllProducts();
@@ -36,14 +33,12 @@ const createProduct = asyncHandler(async (req, res) => {
 
     await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
 
-    await logProductAction({
-        req,
-        actionType: ACTION_TYPES.ADD_PRODUCT,
-        productId: id,
-        productName: name,
-        before: null,
-        after: { id, name, category, stock_quantity, price, image, description },
-    });
+    res.locals.logData = {
+        entity_id: id,
+        description: `Created product "${name}" (ID: ${id})`,
+        before_data: null,
+        after_data: { id, name, category, stock_quantity, price, image, description },
+    };
 
     sendResponse(res, 201, 'Product created successfully', { id, ...req.body });
 });
@@ -71,33 +66,25 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
-    const truncate = (text, maxLength = 100) => {
+    const truncate = (text, maxLength = 50) => {
         if (!text) {
             return '';
         }
         return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
     };
 
-    await logProductAction({
-        req,
-        actionType: ACTION_TYPES.UPDATE_PRODUCT,
-        productId: req.params.id,
-        productName: name,
-        before: {
+    res.locals.logData = {
+        entity_id: req.params.id,
+        description: `Updated "${name}" (ID: ${req.params.id})`,
+        before_data: {
             name: currentProduct.name,
             category: currentProduct.category,
             price: currentProduct.price,
             image: currentProduct.image,
             description: truncate(currentProduct.description),
         },
-        after: {
-            name,
-            category,
-            price,
-            image,
-            description: truncate(description),
-        },
-    });
+        after_data: { name, category, price, image, description: truncate(description) },
+    };
 
     sendResponse(res, 200, 'Product updated successfully');
 });
@@ -107,24 +94,24 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
 
-    // Get current product data for logging
-    const currentProduct = await productModel.getProductById(id);
-    if (!currentProduct) {
-        throw new HttpError(404, `Product with ID ${id} not found`);
+    const product = await productModel.getProductById(id);
+    if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
     }
 
     await productModel.updateProductActiveStatus(id, is_active);
 
-    await logProductAction({
-        req,
-        actionType: is_active ? ACTION_TYPES.ACTIVATE_PRODUCT : ACTION_TYPES.DEACTIVATE_PRODUCT,
-        productId: id,
-        productName: currentProduct.name,
-        before: { is_active: currentProduct.is_active },
-        after: { is_active },
-    });
+    res.locals.logData = {
+        entity_id: id,
+        description: `Set product "${product.name}" (ID: ${id}) to ${
+            is_active ? 'active' : 'inactive'
+        }`,
+        after_data: { is_active },
+    };
 
-    res.status(200).json({ message: `Product ${id} is now ${is_active ? 'active' : 'inactive'}` });
+    res.status(200).json({
+        message: `Product "${product.name}" is now ${is_active ? 'active' : 'inactive'}`,
+    });
 });
 
 // Update product stock and price
@@ -156,15 +143,12 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         reason: `Stock restocked by ${restock_quantity}`,
     });
 
-    await logProductAction({
-        req,
-        actionType: ACTION_TYPES.ADJUST_STOCK,
-        productId: id,
-        productName: product.name,
-        before: { stock_quantity: product.stock_quantity, price: product.price },
-        after: { stock_quantity: newStock, price },
-        details: `Stock: ${product.stock_quantity} → ${newStock}, Price: ₱${product.price} → ₱${price}`,
-    });
+    res.locals.logData = {
+        entity_id: id,
+        description: `Updated stock and price for "${product.name}" (ID: ${id})`,
+        before_data: { stock_quantity: product.stock_quantity, price: product.price },
+        after_data: { stock_quantity: newStock, price },
+    };
 
     sendResponse(res, 200, `Product ${id} updated with new stock and price.`);
 });
@@ -182,14 +166,14 @@ const deleteProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
 
-    await logProductAction({
-        req,
-        actionType: ACTION_TYPES.DELETE_PRODUCT,
-        productId: req.params.id,
-        productName: currentProduct.name,
-        before: currentProduct,
-        after: null,
-    });
+    res.locals.logData = {
+        entity_id: req.params.id,
+        description: `Deleted product "${currentProduct.name}" (ID: ${req.params.id})`,
+        before_data: {
+            name: currentProduct.name,
+        },
+        after_data: null,
+    };
 
     sendResponse(res, 200, 'Product deleted successfully');
 });

@@ -95,7 +95,6 @@ const updateUser = async (id, username, email, address, contact_number) => {
     );
     return await getUserById(id);
 };
-
 // Function to deactivate or activate a user
 const manageUser = async (id, isActive) => {
     await pool.query('UPDATE users SET is_active = ? WHERE id = ?', [isActive, id]);

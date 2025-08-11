@@ -2,7 +2,7 @@ const pool = require('../database/pool');
 
 // Function to fetch sales summary for a given date range
 const fetchSalesSummary = async (start, end) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     // Get total orders and total sales
     const [[salesStats]] = await pool.query(
@@ -35,7 +35,7 @@ const fetchSalesSummary = async (start, end) => {
 
 // Function to fetch sales summary by status for a given date range
 const fetchSalesSummaryByStatus = async (start, end) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     const [rows] = await pool.query(
         `
@@ -73,7 +73,7 @@ const fetchSalesSummaryByStatus = async (start, end) => {
 
 // Function to fetch top 10 products sold in a given date range
 const fetchTopProducts = async (start, end) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     const [rows] = await pool.query(
         `SELECT 
@@ -97,7 +97,7 @@ const fetchTopProducts = async (start, end) => {
 
 // Function to fetch sales per day for a given date range
 const fetchSalesPerDay = async (start, end) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     const [rows] = await pool.query(
         `SELECT 
@@ -116,7 +116,7 @@ const fetchSalesPerDay = async (start, end) => {
 
 // Function to fetch user report for a given date range
 const fetchUserReport = async (start, end) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     const [rows] = await pool.query(
         `SELECT 
