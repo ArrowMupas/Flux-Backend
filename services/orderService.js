@@ -16,9 +16,11 @@ const createOrder = async (
     userId,
     { payment_method, address, notes, reference_number, account_name }
 ) => {
+    // Validate befoore a transaction starts
     const cart = await validateCart(userId);
     await enforceOrderLimit(userId);
 
+    // Start a transaction
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 

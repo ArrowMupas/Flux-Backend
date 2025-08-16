@@ -34,7 +34,7 @@ app.use(cookieParser());
 const FRONTEND = process.env.FRONTEND;
 const corsOptions = {
     origin: FRONTEND,
-    credentials: true,
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
     optionsSuccessStatus: 200,
 };
 

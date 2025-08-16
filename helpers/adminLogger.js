@@ -14,6 +14,7 @@ async function logAdminAction({
 
     const { id: user_id, username, role } = req.user;
 
+    // Uses knex which is a SQL query builder
     await knex('admin_activity_logs').insert({
         user_id,
         username,

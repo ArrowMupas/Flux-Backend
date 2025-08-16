@@ -1,6 +1,8 @@
 const knex = require('knex');
 require('dotenv').config();
 
+// Added knex configuration for MySQL database connection
+// This is just a test but we might migrate to this
 const knexInstance = knex({
     client: 'mysql2',
     connection: {
