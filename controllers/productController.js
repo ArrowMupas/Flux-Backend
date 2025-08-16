@@ -4,19 +4,16 @@ const HttpError = require('../helpers/errorHelper');
 const sendResponse = require('../middlewares/responseMiddleware');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
 
-// Get all products
 const getAllProducts = asyncHandler(async (req, res) => {
     const products = await productModel.getAllProducts();
     res.status(200).json(products);
 });
 
-// Get all products
 const getAllProductsAdmin = asyncHandler(async (req, res) => {
     const products = await productModel.getAllProductsAdmin();
     res.status(200).json(products);
 });
 
-// Get a product by ID
 const getProductById = asyncHandler(async (req, res) => {
     const product = await productModel.getProductById(req.params.id);
 
@@ -27,7 +24,6 @@ const getProductById = asyncHandler(async (req, res) => {
     res.status(200).json(product);
 });
 
-// Create a new product
 const createProduct = asyncHandler(async (req, res) => {
     const { id, name, category, stock_quantity, price, image, description } = req.body;
 
@@ -43,7 +39,6 @@ const createProduct = asyncHandler(async (req, res) => {
     sendResponse(res, 201, 'Product created successfully', { id, ...req.body });
 });
 
-// Update a product
 const updateProduct = asyncHandler(async (req, res) => {
     const { name, category, price, image, description } = req.body;
 
@@ -66,6 +61,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
+    // Helper function to truncate long text for logging
     const truncate = (text, maxLength = 50) => {
         if (!text) {
             return '';
@@ -89,7 +85,6 @@ const updateProduct = asyncHandler(async (req, res) => {
     sendResponse(res, 200, 'Product updated successfully');
 });
 
-// Update product is_active status
 const updateProductActiveStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { is_active } = req.body;
@@ -114,7 +109,6 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
     });
 });
 
-// Update product stock and price
 const updateProductStockAndPrice = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { restock_quantity, price } = req.body;
@@ -153,9 +147,7 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
     sendResponse(res, 200, `Product ${id} updated with new stock and price.`);
 });
 
-// Delete a product
 const deleteProduct = asyncHandler(async (req, res) => {
-    // Get current product data for logging
     const currentProduct = await productModel.getProductById(req.params.id);
     if (!currentProduct) {
         throw new HttpError(404, `Cannot find product with ID ${req.params.id}`);

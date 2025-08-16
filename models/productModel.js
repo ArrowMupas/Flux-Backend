@@ -11,13 +11,11 @@ const getAllProductsAdmin = async () => {
     return products;
 };
 
-// Function to get a product by ID
 const getProductById = async (id) => {
     const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
     return product[0];
 };
 
-// Function to add a new product
 const addProduct = async (id, name, category, stock_quantity, price, image, description) => {
     const [result] = await pool.query(
         'INSERT INTO products (id, name, category, stock_quantity, price, image, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -26,7 +24,6 @@ const addProduct = async (id, name, category, stock_quantity, price, image, desc
     return result;
 };
 
-// Function to update a product
 const updateProduct = async (id, name, category, price, image, description) => {
     const [result] = await pool.query(
         'UPDATE products SET name = ?, category = ?, price = ?, image = ?, description = ? WHERE id = ?',
@@ -35,7 +32,6 @@ const updateProduct = async (id, name, category, price, image, description) => {
     return result;
 };
 
-// Function to update is_active status of a product
 const updateProductActiveStatus = async (productId, isActive) => {
     const [result] = await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [
         isActive,
@@ -44,7 +40,6 @@ const updateProductActiveStatus = async (productId, isActive) => {
     return result;
 };
 
-// Function to update stock quantity and price of a product
 const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
     await pool.query('UPDATE products SET stock_quantity = ?, price = ? WHERE id = ?', [
         stockQuantity,
@@ -53,13 +48,11 @@ const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
     ]);
 };
 
-// Function to delete a product
 const deleteProduct = async (id) => {
     const [result] = await pool.query('DELETE FROM products WHERE id = ?', [id]);
     return result;
 };
 
-// Get price of a product
 const getProductPrice = async (productId, connection = pool) => {
     const [rows] = await connection.query('SELECT price FROM products WHERE id = ?', [productId]);
 
@@ -70,7 +63,6 @@ const getProductPrice = async (productId, connection = pool) => {
     return rows[0].price;
 };
 
-// Function to check and reserve stock for a product
 const checkAndReserveStock = async (productId, quantity, orderId, connection) => {
     // Lock product row for update
     const [rows] = await connection.query(

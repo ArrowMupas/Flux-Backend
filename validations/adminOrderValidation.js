@@ -1,7 +1,6 @@
 const Joi = require('joi');
 const validate = require('../helpers/validateHelper');
 
-// Schema of status update
 const statusUpdateSchema = Joi.object({
     status: Joi.string()
         .valid(
