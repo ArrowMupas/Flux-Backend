@@ -1,4 +1,5 @@
-// constants/adminActivityTypes.js
+// Activity types for admin actions for logging and tracking purposes
+// Types of Admin Actions
 const ACTION_TYPES = {
     CREATE: 'CREATE',
     UPDATE: 'UPDATE',
@@ -8,6 +9,7 @@ const ACTION_TYPES = {
     ADJUST_STOCK: 'ADJUST_STOCK',
 };
 
+// Entity types that can be affected by admin actions
 const ENTITY_TYPES = {
     PRODUCT: 'PRODUCT',
     ORDER: 'ORDER',
