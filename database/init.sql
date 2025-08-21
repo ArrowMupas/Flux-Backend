@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS staff_permissions (
     name VARCHAR(100) NOT NULL UNIQUE
 );
 
-INSERT INTO staff_permissions (name) VALUES
+INSERT IGNORE INTO staff_permissions (name) VALUES
 ('get_sales_summary'),
 ('get_top_products'),
 ('get_daily_sales'),
@@ -269,7 +269,7 @@ CREATE TABLE IF NOT EXISTS product_reviews (
 
 -- Seeds for easier testing (why did we not do this earlier)
 -- Seed products
-INSERT INTO products (id, name, category, stock_quantity, price, image, description, created_at)
+INSERT IGNORE INTO products (id, name, category, stock_quantity, price, image, description, created_at)
 VALUES
 ('P001', 'The Ballad of Q', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302194/alas_uploads/iknwr95caffzjwbkkhdu.jpg', 'A mysterious sauce with a bold, rich flavor.', '2025-05-30 09:14:12'),
 ('P002', 'Big Bald Bob', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302182/alas_uploads/bbounuzrfo02cbronbme.jpg', 'Intense and strong, just like Bob himself.', '2025-05-30 09:14:12'),
@@ -277,14 +277,14 @@ VALUES
 ('P004', 'Carbon', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302380/alas_uploads/gpdvbwvqnx1l2ri4fbx9.jpg', 'Smoky and dark — for those who like it bold.', '2025-05-30 09:14:12'),
 ('P005', 'Catch 22', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749303226/alas_uploads/n2yltnqql5zvciosdugo.jpg', 'A twisty blend that keeps you coming back.', '2025-05-30 09:14:12');
 
-INSERT INTO products (id, name, category, stock_quantity, price, image, description)
+INSERT IGNORE INTO products (id, name, category, stock_quantity, price, image, description)
 VALUES
 ('P006', 'Gypsy Bu', 'Condiment', 40, 999.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302550/alas_uploads/zgb62etqzs0pmyohucar.jpg', 'Rises in heat and flavor.'),
 ('P007', 'Grin', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302469/alas_uploads/y3alljz8lpsne23jbdm2.jpg', 'Hits quietly, leaves a lasting impression.'),
 ('P008', 'Birds Eye Gambit', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302297/alas_uploads/gzl6lzcevjp8uhyza6h8.jpg', 'Hits quietly, leaves a lasting impression.');
 
 -- Seed users
-INSERT INTO users (username, address, contact_number, role_id, email, password_hash, created_at, updated_at)
+INSERT IGNORE INTO users (username, address, contact_number, role_id, email, password_hash, created_at, updated_at)
 VALUES
 ('walter_white', '308 Negra Arroyo Lane, Albuquerque', '5051234567', 1, 'heisenberg@bb.com', '$2b$10$HeisenbergHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
 ('jesse_pinkman', '9809 Margo Street, Albuquerque', '5057654321', 2, 'yo@bb.com', '$2b$10$JesseHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
@@ -293,7 +293,7 @@ VALUES
 ('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12');
 
 -- Seed orders
-INSERT INTO orders (
+INSERT IGNORE INTO orders (
   id,
   customer_id,
   order_date,
@@ -317,7 +317,7 @@ INSERT INTO orders (
 ('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0, NULL, 300.00);
 
 
-INSERT INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
+INSERT IGNORE INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
 ('ALAS202505010001', 'P001', 2, 300.00, 600.00),
 ('ALAS202505020002', 'P002', 2, 400.00, 800.00),
 ('ALAS202505020002', 'P005', 2, 400.00, 800.00),
