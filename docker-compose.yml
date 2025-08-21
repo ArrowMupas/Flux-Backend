@@ -1,0 +1,80 @@
+services:
+    backend:
+        build: .
+        image: alas-backend
+        container_name: my-backend
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        env_file:
+            - .env
+        environment:
+            - DB_HOST=mysql
+        depends_on:
+            - mysql
+        networks:
+            - app-network
+        volumes:
+            - ./database:/app/database:ro
+
+    mysql:
+        image: mysql:8
+        container_name: my-mysql
+        restart: unless-stopped
+        ports:
+            - '3307:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=arrow
+            - MYSQL_DATABASE=sauce
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - app-network
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-parrow']
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+    db-init:
+        image: alas-backend # ← Use the same image as backend
+        container_name: db-initializer
+        restart: 'no'
+        command: ['node', 'database/initDB.js']
+        env_file:
+            - .env
+        environment:
+            - DB_HOST=mysql
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - app-network
+        volumes:
+            - ./database:/app/database:ro
+        # REMOVED: build: .
+
+    db-seed:
+        image: alas-backend # ← Use the same image as backend
+        container_name: db-seeder
+        restart: 'no'
+        command: ['node', 'database/seedAccounts.js']
+        env_file:
+            - .env
+        environment:
+            - DB_HOST=mysql
+        depends_on:
+            mysql:
+                condition: service_healthy
+        networks:
+            - app-network
+        volumes:
+            - ./database:/app/database:ro
+        # REMOVED: build: .
+
+volumes:
+    mysql_data:
+
+networks:
+    app-network:
+        driver: bridge
