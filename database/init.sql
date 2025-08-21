@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS user_permissions (
     FOREIGN KEY (permission_id) REFERENCES staff_permissions(id) ON DELETE CASCADE
 );
 
-CREATE TABLE coupons (
+CREATE TABLE IF NOT EXISTS coupons (
   id              INT PRIMARY KEY AUTO_INCREMENT,
   code            VARCHAR(50) UNIQUE NOT NULL,
   description     TEXT,
@@ -102,7 +102,7 @@ CREATE TABLE coupons (
   updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE coupon_redemptions (
+CREATE TABLE IF NOT EXISTS coupon_redemptions (
   id          INT PRIMARY KEY AUTO_INCREMENT,
   coupon_id   INT NOT NULL,
   user_id     INT NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE coupon_redemptions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE coupon_usages (
+CREATE TABLE IF NOT EXISTS coupon_usages (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
   coupon_code VARCHAR(50) NOT NULL,
@@ -393,7 +393,7 @@ CREATE TABLE IF NOT EXISTS admin_activity_logs (
     INDEX idx_created_at (created_at)
 );
 
-CREATE TABLE inventory_logs (
+CREATE TABLE IF NOT EXISTS inventory_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     product_id VARCHAR(255) NOT NULL,
     order_id VARCHAR(50) NULL,
