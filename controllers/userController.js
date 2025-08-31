@@ -8,7 +8,6 @@ const userService = require('../services/userService');
 const crypto = require('crypto');
 require('dotenv').config();
 
-// Register a user
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
 
@@ -17,7 +16,6 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(201).json(result);
 });
 
-// Authenticate user
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
@@ -26,14 +24,13 @@ const loginUser = asyncHandler(async (req, res) => {
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.json({ token });
 });
 
-// Logout User
 const logoutUser = asyncHandler(async (req, res) => {
     res.clearCookie('token', {
         httpOnly: true,
@@ -44,13 +41,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 });
 
-// Retrieve user data
 const getUserProfile = asyncHandler(async (req, res) => {
     const userData = await userService.getProfileLogic(req.user.id);
     res.json(userData);
 });
 
-// Update user
 const updateUser = asyncHandler(async (req, res) => {
     const { username, address, contact_number } = req.body;
 
