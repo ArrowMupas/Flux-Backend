@@ -119,13 +119,16 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Product with ID ${id} not found`);
     }
 
-    // Add to current stock
-    const newStock = product.stock_quantity + restock_quantity;
-    if (newStock < 0) {
+    if (product.stock_quantity + restock_quantity < 0) {
         throw new HttpError(400, `Resulting stock cannot be negative`);
     }
 
-    await productModel.updateProductStockAndPrice(id, newStock, price);
+    // Add to current stock
+    const updatedProduct = await productModel.updateProductStockAndPrice(
+        id,
+        restock_quantity,
+        price
+    );
 
     await logInventoryChange({
         productId: id,
@@ -133,7 +136,7 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         action: 'add_stock',
         changeAvailable: restock_quantity,
         oldAvailable: product.stock_quantity,
-        newAvailable: newStock,
+        newAvailable: updatedProduct.stock_quantity,
         reason: `Stock restocked by ${restock_quantity}`,
     });
 
@@ -141,7 +144,7 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         entity_id: id,
         description: `Updated stock and price for "${product.name}" (ID: ${id})`,
         before_data: { stock_quantity: product.stock_quantity, price: product.price },
-        after_data: { stock_quantity: newStock, price },
+        after_data: { stock_quantity: updatedProduct.stock_quantity, price },
     };
 
     sendResponse(res, 200, `Product ${id} updated with new stock and price.`);

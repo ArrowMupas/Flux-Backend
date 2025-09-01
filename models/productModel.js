@@ -40,14 +40,23 @@ const updateProductActiveStatus = async (productId, isActive) => {
     return result;
 };
 
-const updateProductStockAndPrice = async (productId, stockQuantity, price) => {
-    await pool.query('UPDATE products SET stock_quantity = ?, price = ? WHERE id = ?', [
-        stockQuantity,
-        price,
-        productId,
-    ]);
-};
+const updateProductStockAndPrice = async (productId, stockChange, price) => {
+    // Atomically update stock and price, returning the new stock
+    const [result] = await pool.query(
+        `UPDATE products
+         SET stock_quantity = stock_quantity + ?, price = ?
+         WHERE id = ?`,
+        [stockChange, price, productId]
+    );
 
+    // Optionally, get the new stock value
+    const [[updatedProduct]] = await pool.query(
+        'SELECT stock_quantity, price FROM products WHERE id = ?',
+        [productId]
+    );
+
+    return updatedProduct; // { stock_quantity: newStock, price }
+};
 const deleteProduct = async (id) => {
     const [result] = await pool.query('DELETE FROM products WHERE id = ?', [id]);
     return result;
