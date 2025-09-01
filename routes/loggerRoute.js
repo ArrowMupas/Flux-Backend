@@ -15,7 +15,7 @@ router.get('/signins', async (req, res) => {
 
         // Match exact login messages
         const response = await axios.post(
-            `https://cloud.axiom.co/api/v1/datasets/_apl?format=tabular`,
+            `https://cloud.axiom.co/api/v1/datasets/_apl?format=legacy`,
             {
                 apl: `['${dataset}'] | where message =~ "login"`, // ← APL query with dataset name
                 startTime: sevenDaysAgo,
