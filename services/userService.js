@@ -2,10 +2,11 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
-const sendEmail = require('../utilities/emailUtility');
+const { sendEmail } = require('../utilities/emailUtility');
 const verificationEmail = require('../helpers/verificationEmailTemplate');
 const { ensureExist, ensureNotExist } = require('../helpers/existenceHelper');
 const HttpError = require('../helpers/errorHelper');
+const logger = require('../utilities/logger');
 
 const registerLogic = async ({ username, email, password }) => {
     const userExists = await userModel.getUserByUsername(username);
@@ -56,7 +57,11 @@ const loginLogic = async (username, password) => {
         throw new HttpError(401, 'Invalid credentials');
     }
 
-    await userModel.logUserLogin(user.id, user.username);
+    logger.info('login', {
+        userId: user.id,
+        username: user.username,
+        role: user.role_name,
+    });
 
     if (!process.env.SECRET_KEY) {
         throw new Error('SECRET_KEY environment variable is not defined.');
