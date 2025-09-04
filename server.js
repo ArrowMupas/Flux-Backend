@@ -27,6 +27,7 @@ const couponRoute = require('./routes/couponRoute');
 const logRoute = require('./routes/logRoute');
 const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
 const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
+const contactRoutes = require('./routes/contactRoute');
 
 // Cookies
 app.use(cookieParser());
@@ -66,6 +67,7 @@ app.use('/api/coupons', couponRoute);
 app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api/logs', logRoute);
 app.use('/api', uploadRoute);
+app.use('/api/contact', contactRoutes);
 
 // error middleware
 app.use(errorMiddleware);
