@@ -29,7 +29,7 @@ const createProduct = asyncHandler(async (req, res) => {
 
     await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
 
-    res.locals.logData = {
+    res.locals.auditLog = {
         entity_id: id,
         description: `Created product "${name}" (ID: ${id})`,
         before_data: null,
@@ -61,25 +61,30 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
     }
 
-    // Helper function to truncate long text for logging
     const truncate = (text, maxLength = 50) => {
-        if (!text) {
-            return '';
-        }
-        return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
+        if (!text) return '';
+        const clean = text.trim();
+        return clean.length > maxLength ? `${clean.slice(0, maxLength)}…` : clean;
     };
 
-    res.locals.logData = {
+    res.locals.auditLog = {
         entity_id: req.params.id,
+        entity_name: currentProduct.name,
         description: `Updated "${name}" (ID: ${req.params.id})`,
         before_data: {
             name: currentProduct.name,
             category: currentProduct.category,
-            price: currentProduct.price,
+            price: Number(currentProduct.price),
             image: currentProduct.image,
             description: truncate(currentProduct.description),
         },
-        after_data: { name, category, price, image, description: truncate(description) },
+        after_data: {
+            name,
+            category,
+            price: Number(price),
+            image,
+            description: truncate(description),
+        },
     };
 
     sendResponse(res, 200, 'Product updated successfully');
@@ -96,11 +101,13 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
 
     await productModel.updateProductActiveStatus(id, is_active);
 
-    res.locals.logData = {
+    res.locals.auditLog = {
         entity_id: id,
+        entity_name: product.name,
         description: `Set product "${product.name}" (ID: ${id}) to ${
             is_active ? 'active' : 'inactive'
         }`,
+        before_data: { is_active: product.is_active },
         after_data: { is_active },
     };
 
@@ -140,8 +147,9 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
         reason: `Stock restocked by ${restock_quantity}`,
     });
 
-    res.locals.logData = {
+    res.locals.auditLog = {
         entity_id: id,
+        entity_name: product.name,
         description: `Updated stock and price for "${product.name}" (ID: ${id})`,
         before_data: { stock_quantity: product.stock_quantity, price: product.price },
         after_data: { stock_quantity: updatedProduct.stock_quantity, price },
@@ -161,7 +169,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot delete product with ID ${req.params.id}`);
     }
 
-    res.locals.logData = {
+    res.locals.auditLog = {
         entity_id: req.params.id,
         description: `Deleted product "${currentProduct.name}" (ID: ${req.params.id})`,
         before_data: {

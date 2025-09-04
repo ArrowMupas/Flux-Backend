@@ -18,7 +18,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
-
     const { token } = await userService.loginLogic(username, password);
 
     res.cookie('token', token, {
