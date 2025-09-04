@@ -28,8 +28,8 @@ const getOrders = asyncHandler(async (req, res) => {
     const status = [].concat(req.query.status || []);
     const paymentMethods = [].concat(req.query.payment_method || []);
 
-    const data = await orderService.getOrders(userId, { status, payment_methods: paymentMethods });
-
+    const monthYear = req.query.month_year || null;
+    const data = await orderService.getOrders(userId, { status, payment_methods: paymentMethods, month_year: monthYear });
     return sendResponse(res, 200, 'Orders retrieved', data);
 });
 
