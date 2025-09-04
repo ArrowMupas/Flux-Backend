@@ -8,6 +8,8 @@ const {
 } = require('../validations/adminUserValidation');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
+const adminLogMiddleware = require('../middlewares/adminLogMiddleware');
+const { ACTION_TYPES, ENTITY_TYPES } = require('../constants/adminActivityTypes');
 const ROLES = require('../constants/roles');
 
 // TEMPORARY BACKDOOR DON'T LEAVE ON PRODUCTION
@@ -23,15 +25,37 @@ router.get('/', adminUserController.getUsers);
 router.get('/:id', adminUserController.getUserById);
 
 // UPDATE user by ID
-router.put('/:id', validateUserCreation, adminUserController.updateUser);
+router.put(
+    '/:id',
+    validateUserCreation,
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.USER,
+        action_type: ACTION_TYPES.UPDATE,
+    }),
+    adminUserController.updateUser
+);
 
-// PATCH user status (enable/disable, etc.)
-router.patch('/manage/:id', validateStatus, adminUserController.manageUser);
+// PATCH user status (togglr)
+router.patch(
+    '/manage/:id',
+    validateStatus,
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.USER,
+        action_type: (req) =>
+            req.body.is_active ? ACTION_TYPES.ACTIVATE_USER : ACTION_TYPES.DEACTIVATE_USER,
+    }),
+    adminUserController.manageUser
+);
 
 // REGISTER new user
-router.post('/register', validateRegister, adminUserController.createUser);
-
-// BULK CREATE users with dates
-router.post('/back', adminUserController.createUsersWithDates);
+router.post(
+    '/register',
+    validateRegister,
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.USER,
+        action_type: ACTION_TYPES.CREATE,
+    }),
+    adminUserController.createUser
+);
 
 module.exports = router;

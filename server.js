@@ -24,7 +24,7 @@ const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
 const couponRoute = require('./routes/couponRoute');
-const loggerRoute = require('./routes/loggerRoute');
+const logRoute = require('./routes/logRoute');
 const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
 const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
 
@@ -64,7 +64,7 @@ app.use('/api/notifications', notificationRoute);
 app.use('/api/admin-activity-logs', adminActivityLogRoute);
 app.use('/api/coupons', couponRoute);
 app.use('/api/inventory-notifications', inventoryNotificationRoute);
-app.use('/api/logs', loggerRoute);
+app.use('/api/logs', logRoute);
 app.use('/api', uploadRoute);
 
 // error middleware

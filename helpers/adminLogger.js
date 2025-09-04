@@ -1,31 +1,39 @@
 // By Yours truly
-const knex = require('../database/knex');
+const logger = require('../utilities/logger');
 
 async function logAdminAction({
     req,
     action_type,
     entity_type,
     entity_id,
+    entity_name,
     description,
     before_data = null,
     after_data = null,
 }) {
-    if (!req.user) return; // Skip if no user info
+    if (!req.user) return;
 
     const { id: user_id, username, role } = req.user;
 
-    // Uses knex which is a SQL query builder
-    await knex('admin_activity_logs').insert({
-        user_id,
-        username,
-        role,
-        action_type,
-        entity_type,
-        entity_id,
-        description,
-        before_data: before_data ? JSON.stringify(before_data) : null,
-        after_data: after_data ? JSON.stringify(after_data) : null,
-    });
+    try {
+        logger.info('Admin action', {
+            user_id,
+            username,
+            role,
+            action_type,
+            entity_type,
+            entity_id,
+            entity_name,
+            description,
+            before_data,
+            after_data,
+            ip: req.ip,
+            user_agent: req.get('user-agent'),
+            timestamp: new Date().toISOString(),
+        });
+    } catch (err) {
+        console.error('Failed to send log:', err);
+    }
 }
 
 module.exports = logAdminAction;

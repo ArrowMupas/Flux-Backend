@@ -8,10 +8,10 @@ function adminLogMiddleware({ entity_type, action_type }) {
                 if (res.statusCode >= 400) {
                     return;
                 }
-                if (!res.locals.logData) {
+                if (!res.locals.auditLog) {
                     return;
                 }
-                if (!res.locals.logData.entity_id) {
+                if (!res.locals.auditLog.entity_id) {
                     return;
                 }
 
@@ -23,7 +23,7 @@ function adminLogMiddleware({ entity_type, action_type }) {
                     req,
                     entity_type,
                     action_type: resolvedActionType,
-                    ...(res.locals.logData || {}), // Additional data from res.locals
+                    ...(res.locals.auditLog || {}), // Additional data from res.locals
                 });
             } catch (err) {
                 console.error('Failed to log admin action:', err);
