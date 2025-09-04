@@ -60,9 +60,9 @@ const createOrder = async (
 
 // Logic of getting orders
 const getOrders = async (userId, filters = {}) => {
-    const { status = [], payment_methods = [] } = filters;
+    const { status = [], payment_methods = [], month_year = null } = filters;
 
-    const orders = await orderModel.getFilteredOrders(userId, status, payment_methods);
+    const orders = await orderModel.getFilteredOrders(userId, status, payment_methods, month_year);
 
     return await Promise.all(
         orders.map(async (o) => ({

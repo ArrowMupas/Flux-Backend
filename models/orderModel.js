@@ -81,7 +81,7 @@ const getAllOrdersByUser = async (userId) => {
     return rows;
 };
 
-const getFilteredOrders = async (userId, statuses = [], paymentMethods = []) => {
+const getFilteredOrders = async (userId, statuses = [], paymentMethods = [], monthYear = null) => {
     let query = `
         SELECT 
             o.*, 
@@ -102,6 +102,12 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = []) => 
     if (paymentMethods.length) {
         query += ` AND p.method IN (${paymentMethods.map(() => '?').join(',')})`;
         params.push(...paymentMethods);
+    }
+
+    if (monthYear) {
+        // format is 'YYYY-MM'
+        query += ` AND DATE_FORMAT(o.order_date, '%Y-%m') = ?`;
+        params.push(monthYear);
     }
 
     // Sort by newest first
