@@ -1,5 +1,6 @@
 const orderModel = require('../models/orderModel');
 const cartModel = require('../models/cartModel');
+const cartService = require('../services/cartService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const {
@@ -47,7 +48,7 @@ const createOrder = async (
             connection,
         });
 
-        await cartModel.clearCart(cart.cart_id || cart.id, connection);
+        await cartService.clearCart(cart.cart_id || cart.id, connection);
         await connection.commit();
         return { orderId, paymentId };
     } catch (error) {

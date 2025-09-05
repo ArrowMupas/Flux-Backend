@@ -2,65 +2,98 @@ const pool = require('../database/pool');
 const cartModel = require('../models/cartModel');
 const couponModel = require('../models/couponModel');
 const HttpError = require('../helpers/errorHelper');
+const { getCache, setCache, invalidateCache } = require('../utilities/cache');
 
-// Get or create cart for user
+// This code is the most disgusting thing.
+// Cache key generators for carts, its items, and totals
+const CART_KEY = (userId) => `cart:${userId}`;
+const CART_ITEMS_KEY = (cartId) => `cart_items:${cartId}`;
+const CART_TOTAL_KEY = (userId) => `cart_total:${userId}`;
+
+// Get or create a cart for a specific user.
 const getOrCreateCart = async (userId) => {
+    const cacheKey = CART_KEY(userId);
+
+    // Try fetching cart from cache first
+    const cachedCart = getCache(cacheKey);
+    if (cachedCart) {
+        return cachedCart;
+    }
+
+    // Fetch cart from DB, if no cache
     let cart = await cartModel.getCartByUserId(userId);
+
+    // Create cart if not found
     if (!cart) {
         await cartModel.createCart(userId);
         cart = await cartModel.getCartByUserId(userId);
     }
+
+    // Cache cart for 5 minutes (120 seconds)
+    setCache(cacheKey, cart, 120);
     return cart;
 };
 
-// Get all items in a cart
 const getCartItemsByCartId = async (cartId) => {
-    const cart = await cartModel.getCartItemsByCartId(cartId);
+    const cacheKey = CART_ITEMS_KEY(cartId);
 
-    if (cart?.coupon_code && cart?.user_id) {
-        try {
-            await applyCouponToCart(cart.user_id, cart.coupon_code);
-            return await cartModel.getCartItemsByCartId(cartId);
-        } catch (err) {
-            console.warn('Coupon removed due to invalidation:', err.message);
-            await cartModel.removeCouponFromCart(cart.user_id);
-            return await cartModel.getCartItemsByCartId(cartId);
-        }
+    // Try fetching cart items from cache
+    const cachedItems = getCache(cacheKey);
+    if (cachedItems) {
+        return cachedItems;
     }
 
+    // Fetch items from DB
+    const cart = await cartModel.getCartItemsByCartId(cartId);
+    if (!cart) {
+        throw new HttpError(404, 'Cart not found');
+    }
+
+    // Cache items for 2 minutes (120 seconds)
+    setCache(cacheKey, cart, 120);
     return cart;
 };
 
-// Add product to cart
 const addToCart = async (cartId, productId, quantity = 1) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
+        // Fetch product stock
         const product = await cartModel.getProductStock(connection, productId);
         if (!product || product.length === 0) {
             throw new HttpError(404, 'Product not found');
         }
-
+        // Save stock here
         const stockQty = product[0].stock_quantity;
-        if (quantity > stockQty) {
-            throw new HttpError(400, 'Requested quantity exceeds stock');
-        }
 
+        // Fetch cart items
         const existingItem = await cartModel.getCartItem(connection, cartId, productId);
+
         if (existingItem.length > 0) {
-            // Update quantity by adding to existing
+            // Update quantity if item already exists
             const newQuantity = existingItem[0].quantity + quantity;
-            if (newQuantity > stockQty) {
-                throw new HttpError(400, 'Total quantity exceeds stock');
-            }
+            if (newQuantity > stockQty) throw new HttpError(400, 'Total quantity exceeds stock');
             await cartModel.updateCartItem(connection, cartId, productId, newQuantity);
         } else {
+            // Insert new cart item
+            if (quantity > stockQty) throw new HttpError(400, 'Requested quantity exceeds stock');
             await cartModel.insertCartItem(connection, cartId, productId, quantity);
         }
 
         await connection.commit();
-        return await getCartItemsByCartId(cartId);
+
+        // Invalidate cache after modification, fetch updated cart
+        const cart = await cartModel.getCartById(connection, cartId);
+        invalidateCache(CART_ITEMS_KEY(cartId));
+        invalidateCache(CART_TOTAL_KEY(cart.user_id));
+
+        // Reapply coupon if it exists
+        if (cart.coupon_code) {
+            await applyCouponToCart(cart.user_id, cart.coupon_code);
+        }
+
+        return { message: 'Item added to cart successfully' };
     } catch (err) {
         await connection.rollback();
         throw err;
@@ -69,39 +102,43 @@ const addToCart = async (cartId, productId, quantity = 1) => {
     }
 };
 
-// Update cart item quantity (directly sets it)
 const updateCartItemQuantity = async (cartId, productId, quantity) => {
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
+        // Fetch product stock
         const product = await cartModel.getProductStock(connection, productId);
         if (!product || product.length === 0) {
             throw new HttpError(404, 'Product not found');
         }
-
         const stockQty = product[0].stock_quantity;
 
         if (quantity > stockQty) {
             throw new HttpError(400, 'Requested quantity exceeds stock');
         }
 
-        let result;
-
         if (quantity <= 0) {
-            // Remove item if quantity is 0 or less
-            result = await cartModel.removeCartItemByCartId(connection, cartId, productId);
+            // Remove item if quantity is zero or negative
+            await cartModel.removeCartItemByCartId(connection, cartId, productId);
         } else {
-            // Update quantity normally
-            result = await cartModel.updateCartItem(connection, cartId, productId, quantity);
-        }
-
-        if (result.affectedRows === 0) {
-            throw new HttpError(404, 'Cart item not found');
+            const result = await cartModel.updateCartItem(connection, cartId, productId, quantity);
+            if (result.affectedRows === 0) throw new HttpError(404, 'Cart item not found');
         }
 
         await connection.commit();
-        return await getCartItemsByCartId(cartId);
+
+        // Invalidate cache
+        const cart = await cartModel.getCartById(connection, cartId);
+        invalidateCache(CART_ITEMS_KEY(cartId));
+        invalidateCache(CART_TOTAL_KEY(cart.user_id));
+
+        // Reapply coupon if it exists
+        if (cart.coupon_code) {
+            await applyCouponToCart(cart.user_id, cart.coupon_code);
+        }
+
+        return { message: 'Cart updated successfully' };
     } catch (err) {
         await connection.rollback();
         throw err;
@@ -110,54 +147,100 @@ const updateCartItemQuantity = async (cartId, productId, quantity) => {
     }
 };
 
-// Remove a product from the cart
+// Removes a single item from cart
 const removeCartItem = async (cartId, productId) => {
-    const result = await cartModel.removeCartItem(cartId, productId);
-    if (result.affectedRows === 0) {
-        throw new HttpError(404, 'Cart item not found');
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        // Remove the cart item
+        const result = await cartModel.removeCartItemByCartId(connection, cartId, productId);
+        if (result.affectedRows === 0) throw new HttpError(404, 'Cart item not found');
+
+        // Now fetch the updated cart
+        const updatedCart = await cartModel.getCartById(connection, cartId);
+        if (!updatedCart) throw new HttpError(404, 'Cart not found');
+
+        // Invalidate cache
+        invalidateCache(CART_ITEMS_KEY(cartId));
+        invalidateCache(CART_TOTAL_KEY(updatedCart.user_id));
+
+        // Reapply coupon if it exists
+        if (updatedCart.coupon_code) {
+            try {
+                await applyCouponToCart(updatedCart.user_id, updatedCart.coupon_code, connection);
+            } catch (err) {
+                console.warn('Coupon removed due to invalidation:', err.message);
+                await cartModel.removeCouponFromCart(connection, updatedCart.user_id);
+            }
+        }
+
+        await connection.commit();
+        return { message: 'Item removed from cart successfully' };
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
     }
-    return result;
 };
 
-// Clear all items from the cart
-const clearCart = async (cartId) => {
-    const result = await cartModel.clearCart(cartId);
-    if (result.affectedRows === 0) {
-        throw new HttpError(404, 'Cart is already empty');
+const clearCart = async (cartId, connection = null) => {
+    const useTransaction = !!connection;
+    const conn = connection || (await pool.getConnection());
+
+    if (!useTransaction) await conn.beginTransaction();
+
+    try {
+        // Clear the cart
+        const result = await cartModel.clearCart(conn, cartId);
+        if (result.affectedRows === 0) throw new HttpError(404, 'Cart is already empty');
+
+        //. refetch cart, and also clear the coupon
+        const cart = await cartModel.getCartById(conn, cartId);
+        if (cart && cart.coupon_code) {
+            await cartModel.removeCouponFromCart(conn, cart.user_id);
+        }
+
+        // Invalidate cache
+        invalidateCache(CART_ITEMS_KEY(cartId));
+        invalidateCache(CART_TOTAL_KEY(cart.user_id));
+
+        if (!useTransaction) await conn.commit();
+
+        return { message: 'Cart cleared successfully' };
+    } catch (err) {
+        if (!useTransaction) await conn.rollback();
+        throw err;
+    } finally {
+        if (!useTransaction) conn.release();
     }
-    return result;
 };
 
-const applyCouponToCart = async (userId, code) => {
-    const cart = await cartModel.getCartByUserId(userId);
-    if (!cart) {
-        throw new HttpError(404, 'Cart not found');
-    }
+const applyCouponToCart = async (userId, code, connection = null) => {
+    const conn = connection || pool;
 
-    const cartData = await cartModel.getCartItemsByCartId(cart.id);
+    // fetch cart
+    const cart = await cartModel.getCartByUserIdTransaction(conn, userId);
+    if (!cart) throw new HttpError(404, 'Cart not found');
+
+    const cartData = await cartModel.getCartItemsByCartIdTransaction(conn, cart.id);
     if (!cartData.items || cartData.items.length === 0) {
         throw new HttpError(400, 'Cannot apply a coupon to an empty cart');
     }
 
-    const coupon = await couponModel.getCouponByCode(code);
-    if (!coupon || !coupon.is_active) {
-        throw new HttpError(400, 'Invalid or inactive coupon');
-    }
+    // fetch coupon
+    const coupon = await couponModel.getCouponByCode(conn, code);
+    if (!coupon || !coupon.is_active) throw new HttpError(400, 'Invalid or inactive coupon');
 
+    // Validate coupon usage limits
     if (coupon.usage_limit !== null && coupon.times_used >= coupon.usage_limit) {
         throw new HttpError(400, 'This coupon has reached its usage limit.');
     }
 
-    const now = new Date();
-    const startsAt = coupon.starts_at && new Date(coupon.starts_at);
-    const expiresAt = coupon.expires_at && new Date(coupon.expires_at);
-
-    if ((startsAt && now < startsAt) || (expiresAt && now > expiresAt)) {
-        throw new HttpError(400, 'Coupon is not valid at this time');
-    }
-
+    // Validate coupon per user limit
     if (coupon.per_user_limit) {
-        const usageCount = await couponModel.getUserCouponUsageCount(userId, code);
+        const usageCount = await couponModel.getUserCouponUsageCount(conn, userId, code);
         if (usageCount >= coupon.per_user_limit) {
             throw new HttpError(
                 400,
@@ -166,21 +249,21 @@ const applyCouponToCart = async (userId, code) => {
         }
     }
 
-    const cartTotal = await cartModel.getCartTotal(userId);
+    const cartTotal = await cartModel.getCartTotal(conn, userId);
 
+    // Calculate discount
     let discount = 0;
-    if (coupon.discount_type === 'fixed') {
-        discount = coupon.discount_value;
-    } else if (coupon.discount_type === 'percentage') {
+    if (coupon.discount_type === 'fixed') discount = coupon.discount_value;
+    else if (coupon.discount_type === 'percentage') {
         discount = (cartTotal * coupon.discount_value) / 100;
     }
-
     discount = Math.min(discount, cartTotal);
 
-    await cartModel.updateCartCoupon(userId, {
-        coupon_code: code,
-        discount_total: discount,
-    });
+    await cartModel.updateCartCoupon(conn, userId, { coupon_code: code, discount_total: discount });
+
+    // Invalidate cache
+    invalidateCache(CART_ITEMS_KEY(cart.id));
+    invalidateCache(CART_TOTAL_KEY(userId));
 
     return {
         coupon: {
@@ -195,15 +278,28 @@ const applyCouponToCart = async (userId, code) => {
 };
 
 const removeCoupon = async (userId) => {
-    const cart = await cartModel.getCartByUserId(userId);
-    if (!cart) {
-        throw new HttpError(404, 'Cart not found');
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        const cart = await cartModel.getCartByUserIdTransaction(connection, userId);
+        if (!cart) throw new HttpError(404, 'Cart not found');
+
+        await cartModel.removeCouponFromCart(connection, userId);
+
+        // Invalidate cache
+        invalidateCache(CART_ITEMS_KEY(cart.id));
+        invalidateCache(CART_TOTAL_KEY(userId));
+
+        await connection.commit();
+
+        return { message: 'Coupon removed successfully' };
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
     }
-
-    await cartModel.removeCouponFromCart(userId);
-
-    // Get updated cart info
-    return await cartModel.getCartItemsByCartId(cart.id);
 };
 
 module.exports = {
