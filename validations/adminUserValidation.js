@@ -1,5 +1,4 @@
 const Joi = require('joi');
-const validate = require('../helpers/validateHelper');
 
 const usernameRegex = /^[a-zA-Z][A-Za-z0-9-_]{7,15}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[A-Za-z\d]{8,}$/;
@@ -35,12 +34,8 @@ const statusSchema = Joi.object({
     is_active: Joi.boolean().required(),
 }).unknown();
 
-const validateStatus = validate(statusSchema);
-const validateUserCreation = validate(userSchema);
-const validateRegister = validate(registerSchema);
-
 module.exports = {
-    validateUserCreation,
-    validateRegister,
-    validateStatus,
+    registerSchema,
+    userSchema,
+    statusSchema,
 };

@@ -3,6 +3,8 @@ const app = express();
 require('dotenv').config();
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const compression = require('compression');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
 // route import
@@ -22,14 +24,13 @@ const specialOfferRoute = require('./routes/specialOfferRoute');
 const bundleRoute = require('./routes/bundleRoute');
 const notificationRoute = require('./routes/notificationRoute');
 const uploadRoute = require('./routes/uploadRoute');
-const adminActivityLogRoute = require('./routes/adminActivityLogRoute');
 const couponRoute = require('./routes/couponRoute');
 const logRoute = require('./routes/logRoute');
 const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
 const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
 
-// Cookies
-app.use(cookieParser());
+app.use(helmet());
+app.use(compression());
 
 // CORS
 const FRONTEND = process.env.FRONTEND;
@@ -41,9 +42,12 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Cookies
+app.use(cookieParser());
+
 // uses JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // routes
 app.use('/api/products', productRoute);
@@ -61,11 +65,15 @@ app.use('/api/walkInOrders', walkInOrderRoute);
 app.use('/api/special-offers', specialOfferRoute);
 app.use('/api/bundles', bundleRoute);
 app.use('/api/notifications', notificationRoute);
-app.use('/api/admin-activity-logs', adminActivityLogRoute);
 app.use('/api/coupons', couponRoute);
 app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api/logs', logRoute);
 app.use('/api', uploadRoute);
+
+// 404 for unhandled routes
+app.all('*', (req, res) => {
+    res.status(404).json({ message: 'Route not found' });
+});
 
 // error middleware
 app.use(errorMiddleware);

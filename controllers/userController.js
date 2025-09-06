@@ -1,8 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const userModel = require('../models/userModel');
-const entityExistHelper = require('../helpers/entityExistHelper');
 const HttpError = require('../helpers/errorHelper');
-const bcrypt = require('bcrypt');
 const { sendEmail } = require('../utilities/emailUtility');
 const userService = require('../services/userService');
 const crypto = require('crypto');
