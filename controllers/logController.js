@@ -1,5 +1,4 @@
 const axios = require('axios');
-
 const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
 const fetchAxiomLogs = async (aplQuery) => {
@@ -57,6 +56,7 @@ const getSignins = async (req, res) => {
     }
 };
 const getAdminAuditLogs = async (req, res) => {
+    // console.log('You reached me'); uncomment if you want to see how the cache work
     try {
         const matches = await fetchAxiomLogs(
             'where message =~ "Admin action" | order by _time desc | limit 20'
