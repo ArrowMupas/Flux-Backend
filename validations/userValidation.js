@@ -1,5 +1,4 @@
 const Joi = require('joi');
-const validate = require('../helpers/validateHelper');
 
 const usernameRegex = /^[a-zA-Z][A-Za-z0-9-_]{7,15}$/;
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])[A-Za-z\d]{8,}$/;
@@ -38,15 +37,11 @@ const resetPasswordSchema = Joi.object({
         'any.required': 'Current password is required.',
     }),
 
-    newPassword: Joi.string()
-        .pattern(passwordRegex)
-        .invalid(Joi.ref('password'))
-        .required()
-        .messages({
-            'string.pattern.base':
-                'New password must be at least 8 characters and include uppercase, lowercase, and a number.',
-            'any.invalid': 'New password must be different from the current password.',
-        }),
+    newPassword: Joi.string().pattern(passwordRegex).invalid(Joi.ref('password')).required().messages({
+        'string.pattern.base':
+            'New password must be at least 8 characters and include uppercase, lowercase, and a number.',
+        'any.invalid': 'New password must be different from the current password.',
+    }),
 
     confirmPassword: Joi.any().valid(Joi.ref('newPassword')).required().messages({
         'any.only': 'Confirm password must match the new password.',
@@ -69,8 +64,7 @@ const updateUserSchema = Joi.object({
     contact_number: Joi.string()
         .pattern(/^\+?\d{10,15}$/)
         .messages({
-            'string.pattern.base':
-                'Contact number must be a valid phone number (10–15 digits, optional +).',
+            'string.pattern.base': 'Contact number must be a valid phone number (10–15 digits, optional +).',
         }),
 }).unknown();
 
@@ -102,18 +96,11 @@ const confirmResetPasswordSchema = Joi.object({
     }),
 }).unknown();
 
-const validateRegistration = validate(registerSchema);
-const validatePasswordReset = validate(resetPasswordSchema);
-const validateLogin = validate(loginSchema);
-const validateUserUpdate = validate(updateUserSchema);
-const validateEmail = validate(emailSchema);
-const validateConfirmPasswordReset = validate(confirmResetPasswordSchema);
-
 module.exports = {
-    validateRegistration,
-    validatePasswordReset,
-    validateLogin,
-    validateUserUpdate,
-    validateEmail,
-    validateConfirmPasswordReset,
+    registerSchema,
+    loginSchema,
+    resetPasswordSchema,
+    updateUserSchema,
+    emailSchema,
+    confirmResetPasswordSchema,
 };

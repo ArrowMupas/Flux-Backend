@@ -1,5 +1,4 @@
 const Joi = require('joi');
-const validate = require('../helpers/validateHelper');
 
 const itemSchema = Joi.object({
     product_id: Joi.string().max(10).required(),
@@ -14,8 +13,6 @@ const WalkInOderSchema = Joi.object({
     items: Joi.array().items(itemSchema).min(1).required(),
 }).unknown();
 
-const validateWalkInOrder = validate(WalkInOderSchema);
-
 module.exports = {
-    validateWalkInOrder,
+    WalkInOderSchema,
 };

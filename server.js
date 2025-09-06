@@ -15,7 +15,6 @@ const adminUserRoute = require('./routes/adminUserRoute');
 const orderRoute = require('./routes/orderRoute');
 const adminOrderRoute = require('./routes/adminOrderRoute');
 const paymentRoute = require('./routes/paymentRoute');
-const limitedOfferRoute = require('./routes/limitedOfferRoute');
 const reviewRoute = require('./routes/reviewRoute');
 const reportRoute = require('./routes/reportRoute');
 const permissionRoute = require('./routes/permissionRoute');
@@ -57,7 +56,6 @@ app.use('/api/adminUser', adminUserRoute);
 app.use('/api/orders', orderRoute);
 app.use('/api/adminOrder', adminOrderRoute);
 app.use('/api/payments', paymentRoute);
-app.use('/api/limited-offer', limitedOfferRoute);
 app.use('/api/reviews', reviewRoute);
 app.use('/api/reports', reportRoute);
 app.use('/api/permissions', permissionRoute);
@@ -71,7 +69,7 @@ app.use('/api/logs', logRoute);
 app.use('/api', uploadRoute);
 
 // 404 for unhandled routes
-app.all('*', (req, res) => {
+app.use((req, res, next) => {
     res.status(404).json({ message: 'Route not found' });
 });
 

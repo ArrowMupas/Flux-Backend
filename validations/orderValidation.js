@@ -1,5 +1,4 @@
 const Joi = require('joi');
-const validate = require('../helpers/validateHelper');
 
 const checkoutSchema = Joi.object({
     payment_method: Joi.string().valid('GCash', 'Maya', 'bank_transfer').required(),
@@ -9,8 +8,6 @@ const checkoutSchema = Joi.object({
     account_name: Joi.string().max(100),
 }).unknown();
 
-const validateCheckout = validate(checkoutSchema);
-
 module.exports = {
-    validateCheckout,
+    checkoutSchema,
 };

@@ -3,7 +3,8 @@ const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
 const { generalLimiter } = require('../middlewares/rateLimiterMiddleware');
-const { validateStatusUpdate } = require('../validations/adminOrderValidation');
+const { statusUpdateSchema } = require('../validations/adminOrderValidation');
+const validate = require('../middlewares/validateMiddleware');
 const ROLES = require('../constants/roles');
 const { orderCompletionStockMiddleware } = require('../middlewares/autoStockCheckMiddleware');
 const adminOrderController = require('../controllers/adminOrderController');
@@ -22,7 +23,7 @@ router.get('/', getAllOrders);
 router.get('/:id', getOrderById);
 router.get('/user/:id', getOrdersByUserId);
 router.get('/status-history/:orderId', getOrderStatusHistory);
-router.patch('/status-update/:orderId', verifyToken, validateStatusUpdate, adminOrderController.changeOrderStatus);
+router.patch('/status-update/:orderId', validate(statusUpdateSchema), adminOrderController.changeOrderStatus);
 router.patch('/cancel/:orderId', orderCompletionStockMiddleware(), adminOrderController.adminCancelOrder);
 
 module.exports = router;

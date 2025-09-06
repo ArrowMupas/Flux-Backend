@@ -3,12 +3,13 @@ const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
 const { generalLimiter, loginLimiter } = require('../middlewares/rateLimiterMiddleware');
 const {
-    validateRegistration,
-    validateLogin,
-    validatePasswordReset,
-    validateUserUpdate,
-    validateEmail,
+    registerSchema,
+    loginSchema,
+    resetPasswordSchema,
+    updateUserSchema,
+    emailSchema,
 } = require('../validations/userValidation');
+const validate = require('../middlewares/validateMiddleware');
 const {
     loginUser,
     registerUser,
@@ -21,19 +22,19 @@ const {
 } = require('../controllers/userController');
 
 // Public routes
-router.post('/login', loginLimiter, validateLogin, loginUser);
+router.post('/login', loginLimiter, validate(loginSchema), loginUser);
 router.use(generalLimiter);
 
-router.post('/register', validateRegistration, registerUser);
+router.post('/register', validate(registerSchema), registerUser);
 router.get('/verify-email', verifyEmail);
 router.post('/logout', logoutUser);
-router.post('/resend-verification-email', validateEmail, resendVerificationEmail);
+router.post('/resend-verification-email', validate(emailSchema), resendVerificationEmail);
 
 // Protected routes
 router.use(verifyToken);
 
 router.get('/', getUserProfile);
-router.put('/', validateUserUpdate, updateUser);
-router.post('/reset', validatePasswordReset, updateUserPassword);
+router.put('/', validate(updateUserSchema), updateUser);
+router.post('/reset', validate(resetPasswordSchema), updateUserPassword);
 
 module.exports = router;

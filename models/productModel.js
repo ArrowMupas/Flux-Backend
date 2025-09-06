@@ -1,18 +1,27 @@
 const pool = require('../database/pool');
+const SQL = require('sql-template-strings'); // Auto anti sql injection
 const HttpError = require('../helpers/errorHelper');
 
 const getAllProducts = async () => {
-    const [products] = await pool.query('SELECT * FROM products WHERE is_active = TRUE');
+    const [products] = await pool.query(SQL`
+        SELECT * FROM products 
+        WHERE is_active = TRUE
+    `);
     return products;
 };
 
 const getAllProductsAdmin = async () => {
-    const [products] = await pool.query('SELECT * FROM products');
+    const [products] = await pool.query(SQL`
+        SELECT * FROM products
+    `);
     return products;
 };
 
 const getProductById = async (id) => {
-    const [product] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
+    const [product] = await pool.query(SQL`
+        SELECT * FROM products 
+        WHERE id = ${id}
+    `);
     return product[0];
 };
 
@@ -25,18 +34,21 @@ const addProduct = async (id, name, category, stock_quantity, price, image, desc
 };
 
 const updateProduct = async (id, name, category, price, image, description) => {
-    const [result] = await pool.query(
-        'UPDATE products SET name = ?, category = ?, price = ?, image = ?, description = ? WHERE id = ?',
-        [name, category, price, image, description, id]
-    );
+    const [result] = await pool.query(SQL`
+        UPDATE products 
+        SET 
+            name = ${name},
+            category = ${category},
+            price = ${price},
+            image = ${image},
+            description = ${description}
+        WHERE id = ${id}
+    `);
     return result;
 };
 
 const updateProductActiveStatus = async (productId, isActive) => {
-    const [result] = await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [
-        isActive,
-        productId,
-    ]);
+    const [result] = await pool.query('UPDATE products SET is_active = ? WHERE id = ?', [isActive, productId]);
     return result;
 };
 
@@ -50,10 +62,7 @@ const updateProductStockAndPrice = async (productId, stockChange, price) => {
     );
 
     // Optionally, get the new stock value
-    const [[updatedProduct]] = await pool.query(
-        'SELECT stock_quantity, price FROM products WHERE id = ?',
-        [productId]
-    );
+    const [[updatedProduct]] = await pool.query('SELECT stock_quantity, price FROM products WHERE id = ?', [productId]);
 
     return updatedProduct; // { stock_quantity: newStock, price }
 };
@@ -105,10 +114,7 @@ const checkAndReserveStock = async (productId, quantity, orderId, connection) =>
     const newAvailable = stock_quantity - newReserved;
 
     // Update reserved quantity in products table
-    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [
-        newReserved,
-        productId,
-    ]);
+    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [newReserved, productId]);
 
     // Add product reservation entry
     await connection.query(
@@ -140,10 +146,7 @@ const getProductStockForUpdate = async (productId, connection) => {
 };
 
 const updateReservedQuantity = async (productId, newReserved, connection) => {
-    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [
-        newReserved,
-        productId,
-    ]);
+    await connection.query(`UPDATE products SET reserved_quantity = ? WHERE id = ?`, [newReserved, productId]);
 };
 
 const createProductReservation = async (productId, orderId, quantity, connection) => {
