@@ -6,7 +6,9 @@ const authorizeAccess = require('../middlewares/accessMiddleware');
 const ROLES = require('../constants/roles');
 const validate = require('../middlewares/validateMiddleware');
 const { couponSchema } = require('../validations/couponValidation');
+const { generalLimiter } = require('../middlewares/rateLimiterMiddleware');
 
+router.use(generalLimiter);
 router.use(verifyToken);
 router.use(authorizeAccess([ROLES.ADMIN, ROLES.STAFF]));
 

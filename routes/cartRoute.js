@@ -5,7 +5,9 @@ const { validateCartItem } = require('../validations/cartValidation');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
 const ROLES = require('../constants/roles');
+const { generalLimiter } = require('../middlewares/rateLimiterMiddleware');
 
+router.use(generalLimiter);
 router.use(verifyToken);
 router.use(authorizeAccess([ROLES.CUSTOMER]));
 
@@ -17,4 +19,4 @@ router.delete('/clear', cartController.clearCart);
 router.post('/apply-coupon', cartController.applyCouponToCart);
 router.delete('/coupon', cartController.removeCoupon);
 
-module.exports = router;
+module.exports = router; //
