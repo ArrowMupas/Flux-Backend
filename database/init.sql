@@ -242,16 +242,6 @@ CREATE TABLE IF NOT EXISTS walk_in_sale_items (
     INDEX (product_id)
 );
 
-CREATE TABLE IF NOT EXISTS limited_offers (
-    offer_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id VARCHAR(50) NOT NULL,
-    discounted_price DECIMAL(10, 2) NOT NULL,
-    start_date DATETIME NOT NULL,
-    end_date DATETIME NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    UNIQUE (product_id)
-);
-
 CREATE TABLE IF NOT EXISTS product_reviews (
     review_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

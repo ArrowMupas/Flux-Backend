@@ -10,6 +10,6 @@ router.use(generalLimiter);
 router.use(verifyToken);
 router.use(authorizeAccess([ROLES.CUSTOMER]));
 
-router.get('/:orderId', verifyToken, paymentController.getPaymentByOrder);
+router.get('/:orderId', paymentController.getPaymentByOrder);
 
 module.exports = router;
