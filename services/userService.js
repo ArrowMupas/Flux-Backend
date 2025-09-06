@@ -7,6 +7,7 @@ const verificationEmail = require('../helpers/verificationEmailTemplate');
 const { ensureExist, ensureNotExist } = require('../helpers/existenceHelper');
 const HttpError = require('../helpers/errorHelper');
 const logger = require('../utilities/logger');
+const { getCache, setCache } = require('../utilities/cache');
 
 const registerLogic = async ({ username, email, password }) => {
     const userExists = await userModel.getUserByUsername(username);
@@ -82,15 +83,17 @@ const loginLogic = async (username, password) => {
 };
 
 const getProfileLogic = async (userId) => {
-    const user = await userModel.getUserById(userId);
+    const cachedProfile = getCache(userId);
+    if (cachedProfile) return cachedProfile;
 
+    const user = await userModel.getUserById(userId);
     ensureExist(user, 404, `User with ID: ${userId} not found`);
 
     if (!user.is_active) {
         throw new HttpError(403, 'Account is inactive');
     }
 
-    return {
+    const profileData = {
         id: user.id,
         role_name: user.role_name,
         username: user.username,
@@ -100,6 +103,10 @@ const getProfileLogic = async (userId) => {
         created_at: user.created_at,
         updated_at: user.updated_at,
     };
+
+    setCache(userId, profileData, 900);
+
+    return profileData;
 };
 
 const updatePasswordLogic = async (userId, password, newPassword) => {

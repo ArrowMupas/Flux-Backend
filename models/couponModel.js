@@ -39,8 +39,8 @@ const getCouponById = async (id) => {
     return rows[0];
 };
 
-const getCouponByCode = async (code) => {
-    const [rows] = await pool.execute('SELECT * FROM coupons WHERE code = ?', [code]);
+const getCouponByCode = async (connection, code) => {
+    const [rows] = await connection.query('SELECT * FROM coupons WHERE code = ?', [code]);
     return rows[0];
 };
 
@@ -55,8 +55,8 @@ const logUserCouponUsage = async (userId, couponCode, connection = pool) => {
     ]);
 };
 
-const getUserCouponUsageCount = async (userId, couponCode) => {
-    const [rows] = await pool.query(
+const getUserCouponUsageCount = async (connection, userId, couponCode) => {
+    const [rows] = await connection.query(
         `SELECT COUNT(*) AS usage_count FROM coupon_usages WHERE user_id = ? AND coupon_code = ?`,
         [userId, couponCode]
     );

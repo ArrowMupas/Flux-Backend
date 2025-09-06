@@ -7,6 +7,7 @@ const { sendEmail } = require('../utilities/emailUtility');
 const userService = require('../services/userService');
 const crypto = require('crypto');
 require('dotenv').config();
+const { invalidateCache } = require('../utilities/cache');
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
@@ -53,6 +54,8 @@ const updateUser = asyncHandler(async (req, res) => {
         address,
         contact_number,
     });
+
+    invalidateCache(req.user.id);
 
     res.status(200).json(updatedUser);
 });
@@ -122,70 +125,6 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Verification email resent' });
 });
 
-// Request password reset
-const requestPasswordReset = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    const user = await userModel.getUserByEmail(email);
-    if (!user) throw new HttpError(404, 'User not found');
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
-
-    await userModel.savePasswordResetToken(user.id, token, expiresAt);
-
-    const resetLink = `${process.env.BASE_URL}/api/users/verify-password-reset?token=${token}`;
-    await sendEmail({
-        to: user.email,
-        subject: 'Password Reset Request',
-        html: `<p>Click the link below to reset your password:</p>
-            <a href="${resetLink}" style="background:#4CAF50;color:#fff;padding:10px 15px;text-decoration:none;border-radius:5px;">Reset Password</a>
-            <p>This link expires in 1 hour.</p>`,
-    });
-
-    res.status(200).json({ message: 'Password reset email sent' });
-});
-
-// Verify password reset token
-const verifyResetToken = asyncHandler(async (req, res) => {
-    const { token } = req.query;
-
-    const user = await userModel.getUserByPasswordResetToken(token);
-    if (!user || user.expires_at < new Date()) {
-        throw new HttpError(400, 'Invalid or expired token');
-    }
-
-    res.send('Password reset verified');
-});
-
-// Reset user password
-const changeUserPassword = asyncHandler(async (req, res) => {
-    const { email, newPassword } = req.body;
-
-    const user = await userModel.getUserByEmail(email);
-
-    entityExistHelper(user, res, 404, 'User not found');
-
-    // Check if user is active
-    if (!user.is_active) {
-        throw new HttpError(403, `Account is inactive`);
-    }
-
-    const hasReset = await userModel.hasActivePasswordResetRequest(user.id);
-    if (!hasReset) {
-        throw new HttpError(403, `Password reset not verified`);
-    }
-
-    // Create user with hashed password
-    const hashedPassword = await bcrypt.hash(newPassword, 10); // Combines password with salt
-    userModel.resetUserPassword(user.id, hashedPassword);
-
-    await userModel.deletePasswordResetToken(user.id);
-
-    res.status(200).json({
-        message: 'Password reset successful',
-    });
-});
-
 module.exports = {
     registerUser,
     loginUser,
@@ -195,7 +134,4 @@ module.exports = {
     updateUserPassword,
     verifyEmail,
     resendVerificationEmail,
-    verifyResetToken,
-    changeUserPassword,
-    requestPasswordReset,
 };

@@ -6,7 +6,12 @@ const getCartByUserId = async (userId) => {
     return rows[0];
 };
 
-const getCartById = async (connection = pool, cartId) => {
+const getCartByUserIdTransaction = async (connection, userId) => {
+    const [rows] = await connection.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
+    return rows[0];
+};
+
+const getCartById = async (connection, cartId) => {
     const [rows] = await connection.query('SELECT * FROM carts WHERE id = ?', [cartId]);
     return rows[0];
 };
@@ -20,6 +25,59 @@ const createCart = async (userId) => {
 const getCartItemsByCartId = async (cartId) => {
     // Get cart items and product details
     const [items] = await pool.query(
+        `SELECT 
+            ci.id AS cart_item_id,
+            ci.quantity,
+            ci.updated_at,
+            p.id AS product_id,
+            p.name,
+            p.price,
+            p.image,
+            p.stock_quantity,
+            p.description
+         FROM cart_items ci
+         JOIN products p ON ci.product_id = p.id
+         WHERE ci.cart_id = ?`,
+        [cartId]
+    );
+
+    // Get total price
+    const [[total]] = await pool.query(
+        `SELECT SUM(ci.quantity * p.price) AS cart_total
+         FROM cart_items ci
+         JOIN products p ON ci.product_id = p.id
+         WHERE ci.cart_id = ?`,
+        [cartId]
+    );
+
+    const cart_total = parseFloat(total?.cart_total || 0);
+
+    // Get cart info (for coupon and discount)
+    const [[cartInfo]] = await pool.query(
+        `SELECT user_id, coupon_code, discount_total
+        FROM carts
+        WHERE id = ?`,
+        [cartId]
+    );
+
+    const discount = parseFloat(cartInfo?.discount_total || 0);
+    const coupon_code = cartInfo?.coupon_code || null;
+    const user_id = cartInfo?.user_id || null;
+
+    return {
+        cart_id: cartId,
+        cart_total,
+        coupon_code,
+        discount,
+        final_total: Math.max(cart_total - discount, 0),
+        items,
+        user_id,
+    };
+};
+
+const getCartItemsByCartIdTransaction = async (connection, cartId) => {
+    // Get cart items and product details
+    const [items] = await connection.query(
         `SELECT 
             ci.id AS cart_item_id,
             ci.quantity,
@@ -115,13 +173,13 @@ const removeCartItem = async (cartId, productId) => {
 };
 
 // ✅ Clear all items in the cart
-const clearCart = async (cartId) => {
-    const [result] = await pool.query('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
+const clearCart = async (connection, cartId) => {
+    const [result] = await connection.query('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
     return result;
 };
 
-const updateCartCoupon = async (userId, { coupon_code, discount_total }) => {
-    await pool.query(
+const updateCartCoupon = async (connection, userId, { coupon_code, discount_total }) => {
+    await connection.query(
         `UPDATE carts
          SET coupon_code = ?, discount_total = ?, updated_at = CURRENT_TIMESTAMP
          WHERE user_id = ?`,
@@ -130,8 +188,8 @@ const updateCartCoupon = async (userId, { coupon_code, discount_total }) => {
 };
 
 // Assumes you already have cart items with quantity & price
-const getCartTotal = async (userId) => {
-    const [rows] = await pool.query(
+const getCartTotal = async (connection, userId) => {
+    const [rows] = await connection.query(
         `
         SELECT SUM(ci.quantity * p.price) AS total
         FROM cart_items ci
@@ -145,8 +203,8 @@ const getCartTotal = async (userId) => {
     return rows[0]?.total || 0;
 };
 
-const removeCouponFromCart = async (userId) => {
-    await pool.query(
+const removeCouponFromCart = async (connection, userId) => {
+    await connection.query(
         `UPDATE carts
          SET coupon_code = NULL,
              discount_total = 0,
@@ -154,6 +212,14 @@ const removeCouponFromCart = async (userId) => {
          WHERE user_id = ?`,
         [userId]
     );
+};
+
+const removeCartItemByCartId = async (connection, cartId, productId) => {
+    const [result] = await connection.query(
+        'DELETE FROM cart_items WHERE cart_id = ? AND product_id = ?',
+        [cartId, productId]
+    );
+    return result;
 };
 
 module.exports = {
@@ -170,4 +236,7 @@ module.exports = {
     updateCartCoupon,
     getCartTotal,
     removeCouponFromCart,
+    removeCartItemByCartId,
+    getCartByUserIdTransaction,
+    getCartItemsByCartIdTransaction,
 };
