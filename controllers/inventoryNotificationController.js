@@ -6,7 +6,7 @@ const HttpError = require('../helpers/errorHelper');
 const getAllInventoryNotifications = asyncHandler(async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    
+
     const filters = {
         type: req.query.type,
         entity_type: req.query.entity_type,
@@ -14,20 +14,19 @@ const getAllInventoryNotifications = asyncHandler(async (req, res) => {
         priority: req.query.priority,
         status: req.query.status,
         dateFrom: req.query.date_from,
-        dateTo: req.query.date_to
+        dateTo: req.query.date_to,
     };
 
-    Object.keys(filters).forEach(key => {
+    Object.keys(filters).forEach((key) => {
         if (filters[key] === undefined) {
             delete filters[key];
         }
     });
 
     const result = await inventoryNotificationModel.getAllInventoryNotifications(page, limit, filters);
-    
+
     sendResponse(res, 200, 'Inventory notifications retrieved successfully', result);
 });
-
 
 const getNotificationsByEntity = asyncHandler(async (req, res) => {
     const { entity_type, entity_id } = req.params;
@@ -37,19 +36,14 @@ const getNotificationsByEntity = asyncHandler(async (req, res) => {
         throw new HttpError(400, 'Invalid entity type. Must be "product" or "bundle"');
     }
 
-    const notifications = await inventoryNotificationModel.getNotificationsByEntity(
-        entity_type, 
-        entity_id, 
-        status
-    );
-    
+    const notifications = await inventoryNotificationModel.getNotificationsByEntity(entity_type, entity_id, status);
+
     sendResponse(res, 200, `Notifications for ${entity_type} ${entity_id} retrieved successfully`, notifications);
 });
 
-
 const getCriticalNotifications = asyncHandler(async (req, res) => {
     const notifications = await inventoryNotificationModel.getCriticalNotifications();
-    
+
     sendResponse(res, 200, 'Critical notifications retrieved successfully', notifications);
 });
 
@@ -58,13 +52,13 @@ const getNotificationSummary = asyncHandler(async (req, res) => {
     const dateTo = req.query.date_to || new Date().toISOString();
 
     const summary = await inventoryNotificationModel.getNotificationSummary(dateFrom, dateTo);
-    
+
     sendResponse(res, 200, 'Notification summary retrieved successfully', summary);
 });
 
 const getNotificationCounts = asyncHandler(async (req, res) => {
     const counts = await inventoryNotificationModel.getNotificationCounts();
-    
+
     sendResponse(res, 200, 'Notification counts retrieved successfully', counts);
 });
 
@@ -73,7 +67,7 @@ const acknowledgeNotification = asyncHandler(async (req, res) => {
     const acknowledgedBy = req.user?.id || null;
 
     await inventoryNotificationModel.acknowledgeNotification(notificationId, acknowledgedBy);
-    
+
     sendResponse(res, 200, 'Notification acknowledged successfully');
 });
 
@@ -82,11 +76,11 @@ const resolveNotification = asyncHandler(async (req, res) => {
     const resolvedBy = req.user?.id || null;
 
     const affectedRows = await inventoryNotificationModel.resolveNotification(notificationId, resolvedBy);
-    
+
     if (affectedRows === 0) {
         throw new HttpError(404, 'Notification not found or already resolved');
     }
-    
+
     sendResponse(res, 200, 'Notification resolved successfully', { affectedRows });
 });
 
@@ -99,19 +93,21 @@ const resolveNotifications = asyncHandler(async (req, res) => {
     }
 
     const affectedRows = await inventoryNotificationModel.resolveNotifications(entity_type, entity_id, resolvedBy);
-    
+
     if (affectedRows === 0) {
         sendResponse(res, 200, `No active notifications found for ${entity_type} ${entity_id}`, { affectedRows });
     } else {
-        sendResponse(res, 200, `${affectedRows} notifications resolved for ${entity_type} ${entity_id}`, { affectedRows });
+        sendResponse(res, 200, `${affectedRows} notifications resolved for ${entity_type} ${entity_id}`, {
+            affectedRows,
+        });
     }
 });
 
 const cleanupOldNotifications = asyncHandler(async (req, res) => {
     const daysOld = parseInt(req.query.days_old) || 30;
-    
+
     const deletedCount = await inventoryNotificationModel.cleanupOldNotifications(daysOld);
-    
+
     sendResponse(res, 200, `Cleanup completed. ${deletedCount} old notifications removed`);
 });
 
@@ -127,24 +123,14 @@ const triggerStockCheck = asyncHandler(async (req, res) => {
         if (entity_type === 'product') {
             const productModel = require('../models/productModel');
             const product = await productModel.getProductById(entity_id);
-            
+
             if (!product) {
                 throw new HttpError(404, 'Product not found');
             }
-            
+
             await smartInventoryNotifier.checkProductStock(product);
-        } else if (entity_type === 'bundle') {
-            const bundleModel = require('../models/bundleModel');
-            const bundle = await bundleModel.getBundleById(entity_id);
-            const bundleItems = await bundleModel.getBundleItemsWithProducts(entity_id);
-            
-            if (!bundle) {
-                throw new HttpError(404, 'Bundle not found');
-            }
-            
-            await smartInventoryNotifier.checkBundleStock(bundle, bundleItems);
         }
-        
+
         sendResponse(res, 200, `Stock check triggered for ${entity_type} ${entity_id}`);
     } catch (error) {
         console.error('Error in manual stock check:', error);
@@ -155,20 +141,10 @@ const triggerStockCheck = asyncHandler(async (req, res) => {
 const triggerBatchStockCheck = asyncHandler(async (req, res) => {
     const smartInventoryNotifier = require('../helpers/smartInventoryNotifier');
     const productModel = require('../models/productModel');
-    const bundleModel = require('../models/bundleModel');
 
     try {
         const products = await productModel.getAllProducts();
         await smartInventoryNotifier.checkMultipleProducts(products);
-
-        const bundles = await bundleModel.getAllBundles();
-        const bundlesWithItems = await Promise.all(
-            bundles.map(async (bundle) => {
-                const items = await bundleModel.getBundleItemsWithProducts(bundle.bundle_id);
-                return { bundle, items };
-            })
-        );
-        await smartInventoryNotifier.checkMultipleBundles(bundlesWithItems);
 
         sendResponse(res, 200, 'Batch stock check completed for all products and bundles');
     } catch (error) {
@@ -188,5 +164,5 @@ module.exports = {
     resolveNotifications,
     cleanupOldNotifications,
     triggerStockCheck,
-    triggerBatchStockCheck
+    triggerBatchStockCheck,
 };

@@ -144,10 +144,10 @@ const cancelOrder = async (orderId, notes, connection = pool) => {
     await connection.query(`UPDATE orders SET status = 'cancelled' WHERE id = ?`, [orderId]);
 
     // Log the cancel on status history
-    await connection.query(
-        `INSERT INTO order_status_history (order_id, status, notes) VALUES (?, 'cancelled', ?)`,
-        [orderId, notes]
-    );
+    await connection.query(`INSERT INTO order_status_history (order_id, status, notes) VALUES (?, 'cancelled', ?)`, [
+        orderId,
+        notes,
+    ]);
 };
 
 // Function to cancel order

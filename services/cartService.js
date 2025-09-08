@@ -2,24 +2,9 @@ const pool = require('../database/pool');
 const cartModel = require('../models/cartModel');
 const couponModel = require('../models/couponModel');
 const HttpError = require('../helpers/errorHelper');
-const { getCache, setCache, invalidateCache } = require('../utilities/cache');
-
-// This code is the most disgusting thing.
-// Cache key generators for carts, its items, and totals
-const CART_KEY = (userId) => `cart:${userId}`;
-const CART_ITEMS_KEY = (cartId) => `cart_items:${cartId}`;
-const CART_TOTAL_KEY = (userId) => `cart_total:${userId}`;
 
 // Get or create a cart for a specific user.
 const getOrCreateCart = async (userId) => {
-    const cacheKey = CART_KEY(userId);
-
-    // Try fetching cart from cache first
-    const cachedCart = getCache(cacheKey);
-    if (cachedCart) {
-        return cachedCart;
-    }
-
     // Fetch cart from DB, if no cache
     let cart = await cartModel.getCartByUserId(userId);
 
@@ -30,19 +15,10 @@ const getOrCreateCart = async (userId) => {
     }
 
     // Cache cart for 5 minutes (120 seconds)
-    setCache(cacheKey, cart, 120);
     return cart;
 };
 
 const getCartItemsByCartId = async (cartId) => {
-    const cacheKey = CART_ITEMS_KEY(cartId);
-
-    // Try fetching cart items from cache
-    const cachedItems = getCache(cacheKey);
-    if (cachedItems) {
-        return cachedItems;
-    }
-
     // Fetch items from DB
     const cart = await cartModel.getCartItemsByCartId(cartId);
     if (!cart) {
@@ -50,7 +26,6 @@ const getCartItemsByCartId = async (cartId) => {
     }
 
     // Cache items for 2 minutes (120 seconds)
-    setCache(cacheKey, cart, 120);
     return cart;
 };
 
@@ -85,8 +60,6 @@ const addToCart = async (cartId, productId, quantity = 1) => {
 
         // Invalidate cache after modification, fetch updated cart
         const cart = await cartModel.getCartById(connection, cartId);
-        invalidateCache(CART_ITEMS_KEY(cartId));
-        invalidateCache(CART_TOTAL_KEY(cart.user_id));
 
         // Reapply coupon if it exists
         if (cart.coupon_code) {
@@ -130,8 +103,6 @@ const updateCartItemQuantity = async (cartId, productId, quantity) => {
 
         // Invalidate cache
         const cart = await cartModel.getCartById(connection, cartId);
-        invalidateCache(CART_ITEMS_KEY(cartId));
-        invalidateCache(CART_TOTAL_KEY(cart.user_id));
 
         // Reapply coupon if it exists
         if (cart.coupon_code) {
@@ -160,10 +131,6 @@ const removeCartItem = async (cartId, productId) => {
         // Now fetch the updated cart
         const updatedCart = await cartModel.getCartById(connection, cartId);
         if (!updatedCart) throw new HttpError(404, 'Cart not found');
-
-        // Invalidate cache
-        invalidateCache(CART_ITEMS_KEY(cartId));
-        invalidateCache(CART_TOTAL_KEY(updatedCart.user_id));
 
         // Reapply coupon if it exists
         if (updatedCart.coupon_code) {
@@ -202,10 +169,6 @@ const clearCart = async (cartId, connection = null) => {
             await cartModel.removeCouponFromCart(conn, cart.user_id);
         }
 
-        // Invalidate cache
-        invalidateCache(CART_ITEMS_KEY(cartId));
-        invalidateCache(CART_TOTAL_KEY(cart.user_id));
-
         if (!useTransaction) await conn.commit();
 
         return { message: 'Cart cleared successfully' };
@@ -242,10 +205,7 @@ const applyCouponToCart = async (userId, code, connection = null) => {
     if (coupon.per_user_limit) {
         const usageCount = await couponModel.getUserCouponUsageCount(conn, userId, code);
         if (usageCount >= coupon.per_user_limit) {
-            throw new HttpError(
-                400,
-                'You have already used this coupon the maximum number of times allowed.'
-            );
+            throw new HttpError(400, 'You have already used this coupon the maximum number of times allowed.');
         }
     }
 
@@ -260,10 +220,6 @@ const applyCouponToCart = async (userId, code, connection = null) => {
     discount = Math.min(discount, cartTotal);
 
     await cartModel.updateCartCoupon(conn, userId, { coupon_code: code, discount_total: discount });
-
-    // Invalidate cache
-    invalidateCache(CART_ITEMS_KEY(cart.id));
-    invalidateCache(CART_TOTAL_KEY(userId));
 
     return {
         coupon: {
@@ -286,10 +242,6 @@ const removeCoupon = async (userId) => {
         if (!cart) throw new HttpError(404, 'Cart not found');
 
         await cartModel.removeCouponFromCart(connection, userId);
-
-        // Invalidate cache
-        invalidateCache(CART_ITEMS_KEY(cart.id));
-        invalidateCache(CART_TOTAL_KEY(userId));
 
         await connection.commit();
 

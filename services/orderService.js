@@ -1,5 +1,4 @@
 const orderModel = require('../models/orderModel');
-const cartModel = require('../models/cartModel');
 const cartService = require('../services/cartService');
 const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
@@ -13,11 +12,7 @@ const {
 } = require('../workflows/createOrderWorkflow');
 
 // Logic of creating an order
-const createOrder = async (
-    userId,
-    { payment_method, address, notes, reference_number, account_name }
-) => {
-    // Validate befoore a transaction starts
+const createOrder = async (userId, { payment_method, address, notes, reference_number, account_name }) => {
     const cart = await validateCart(userId);
     await enforceOrderLimit(userId);
 
@@ -37,8 +32,6 @@ const createOrder = async (
         });
 
         await addItemsAndReserveStock({ cart, orderId, userId, connection });
-        await createInitialOrderStatus(orderId, connection);
-
         const paymentId = await handlePayment({
             orderId,
             payment_method,
@@ -48,8 +41,9 @@ const createOrder = async (
             connection,
         });
 
-        await cartService.clearCart(cart.cart_id || cart.id, connection);
+        await createInitialOrderStatus(orderId, connection);
         await connection.commit();
+        cartService.clearCart(cart.cart_id || cart.id).catch((err) => console.error('Failed to clear cart:', err));
         return { orderId, paymentId };
     } catch (error) {
         await connection.rollback();
@@ -104,16 +98,9 @@ const cancelOrder = async (userId, orderId, notes) => {
 
         let message = '';
 
-        if (
-            order.status === 'pending' ||
-            order.status === 'processing' ||
-            order.status === 'shipping'
-        ) {
+        if (order.status === 'pending' || order.status === 'processing' || order.status === 'shipping') {
             if (order.cancel_requested) {
-                throw new HttpError(
-                    400,
-                    'Cancel request already submitted. Wait for admin to review'
-                );
+                throw new HttpError(400, 'Cancel request already submitted. Wait for admin to review');
             }
             await orderModel.createCancelRequest(orderId, notes, connection);
             message = 'Cancel request submitted. Admin will review it.';
