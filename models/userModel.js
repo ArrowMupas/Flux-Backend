@@ -57,39 +57,29 @@ const createUser = async (username, email, password) => {
 
 // Function to update user
 const updateUser = async (userId, updates) => {
-    const [result] = await pool.query(
-        'UPDATE users SET username=?, address=?, contact_number=? WHERE id=?',
-        [updates.username, updates.address, updates.contact_number, userId]
-    );
+    const [result] = await pool.query('UPDATE users SET username=?, address=?, contact_number=? WHERE id=?', [
+        updates.username,
+        updates.address,
+        updates.contact_number,
+        userId,
+    ]);
 
     return await getUserById(userId);
 };
 
-// Function to log a user login
-const logUserLogin = async (userId, username) => {
-    await pool.query(
-        `INSERT INTO login_logs (user_id, username)
-         VALUES (?, ?)`,
-        [userId, username]
-    );
-};
-
 // Function to reset user password
 const resetUserPassword = async (userId, newPasswordHash) => {
-    const [result] = await pool.query(
-        'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?',
-        [newPasswordHash, userId]
-    );
+    const [result] = await pool.query('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?', [
+        newPasswordHash,
+        userId,
+    ]);
 
     return await getUserById(userId);
 };
 
 // Function to save email verification token
 const saveVerificationToken = async (userId, token) => {
-    await pool.query(`INSERT INTO email_verification_tokens (user_id, token) VALUES (?, ?)`, [
-        userId,
-        token,
-    ]);
+    await pool.query(`INSERT INTO email_verification_tokens (user_id, token) VALUES (?, ?)`, [userId, token]);
 };
 
 // Function to get user by verification token
@@ -127,6 +117,4 @@ module.exports = {
     getUserByVerificationToken,
     verifyUser,
     deleteVerificationToken,
-
-    logUserLogin,
 };

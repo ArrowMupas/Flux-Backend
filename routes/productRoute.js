@@ -20,6 +20,7 @@ const {
     deleteProduct,
     getProductById,
 } = require('../controllers/productController');
+const { csrfProtection } = require('../middlewares/AntiCSRFMiddleware');
 
 router.use(generalLimiter);
 
@@ -67,6 +68,7 @@ router.patch(
 
 router.patch(
     '/toggle-status/:id',
+    csrfProtection,
     validate(statusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.PRODUCT,

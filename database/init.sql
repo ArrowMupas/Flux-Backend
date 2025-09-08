@@ -41,15 +41,6 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
-CREATE TABLE IF NOT EXISTS login_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    username VARCHAR(255) NOT NULL,
-    login_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
-
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -58,14 +49,6 @@ CREATE TABLE IF NOT EXISTS email_verification_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    token VARCHAR(255) NOT NULL,
-    expires_at DATETIME NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
 CREATE TABLE IF NOT EXISTS staff_permissions (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -102,16 +85,6 @@ CREATE TABLE IF NOT EXISTS coupons (
   updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS coupon_redemptions (
-  id          INT PRIMARY KEY AUTO_INCREMENT,
-  coupon_id   INT NOT NULL,
-  user_id     INT NOT NULL,
-  used_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_coupon_user (coupon_id, user_id), -- optional
-
-  FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
 
 CREATE TABLE IF NOT EXISTS coupon_usages (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -322,47 +295,6 @@ INSERT IGNORE INTO order_items (order_id, product_id, quantity, unit_price, subt
 ('ALAS202505090009', 'P002', 2, 400.00, 800.00),
 ('ALAS202505090009', 'P005', 1, 300.00, 300.00),
 ('ALAS202505100010', 'P001', 1, 300.00, 300.00);
-
-CREATE TABLE IF NOT EXISTS special_offers (
-    offer_id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id VARCHAR(50) NOT NULL,
-    rule_type ENUM('B1G1', 'FIXED') NOT NULL,
-    x_quantity INT NOT NULL,
-    y_quantity INT DEFAULT 0,
-    fixed_price DECIMAL(10,2) DEFAULT NULL,
-    start_date DATETIME,
-    end_date DATETIME,
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
-
-CREATE TABLE IF NOT EXISTS bundles (
-    bundle_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE IF NOT EXISTS bundle_items (
-    bundle_item_id INT AUTO_INCREMENT PRIMARY KEY,
-    bundle_id INT NOT NULL,
-    product_id VARCHAR(50) NOT NULL,
-    quantity INT NOT NULL DEFAULT 1,
-    FOREIGN KEY (bundle_id) REFERENCES bundles(bundle_id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
-
-CREATE TABLE IF NOT EXISTS notifications (
-  notification_id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  message TEXT NOT NULL,
-  type ENUM('info', 'promo', 'alert') DEFAULT 'info',
-  is_global BOOLEAN DEFAULT TRUE, 
-  user_id INT DEFAULT NULL,       
-  is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
 
 CREATE TABLE IF NOT EXISTS inventory_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,

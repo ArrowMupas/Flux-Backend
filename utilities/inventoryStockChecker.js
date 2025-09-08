@@ -1,6 +1,5 @@
 const smartInventoryNotifier = require('../helpers/smartInventoryNotifier');
 const productModel = require('../models/productModel');
-const bundleModel = require('../models/bundleModel');
 
 class InventoryStockChecker {
     constructor(options = {}) {
@@ -42,15 +41,6 @@ class InventoryStockChecker {
         try {
             const products = await productModel.getAllProducts();
             await smartInventoryNotifier.checkMultipleProducts(products);
-
-            const bundles = await bundleModel.getAllBundles();
-            const bundlesWithItems = await Promise.all(
-                bundles.map(async (bundle) => {
-                    const items = await bundleModel.getBundleItemsWithProducts(bundle.bundle_id);
-                    return { bundle, items };
-                })
-            );
-            await smartInventoryNotifier.checkMultipleBundles(bundlesWithItems);
         } catch (error) {
             console.error('Error in scheduled stock check:', error);
         }
