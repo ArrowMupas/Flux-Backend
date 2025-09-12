@@ -1,5 +1,16 @@
-module.exports = (username, verificationLink) => `
-    <h2>Welcome, ${username}!</h2>
-    <p>Please verify your email by clicking the button below:</p>
-    <a href="${verificationLink}" style="background:#4CAF50;color:#fff;padding:10px 15px;text-decoration:none;border-radius:5px;">Verify Email</a>
-`;
+const fs = require('fs');
+const path = require('path');
+
+function getVerificationEmail(username, verificationLink) {
+    const templatePath = path.join(__dirname, 'verifyEmail.html');
+    let template = fs.readFileSync(templatePath, 'utf8');
+
+    template = template
+        .replace(/{{username}}/g, username)
+        .replace(/{{verificationLink}}/g, verificationLink)
+        .replace(/{{year}}/g, new Date().getFullYear());
+
+    return template;
+}
+
+module.exports = getVerificationEmail;
