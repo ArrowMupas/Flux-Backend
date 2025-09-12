@@ -16,7 +16,7 @@ const registerLogic = async ({ username, email, password }) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     const emailExists = await userModel.getUserByEmail(normalizedEmail);
-    ensureNotExist(emailExists, 401, `${email} is already taken`);
+    ensureNotExist(emailExists, 401, `${email} is already in use`);
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await userModel.createUser(username, normalizedEmail, hashedPassword);
@@ -24,10 +24,12 @@ const registerLogic = async ({ username, email, password }) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await userModel.saveVerificationToken(user.id, verificationToken);
 
-    const verificationLink = `${process.env.BASE_URL}/api/users/verify-email?token=${verificationToken}`;
+    console.log('verificationToken:', verificationToken);
+
+    const verificationLink = `${process.env.FRONTEND}/users/verify-email?token=${verificationToken}`;
     sendEmail({
         to: normalizedEmail,
-        subject: 'Verify your email',
+        subject: 'Verify your email for Alas Delis and Spices',
         html: verificationEmail(username, verificationLink),
     }).catch((err) => {
         console.error('Error sending verification email:', err);
