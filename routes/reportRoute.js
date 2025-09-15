@@ -15,5 +15,6 @@ router.get('/sales-summary-order', reportController.getSalesSummaryByStatus);
 router.get('/top-products', reportController.getTopProducts);
 router.get('/sales-per-day', reportController.getSalesPerDay);
 router.get('/user-report', reportController.getUserReport);
+router.get('/weekly-sales', reportController.getWeeklySales);
 
 module.exports = router;
