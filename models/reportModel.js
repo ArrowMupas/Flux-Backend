@@ -1,4 +1,5 @@
 const pool = require('../database/pool');
+const dayjs = require('dayjs')
 
 // Function to fetch sales summary for a given date range
 const fetchSalesSummary = async (start, end) => {
@@ -134,10 +135,62 @@ const fetchUserReport = async (start, end) => {
     };
 };
 
+// Chart Thingy
+const fetchWeeklySales = async (weeks = 7) => {
+    const endDate = dayjs();  
+    const startDate = endDate.subtract((weeks * 7) - 1, 'day');
+
+    const start = startDate.format('YYYY-MM-DD');
+    const end = endDate.format('YYYY-MM-DD');
+    const endWithTime = `${end} 23:59:59`;
+
+    const [rows] = await pool.query(
+        `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
+         FROM orders 
+         WHERE order_date BETWEEN ? AND ?
+           AND status = 'delivered'
+         GROUP BY DATE(order_date)
+         ORDER BY DATE(order_date) ASC`,
+        [start, endWithTime]
+    );
+
+    const salesMap = {};
+    rows.forEach(row => {
+    const dateKey = dayjs(row.date).format('YYYY-MM-DD'); 
+    salesMap[dateKey] = Number(row.daily_sales);
+});
+
+    const allDates = [];
+    let currentDate = startDate;
+    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+        const dateStr = currentDate.format('YYYY-MM-DD');
+        allDates.push({
+            date: dateStr,
+            daily_sales: salesMap[dateStr] || 0
+        });
+        currentDate = currentDate.add(1, 'day');
+    }
+
+    const weeklyData = [];
+    for (let i = 0; i < allDates.length; i += 7) {
+        const weekDays = allDates.slice(i, i + 7);
+        const weekLabel = `Week ${weeklyData.length + 1} (${weekDays[0].date} - ${weekDays[weekDays.length - 1].date})`;
+
+        weeklyData.push({
+            label: weekLabel,
+            days: weekDays.map(day => day.daily_sales),
+            total: weekDays.reduce((sum, d) => sum + d.daily_sales, 0)
+        });
+    }
+
+    return weeklyData;
+};
+
 module.exports = {
     fetchSalesSummary,
     fetchTopProducts,
     fetchSalesPerDay,
     fetchUserReport,
     fetchSalesSummaryByStatus,
+    fetchWeeklySales
 };

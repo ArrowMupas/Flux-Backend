@@ -73,10 +73,24 @@ const getUserReport = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'User Report Retrieved', result);
 });
 
+// Chart Report
+const getWeeklySales = asyncHandler(async (req, res) => {
+    const { weeks = 7 } = req.query;
+    const weeklySales = await reportModel.fetchWeeklySales(parseInt(weeks));
+
+    const result = {
+        weeks: weeklySales,
+        weekCount: weeklySales.length
+    };
+
+    return sendResponse(res, 200, 'Weekly sales data retrieved', result);
+});
+
 module.exports = {
     getSalesSummary,
     getTopProducts,
     getSalesPerDay,
     getUserReport,
     getSalesSummaryByStatus,
+    getWeeklySales
 };
