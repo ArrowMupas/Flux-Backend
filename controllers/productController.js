@@ -48,14 +48,7 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot find product with ID ${req.params.id}`);
     }
 
-    const result = await productModel.updateProduct(
-        req.params.id,
-        name,
-        category,
-        price,
-        image,
-        description
-    );
+    const result = await productModel.updateProduct(req.params.id, name, category, price, image, description);
 
     if (result.affectedRows === 0) {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
@@ -104,9 +97,7 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
     res.locals.auditLog = {
         entity_id: id,
         entity_name: product.name,
-        description: `Set product "${product.name}" (ID: ${id}) to ${
-            is_active ? 'active' : 'inactive'
-        }`,
+        description: `Set product "${product.name}" (ID: ${id}) to ${is_active ? 'active' : 'inactive'}`,
         before_data: { is_active: product.is_active },
         after_data: { is_active },
     };
@@ -131,11 +122,7 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
     }
 
     // Add to current stock
-    const updatedProduct = await productModel.updateProductStockAndPrice(
-        id,
-        restock_quantity,
-        price
-    );
+    const updatedProduct = await productModel.updateProductStockAndPrice(id, restock_quantity, price);
 
     await logInventoryChange({
         productId: id,

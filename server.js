@@ -61,9 +61,8 @@ app.use('/api/walkInOrders', walkInOrderRoute);
 app.use('/api/coupons', couponRoute);
 app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api/logs', logRoute);
-app.use('/api', uploadRoute);
+app.use('/api/upload', uploadRoute);
 app.use('/api/dashboard', dashboardRoute);
-
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
