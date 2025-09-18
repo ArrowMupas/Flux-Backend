@@ -5,7 +5,6 @@ const HttpError = require('../helpers/errorHelper');
 
 // Get or create a cart for a specific user.
 const getOrCreateCart = async (userId) => {
-    // Fetch cart from DB, if no cache
     let cart = await cartModel.getCartByUserId(userId);
 
     // Create cart if not found
@@ -14,18 +13,15 @@ const getOrCreateCart = async (userId) => {
         cart = await cartModel.getCartByUserId(userId);
     }
 
-    // Cache cart for 5 minutes (120 seconds)
     return cart;
 };
 
 const getCartItemsByCartId = async (cartId) => {
-    // Fetch items from DB
     const cart = await cartModel.getCartItemsByCartId(cartId);
     if (!cart) {
         throw new HttpError(404, 'Cart not found');
     }
 
-    // Cache items for 2 minutes (120 seconds)
     return cart;
 };
 
@@ -58,7 +54,6 @@ const addToCart = async (cartId, productId, quantity = 1) => {
 
         await connection.commit();
 
-        // Invalidate cache after modification, fetch updated cart
         const cart = await cartModel.getCartById(connection, cartId);
 
         // Reapply coupon if it exists
@@ -101,7 +96,6 @@ const updateCartItemQuantity = async (cartId, productId, quantity) => {
 
         await connection.commit();
 
-        // Invalidate cache
         const cart = await cartModel.getCartById(connection, cartId);
 
         // Reapply coupon if it exists

@@ -1,15 +1,12 @@
 const walkInOrderModel = require('../models/walkInOrderModel');
 const productModel = require('../models/productModel');
-const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
+const { withTransaction } = require('../helpers/transactionHelper');
 
 // Logic to create a walk-in sale
 const createWalkInSale = async (name, email, items, discount_amount = 0, notes = '') => {
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    try {
+    return withTransaction(async (connection) => {
         const generatedID = generateOrderId();
         await walkInOrderModel.createOrder(
             {
@@ -50,14 +47,8 @@ const createWalkInSale = async (name, email, items, discount_amount = 0, notes =
         const finalTotal = total - discount_amount;
         await walkInOrderModel.updateOrderTotal(generatedID, finalTotal, connection);
 
-        await connection.commit();
         return { generatedID };
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    });
 };
 
 // Logic to get all walk-in sales with their items

@@ -11,7 +11,6 @@ const productSchema = Joi.object({
 }).unknown();
 
 const updateProductSchema = Joi.object({
-    id: Joi.string().max(10).required(),
     name: Joi.string().max(100).required(),
     category: Joi.string().max(50).optional(),
     price: Joi.number().min(0).required(),
