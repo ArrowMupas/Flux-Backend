@@ -186,11 +186,51 @@ const fetchWeeklySales = async (weeks = 7) => {
     return weeklyData;
 };
 
+//For the 7 days graph thingy
+const fetchDailySales = async (days = 7) => {
+    const endDate = dayjs();
+    const startDate = endDate.subtract(days - 1, 'day');
+
+    const start = startDate.format('YYYY-MM-DD');
+    const end = endDate.format('YYYY-MM-DD');
+    const endWithTime = `${end} 23:59:59`;
+
+    const [rows] = await pool.query(
+        `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
+         FROM orders 
+         WHERE order_date BETWEEN ? AND ?
+           AND status = 'delivered'
+         GROUP BY DATE(order_date)
+         ORDER BY DATE(order_date) ASC`,
+        [start, endWithTime]
+    );
+
+    const salesMap = {};
+    rows.forEach(row => {
+        const dateKey = dayjs(row.date).format('YYYY-MM-DD');
+        salesMap[dateKey] = Number(row.daily_sales);
+    });
+
+    const allDates = [];
+    let currentDate = startDate;
+    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+        const dateStr = currentDate.format('YYYY-MM-DD');
+        allDates.push({
+            date: dateStr,
+            daily_sales: salesMap[dateStr] || 0
+        });
+        currentDate = currentDate.add(1, 'day');
+    }
+
+    return allDates;
+};
+
 module.exports = {
     fetchSalesSummary,
     fetchTopProducts,
     fetchSalesPerDay,
     fetchUserReport,
     fetchSalesSummaryByStatus,
-    fetchWeeklySales
+    fetchWeeklySales,
+    fetchDailySales
 };

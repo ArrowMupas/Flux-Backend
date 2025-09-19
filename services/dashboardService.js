@@ -1,38 +1,55 @@
 const pool = require('../database/pool');
 
 const getDashboardMetrics = async () => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const formattedDate = sevenDaysAgo.toISOString().slice(0, 19).replace('T', ' ');
-    
-    const [results] = await pool.query(`
-        SELECT 
+ 
+    const [onlineResults] = await pool.query(`
+        SELECT
             COUNT(DISTINCT o.id) as online_orders_count,
             COALESCE(SUM(o.total_amount), 0) as online_total_sales,
-            COALESCE(SUM(oi.quantity), 0) as online_items_sold,
+            COALESCE(SUM(oi.quantity), 0) as online_items_sold
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+    `);
 
+    const [walkInResults] = await pool.query(`
+        SELECT
             COUNT(DISTINCT w.id) as walkin_orders_count,
             COALESCE(SUM(w.total_amount), 0) as walkin_total_sales,
             COALESCE(SUM(wi.quantity), 0) as walkin_items_sold
-
-        FROM (SELECT ? as date_filter) d
-        LEFT JOIN orders o ON o.order_date >= d.date_filter
-        LEFT JOIN order_items oi ON o.id = oi.order_id
-        LEFT JOIN walk_in_sales w ON w.sale_date >= d.date_filter
+        FROM walk_in_sales w
         LEFT JOIN walk_in_sale_items wi ON w.id = wi.sale_id
-    `, [formattedDate]);
+    `);
 
-    const metrics = results[0];
+    const onlineMetrics = onlineResults[0];
+    const walkInMetrics = walkInResults[0];
     
-    const totalSales = parseFloat(metrics.online_total_sales) + parseFloat(metrics.walkin_total_sales);
-    const totalItemsSold = parseInt(metrics.online_items_sold) + parseInt(metrics.walkin_items_sold);
+    const totalSales = parseInt(onlineMetrics.online_total_sales) + parseInt(walkInMetrics.walkin_total_sales);
+    const totalItemsSold = parseInt(onlineMetrics.online_items_sold) + parseInt(walkInMetrics.walkin_items_sold);
+
+    const [recentOrders] = await pool.query(`
+        SELECT 
+            o.id,
+            o.order_date,
+            o.status,
+            o.total_amount,
+            u.username as customer_name
+        FROM orders o
+        JOIN users u ON o.customer_id = u.id
+        ORDER BY o.order_date DESC
+        LIMIT 3
+    `);
+    
+    const formattedRecentOrders = recentOrders.map(order => ({
+        ...order,
+        order_date: new Date(order.order_date).toISOString().slice(0, 19).replace('T', ' ')
+    }));
     
     return {
-        onlineOrdersLast7Days: metrics.online_orders_count,
-        walkInOrdersLast7Days: metrics.walkin_orders_count,
-        totalSalesLast7Days: totalSales,
-        totalItemsSoldLast7Days: totalItemsSold
+        totalOnlineOrders: onlineMetrics.online_orders_count,
+        totalWalkInOrders: walkInMetrics.walkin_orders_count,
+        totalSales: totalSales,
+        totalItemsSold: totalItemsSold,
+        recentOrders: formattedRecentOrders
     };
 };
 

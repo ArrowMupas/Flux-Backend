@@ -25,6 +25,7 @@ router.use(generalLimiter);
 
 // Public Routes
 router.get('/', getAllProducts);
+router.get('/low-stock-check', productController.checkLowStock);
 router.get('/:id', getProductById);
 
 // Protected routes
@@ -32,6 +33,7 @@ router.use(verifyToken);
 router.use(authorizeAccess([ROLES.ADMIN, ROLES.STAFF]));
 
 router.get('/admin/list', getAllProductsAdmin);
+
 
 router.post(
     '/',

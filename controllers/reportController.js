@@ -86,11 +86,24 @@ const getWeeklySales = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Weekly sales data retrieved', result);
 });
 
+const getDailySales = asyncHandler(async (req, res) => {
+    const { days = 7 } = req.query;
+    const dailySales = await reportModel.fetchDailySales(parseInt(days));
+
+    const result = {
+        days: dailySales,
+        dayCount: dailySales.length
+    };
+
+    return sendResponse(res, 200, 'Daily sales data retrieved', result);
+});
+
 module.exports = {
     getSalesSummary,
     getTopProducts,
     getSalesPerDay,
     getUserReport,
     getSalesSummaryByStatus,
-    getWeeklySales
+    getWeeklySales,
+    getDailySales
 };
