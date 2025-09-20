@@ -16,5 +16,6 @@ router.get('/top-products', reportController.getTopProducts);
 router.get('/sales-per-day', reportController.getSalesPerDay);
 router.get('/user-report', reportController.getUserReport);
 router.get('/weekly-sales', reportController.getWeeklySales);
+router.get('/daily-sales', reportController.getDailySales);
 
 module.exports = router;

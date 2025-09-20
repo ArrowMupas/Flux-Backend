@@ -159,6 +159,18 @@ const createProductReservation = async (productId, orderId, quantity, connection
     );
 };
 
+const hasLowStockItems = async () => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT COUNT(*) as count FROM products WHERE stock_quantity <= 10'
+    );
+    return rows[0].count > 0;
+  } catch (error) {
+    console.error('Error checking for low stock items:', error);
+    throw error;
+  }
+};
+
 module.exports = {
     getAllProducts,
     getProductById,
@@ -173,4 +185,5 @@ module.exports = {
     getProductStockForUpdate,
     updateReservedQuantity,
     createProductReservation,
+    hasLowStockItems,
 };
