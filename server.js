@@ -25,6 +25,7 @@ const logRoute = require('./routes/logRoute');
 const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
 const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
 const dashboardRoute = require('./routes/dashboardRoute');
+const salesRoute = require('./routes/salesRoute');
 
 app.use(helmet());
 app.use(compression());
@@ -63,6 +64,7 @@ app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api/logs', logRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/dashboard', dashboardRoute);
+app.use('/api/sales', salesRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {

@@ -1,6 +1,14 @@
 const pool = require('../database/pool');
 
 const getDashboardMetrics = async () => {
+
+    const [customerResults] = await pool.query(`
+        SELECT COUNT(u.id) as total_customers
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'customer'
+    `);
+    
  
     const [onlineResults] = await pool.query(`
         SELECT
@@ -45,6 +53,7 @@ const getDashboardMetrics = async () => {
     }));
     
     return {
+        totalCustomers: customerResults[0].total_customers || 0,
         totalOnlineOrders: onlineMetrics.online_orders_count,
         totalWalkInOrders: walkInMetrics.walkin_orders_count,
         totalSales: totalSales,

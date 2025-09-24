@@ -148,7 +148,7 @@ const fetchWeeklySales = async (weeks = 7) => {
         `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
          FROM orders 
          WHERE order_date BETWEEN ? AND ?
-           AND status = 'delivered'
+           AND status IN ('pending', 'processing', 'shipping', 'delivered')
          GROUP BY DATE(order_date)
          ORDER BY DATE(order_date) ASC`,
         [start, endWithTime]
@@ -189,7 +189,7 @@ const fetchWeeklySales = async (weeks = 7) => {
 //For the 7 days graph thingy
 const fetchDailySales = async (days = 7) => {
     const endDate = dayjs();
-    const startDate = endDate.subtract(days - 1, 'day');
+    const startDate = endDate.subtract(days - 1, 'day'  );
 
     const start = startDate.format('YYYY-MM-DD');
     const end = endDate.format('YYYY-MM-DD');
@@ -199,7 +199,7 @@ const fetchDailySales = async (days = 7) => {
         `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
          FROM orders 
          WHERE order_date BETWEEN ? AND ?
-           AND status = 'delivered'
+           AND status IN ('pending', 'processing', 'shipping', 'delivered')
          GROUP BY DATE(order_date)
          ORDER BY DATE(order_date) ASC`,
         [start, endWithTime]
