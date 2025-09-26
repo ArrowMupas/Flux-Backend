@@ -169,14 +169,10 @@ const deleteProduct = asyncHandler(async (req, res) => {
 });
 
 const checkLowStock = asyncHandler(async (req, res) => {
+    const hasLowStock = await productModel.hasLowStockItems();
 
-    const hasLowStock = await productModel.hasLowStockItems();
-
-    sendResponse(res, 200, 'Low stock check completed', { hasLowStock });
-
+    sendResponse(res, 200, 'Low stock check completed', { hasLowStock });
 });
-
-
 
 module.exports = {
     getAllProducts,

@@ -1,4 +1,5 @@
 const pool = require('../database/pool');
+const SQL = require('sql-template-strings');
 
 const createOrder = async (orderData, connection = pool) => {
     const [result] = await connection.query(`INSERT INTO orders SET ?`, orderData);
@@ -119,17 +120,12 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = [], mon
 
 // Function to create initial order status
 const createOrderStatus = async ({ orderId, newStatus, notes }, connection = pool) => {
-    await connection.query(`UPDATE orders SET status = ? WHERE id = ?`, [newStatus, orderId]);
-
-    // Log it on status history
-    await connection.query(
-        `INSERT INTO order_status_history 
-         (order_id, status, notes) 
-         VALUES (?, ?, ?)`,
-        [orderId, newStatus, notes]
-    );
+    await connection.query(SQL`
+    INSERT INTO order_status_history 
+      (order_id, status, notes) 
+    VALUES (${orderId}, ${newStatus}, ${notes})
+  `);
 };
-
 // Function to get order status history
 const getOrderStatusHistory = async (orderId) => {
     const [history] = await pool.query(

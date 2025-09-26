@@ -2,9 +2,12 @@ const pool = require('../database/pool');
 const SQL = require('sql-template-strings');
 
 const getCartItemsByCartId = async (cartId) => {
-    // Get cart items and product details
-    const [items] = await pool.query(SQL`
+    const [rows] = await pool.query(SQL`
         SELECT 
+            c.id AS cart_id,
+            c.user_id,
+            c.coupon_code,
+            c.discount_total,
             ci.id AS cart_item_id,
             ci.quantity,
             ci.updated_at,
@@ -14,41 +17,34 @@ const getCartItemsByCartId = async (cartId) => {
             p.image,
             p.stock_quantity,
             p.description
+        FROM carts c
+        LEFT JOIN cart_items ci ON ci.cart_id = c.id
+        LEFT JOIN products p ON ci.product_id = p.id
+        WHERE c.id = ${cartId}
+    `);
+
+    return rows;
+};
+
+const getCartItemsWithDetails = async (cartId) => {
+    const [rows] = await pool.query(SQL`
+        SELECT 
+            ci.id AS cart_item_id,
+            ci.quantity,
+            ci.updated_at AS item_updated_at,
+            p.id AS product_id,
+            p.name AS product_name,
+            p.price AS product_price,
+            p.image AS product_image,
+            p.stock_quantity AS product_stock,
+            p.description AS product_description,
+            SUM(ci.quantity * p.price) OVER (PARTITION BY ci.cart_id) AS cart_total
         FROM cart_items ci
-        JOIN products p ON ci.product_id = p.id
+        JOIN products p ON p.id = ci.product_id
         WHERE ci.cart_id = ${cartId}
     `);
 
-    // Get total price
-    const [[total]] = await pool.query(SQL`
-        SELECT SUM(ci.quantity * p.price) AS cart_total
-        FROM cart_items ci
-        JOIN products p ON ci.product_id = p.id
-        WHERE ci.cart_id = ${cartId}
-    `);
-
-    const cart_total = parseFloat(total?.cart_total || 0);
-
-    // Get cart info (for coupon and discount)
-    const [[cartInfo]] = await pool.query(SQL`
-        SELECT user_id, coupon_code, discount_total
-        FROM carts
-        WHERE id = ${cartId}
-    `);
-
-    const discount = parseFloat(cartInfo?.discount_total || 0);
-    const coupon_code = cartInfo?.coupon_code || null;
-    const user_id = cartInfo?.user_id || null;
-
-    return {
-        cart_id: cartId,
-        cart_total,
-        coupon_code,
-        discount,
-        final_total: Math.max(cart_total - discount, 0),
-        items,
-        user_id,
-    };
+    return rows;
 };
 
 const insertCartItem = async (connection, cartId, productId, quantity) => {
@@ -235,4 +231,5 @@ module.exports = {
     removeCartItemByCartId,
     getCartByUserIdTransaction,
     getCartItemsByCartIdTransaction,
+    getCartItemsWithDetails,
 };
