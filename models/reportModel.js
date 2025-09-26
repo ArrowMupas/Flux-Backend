@@ -1,5 +1,6 @@
 const pool = require('../database/pool');
-const dayjs = require('dayjs')
+const SQL = require('sql-template-strings');
+const dayjs = require('dayjs');
 
 // Function to fetch sales summary for a given date range
 const fetchSalesSummary = async (start, end) => {
@@ -137,8 +138,8 @@ const fetchUserReport = async (start, end) => {
 
 // Chart Thingy
 const fetchWeeklySales = async (weeks = 7) => {
-    const endDate = dayjs();  
-    const startDate = endDate.subtract((weeks * 7) - 1, 'day');
+    const endDate = dayjs();
+    const startDate = endDate.subtract(weeks * 7 - 1, 'day');
 
     const start = startDate.format('YYYY-MM-DD');
     const end = endDate.format('YYYY-MM-DD');
@@ -155,10 +156,10 @@ const fetchWeeklySales = async (weeks = 7) => {
     );
 
     const salesMap = {};
-    rows.forEach(row => {
-    const dateKey = dayjs(row.date).format('YYYY-MM-DD'); 
-    salesMap[dateKey] = Number(row.daily_sales);
-});
+    rows.forEach((row) => {
+        const dateKey = dayjs(row.date).format('YYYY-MM-DD');
+        salesMap[dateKey] = Number(row.daily_sales);
+    });
 
     const allDates = [];
     let currentDate = startDate;
@@ -166,7 +167,7 @@ const fetchWeeklySales = async (weeks = 7) => {
         const dateStr = currentDate.format('YYYY-MM-DD');
         allDates.push({
             date: dateStr,
-            daily_sales: salesMap[dateStr] || 0
+            daily_sales: salesMap[dateStr] || 0,
         });
         currentDate = currentDate.add(1, 'day');
     }
@@ -178,8 +179,8 @@ const fetchWeeklySales = async (weeks = 7) => {
 
         weeklyData.push({
             label: weekLabel,
-            days: weekDays.map(day => day.daily_sales),
-            total: weekDays.reduce((sum, d) => sum + d.daily_sales, 0)
+            days: weekDays.map((day) => day.daily_sales),
+            total: weekDays.reduce((sum, d) => sum + d.daily_sales, 0),
         });
     }
 
@@ -187,42 +188,49 @@ const fetchWeeklySales = async (weeks = 7) => {
 };
 
 //For the 7 days graph thingy
-const fetchDailySales = async (days = 7) => {
-    const endDate = dayjs();
-    const startDate = endDate.subtract(days - 1, 'day'  );
+const fetchDailySales = async (start, endWithTime) => {
+    const query = SQL`
+        SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
+        FROM orders
+        WHERE order_date BETWEEN ${start} AND ${endWithTime}
+          AND status IN ('pending', 'processing', 'shipping', 'delivered')
+        GROUP BY DATE(order_date)
+        ORDER BY DATE(order_date) ASC
+    `;
 
-    const start = startDate.format('YYYY-MM-DD');
-    const end = endDate.format('YYYY-MM-DD');
-    const endWithTime = `${end} 23:59:59`;
+    const [rows] = await pool.query(query);
+    return rows;
+};
 
-    const [rows] = await pool.query(
-        `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
-         FROM orders 
-         WHERE order_date BETWEEN ? AND ?
-           AND status IN ('pending', 'processing', 'shipping', 'delivered')
-         GROUP BY DATE(order_date)
-         ORDER BY DATE(order_date) ASC`,
-        [start, endWithTime]
-    );
+const fetchDashboardMetrics = async () => {
+    const [metrics] = await pool.query(`
+        SELECT
+            -- Total customers
+            (SELECT COUNT(u.id)
+             FROM users u
+             JOIN roles r ON u.role_id = r.id
+             WHERE r.name = 'customer') AS total_customers,
 
-    const salesMap = {};
-    rows.forEach(row => {
-        const dateKey = dayjs(row.date).format('YYYY-MM-DD');
-        salesMap[dateKey] = Number(row.daily_sales);
-    });
+            -- Online orders
+            (SELECT COUNT(DISTINCT o.id)
+             FROM orders o) AS online_orders_count,
+            (SELECT COALESCE(SUM(o.total_amount), 0)
+             FROM orders o) AS online_total_sales,
+            (SELECT COALESCE(SUM(oi.quantity), 0)
+             FROM orders o
+             LEFT JOIN order_items oi ON o.id = oi.order_id) AS online_items_sold,
 
-    const allDates = [];
-    let currentDate = startDate;
-    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
-        const dateStr = currentDate.format('YYYY-MM-DD');
-        allDates.push({
-            date: dateStr,
-            daily_sales: salesMap[dateStr] || 0
-        });
-        currentDate = currentDate.add(1, 'day');
-    }
+            -- Walk-in orders
+            (SELECT COUNT(DISTINCT w.id)
+             FROM walk_in_sales w) AS walkin_orders_count,
+            (SELECT COALESCE(SUM(w.total_amount), 0)
+             FROM walk_in_sales w) AS walkin_total_sales,
+            (SELECT COALESCE(SUM(wi.quantity), 0)
+             FROM walk_in_sales w
+             LEFT JOIN walk_in_sale_items wi ON w.id = wi.sale_id) AS walkin_items_sold
+    `);
 
-    return allDates;
+    return metrics[0]; // return raw DB row
 };
 
 module.exports = {
@@ -232,5 +240,6 @@ module.exports = {
     fetchUserReport,
     fetchSalesSummaryByStatus,
     fetchWeeklySales,
-    fetchDailySales
+    fetchDailySales,
+    fetchDashboardMetrics,
 };

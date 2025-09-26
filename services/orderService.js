@@ -4,17 +4,14 @@ const pool = require('../database/pool');
 const HttpError = require('../helpers/errorHelper');
 const {
     validateCart,
-    enforceOrderLimit,
     createNewOrder,
     addItemsAndReserveStock,
-    createInitialOrderStatus,
     handlePayment,
 } = require('../workflows/createOrderWorkflow');
 
 // Logic of creating an order
 const createOrder = async (userId, { payment_method, address, notes, reference_number, account_name }) => {
     const cart = await validateCart(userId);
-    await enforceOrderLimit(userId);
 
     // Start a transaction
     const connection = await pool.getConnection();
@@ -41,8 +38,10 @@ const createOrder = async (userId, { payment_method, address, notes, reference_n
             connection,
         });
 
-        await createInitialOrderStatus(orderId, connection);
         await connection.commit();
+        orderModel
+            .createOrderStatus({ orderId, newStatus: 'pending', notes: 'Order created' })
+            .catch((err) => console.error('Failed to log initial order status:', err));
         cartService.clearCart(cart.cart_id || cart.id).catch((err) => console.error('Failed to clear cart:', err));
         return { orderId, paymentId };
     } catch (error) {

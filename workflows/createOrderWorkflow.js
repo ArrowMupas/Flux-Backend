@@ -10,42 +10,39 @@ const INVENTORY_ACTIONS = require('../constants/inventoryActions');
 
 const validateCart = async (userId) => {
     const cart = await cartModel.getCartByUserId(userId);
-    if (!cart) {
-        throw new HttpError(404, 'Cart not found');
-    }
+    if (!cart) throw new HttpError(404, 'Cart not found');
 
-    const cartData = await cartModel.getCartItemsByCartId(cart.id);
-    if (!cartData.items || cartData.items.length === 0) {
-        throw new HttpError(404, 'Cart is empty');
-    }
+    const items = await cartModel.getCartItemsWithDetails(cart.id);
+    if (!items.length) throw new HttpError(404, 'Cart is empty');
+
+    // Calculate totals
+    const cart_total = parseFloat(items[0].cart_total || 0);
+    const discount = parseFloat(cart.discount_total || 0);
+
+    const formattedItems = items.map((row) => ({
+        cart_item_id: row.cart_item_id,
+        quantity: row.quantity,
+        updated_at: row.item_updated_at,
+        product_id: row.product_id,
+        name: row.product_name,
+        price: parseFloat(row.product_price || 0),
+        image: row.product_image,
+        stock_quantity: row.product_stock,
+        description: row.product_description,
+    }));
 
     return {
         cart_id: cart.id,
-        user_id: userId,
-        cart_total: cartData.cart_total,
-        final_total: cartData.final_total,
-        coupon_code: cartData.coupon_code,
-        discount: cartData.discount,
-        items: cartData.items,
+        user_id: cart.user_id,
+        coupon_code: cart.coupon_code,
+        discount,
+        cart_total,
+        final_total: Math.max(cart_total - discount, 0),
+        items: formattedItems,
     };
 };
 
-const enforceOrderLimit = async (userId) => {
-    const todayCount = await orderModel.getTodayOrderCountByUser(userId);
-    if (todayCount >= 100) {
-        throw new HttpError(429, "You've reached your 100 orders today. Try again tomorrow.");
-    }
-};
-
-const createNewOrder = async ({
-    userId,
-    subtotal,
-    total,
-    discount = 0,
-    coupon_code = null,
-    notes,
-    connection,
-}) => {
+const createNewOrder = async ({ userId, subtotal, total, discount = 0, coupon_code = null, notes, connection }) => {
     const orderId = generateOrderId();
 
     await orderModel.createOrder(
@@ -119,25 +116,12 @@ const reserveStock = async (item, orderId, stock, connection) => {
     const newAvailable = stock.stock_quantity - newReserved;
 
     await productModel.updateReservedQuantity(item.product_id, newReserved, connection);
-    await productModel.createProductReservation(
-        item.product_id,
-        orderId,
-        item.quantity,
-        connection
-    );
+    await productModel.createProductReservation(item.product_id, orderId, item.quantity, connection);
 
     return { newReserved, newAvailable };
 };
 
-const logInventoryReservation = async ({
-    item,
-    stock,
-    newReserved,
-    newAvailable,
-    orderId,
-    userId,
-    connection,
-}) => {
+const logInventoryReservation = async ({ item, stock, newReserved, newAvailable, orderId, userId, connection }) => {
     await logInventoryChange({
         productId: item.product_id,
         orderId,
@@ -153,25 +137,7 @@ const logInventoryReservation = async ({
     });
 };
 
-const createInitialOrderStatus = async (orderId, connection) => {
-    await orderModel.createOrderStatus(
-        {
-            orderId,
-            newStatus: 'pending',
-            notes: 'pending',
-        },
-        connection
-    );
-};
-
-const handlePayment = async ({
-    orderId,
-    payment_method,
-    reference_number,
-    account_name,
-    address,
-    connection,
-}) => {
+const handlePayment = async ({ orderId, payment_method, reference_number, account_name, address, connection }) => {
     const existing = await paymentModel.getPaymentByOrderId(orderId, connection);
     if (existing) {
         throw new HttpError(400, 'Payment for this order already submitted');
@@ -189,13 +155,11 @@ const handlePayment = async ({
 
 module.exports = {
     validateCart,
-    enforceOrderLimit,
     createNewOrder,
     addItemsAndReserveStock,
     addOrderItem,
     validateAndFetchStock,
     reserveStock,
     logInventoryReservation,
-    createInitialOrderStatus,
     handlePayment,
 };

@@ -17,12 +17,41 @@ const getOrCreateCart = async (userId) => {
 };
 
 const getCartItemsByCartId = async (cartId) => {
-    const cart = await cartModel.getCartItemsByCartId(cartId);
-    if (!cart) {
+    const rows = await cartModel.getCartItemsByCartId(cartId);
+
+    if (!rows || rows.length === 0) {
         throw new HttpError(404, 'Cart not found');
     }
 
-    return cart;
+    const { cart_id, user_id, coupon_code, discount_total } = rows[0];
+
+    const items = rows
+        .filter((r) => r.cart_item_id)
+        .map((r) => ({
+            cart_item_id: r.cart_item_id,
+            quantity: r.quantity,
+            updated_at: r.updated_at,
+            product_id: r.product_id,
+            name: r.name,
+            price: r.price,
+            image: r.image,
+            stock_quantity: r.stock_quantity,
+            description: r.description,
+        }));
+
+    const cart_total = items.reduce((sum, i) => sum + parseFloat(i.price) * i.quantity, 0);
+    const discount = parseFloat(discount_total || 0);
+    const final_total = Math.max(cart_total - discount, 0);
+
+    return {
+        cart_id,
+        cart_total,
+        coupon_code,
+        discount,
+        final_total,
+        items,
+        user_id,
+    };
 };
 
 const addToCart = async (cartId, productId, quantity = 1) => {
