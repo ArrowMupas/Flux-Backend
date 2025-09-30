@@ -1,5 +1,15 @@
 const salesService = require('../services/salesService');
 
+const getDailySales = async (req, res) => {
+    try {
+        const metrics = await salesService.getDailySalesMetrics();
+        res.status(200).json(metrics);
+    } catch (error) {
+        console.error('Daily sales error:', error);
+        res.status(500).json({ message: 'Error fetching daily sales metrics' });
+    }
+};
+
 const getWeeklySales = async (req, res) => {
     try {
         const metrics = await salesService.getWeeklySalesMetrics();
@@ -20,7 +30,19 @@ const getMonthlySales = async (req, res) => {
     }
 };
 
+const getYearlySales = async (req, res) => {
+    try {
+        const metrics = await salesService.getYearlySalesMetrics();
+        res.status(200).json(metrics);
+    } catch (error) {
+        console.error('Yearly sales error:', error);
+        res.status(500).json({ message: 'Error fetching yearly sales metrics' });
+    }
+};
+
 module.exports = {
+    getDailySales,
     getWeeklySales,
-    getMonthlySales
+    getMonthlySales,
+    getYearlySales
 };
