@@ -219,6 +219,26 @@ const deleteReservationsByOrderId = async (order_id, connection = pool) => {
     );
 };
 
+// Function to get orders using date range
+const getOrdersByDateRange = async (startDate, endDate, connection = pool) => {
+    const [rows] = await pool.query(`
+       SELECT 
+            o.id,
+            o.order_date,
+            u.username AS customer_name,
+            o.total_amount,
+            p.method AS payment_method
+        FROM orders o
+        LEFT JOIN payments p ON o.id = p.order_id
+        LEFT JOIN users u ON o.customer_id = u.id
+        WHERE o.order_date BETWEEN ? AND ?
+        ORDER BY o.order_date DESC
+        `,
+        [startDate, endDate]
+    );
+    return rows;
+};
+
 module.exports = {
     createOrder,
     addOrderItem,
@@ -236,4 +256,5 @@ module.exports = {
     getReservedQuantityByProductId,
     deductStockForOrder,
     deleteReservationsByOrderId,
+    getOrdersByDateRange,
 };
