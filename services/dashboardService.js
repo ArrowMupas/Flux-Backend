@@ -51,6 +51,32 @@ const getDashboardMetrics = async () => {
         ...order,
         order_date: new Date(order.order_date).toISOString().slice(0, 19).replace('T', ' ')
     }));
+
+    const [topProducts] = await pool.query(`
+        SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p.image,
+        COALESCE(SUM(oi.quantity), 0) AS total_sold
+        FROM products p
+        LEFT JOIN order_items oi ON oi.product_id = p.id
+        LEFT JOIN orders o ON oi.order_id = o.id
+        GROUP BY p.id, p.name, p.price, p.image
+        ORDER BY total_sold DESC
+        LIMIT 3
+    `);
+
+    const [lowStock] = await pool.query(`
+        SELECT 
+        p.id,
+        p.name,
+        p.stock_quantity AS stock
+        FROM products p
+        WHERE p.stock_quantity <= 10
+        ORDER BY p.stock_quantity ASC
+        LIMIT 5
+    `);
     
     return {
         totalCustomers: customerResults[0].total_customers || 0,
@@ -58,7 +84,9 @@ const getDashboardMetrics = async () => {
         totalWalkInOrders: walkInMetrics.walkin_orders_count,
         totalSales: totalSales,
         totalItemsSold: totalItemsSold,
-        recentOrders: formattedRecentOrders
+        recentOrders: formattedRecentOrders,
+        topProducts,
+        lowStock
     };
 };
 

@@ -2,32 +2,52 @@ const pool = require('../database/pool');
 const dayjs = require('dayjs');
 
 const fetchOnlineSalesMetrics = async (startDate, endDate, connection = pool) => {
-    const [results] = await connection.query(`
+    const [orderResults] = await connection.query(`
         SELECT
-            COUNT(DISTINCT o.id) as online_orders_count,
-            COALESCE(SUM(o.total_amount), 0) as online_total_sales,
-            COALESCE(SUM(oi.quantity), 0) as online_items_sold
-        FROM orders o
-        LEFT JOIN order_items oi ON o.id = oi.order_id
+            COUNT(DISTINCT id) as online_orders_count,
+            COALESCE(SUM(total_amount), 0) as online_total_sales
+        FROM orders 
+        WHERE order_date BETWEEN ? AND ?
+          AND status IN ('processing', 'shipping', 'delivered')
+    `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
+
+    const [itemsResults] = await connection.query(`
+        SELECT COALESCE(SUM(oi.quantity), 0) as online_items_sold
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
         WHERE o.order_date BETWEEN ? AND ?
           AND o.status IN ('processing', 'shipping', 'delivered')
     `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
 
-    return results[0];
+    return {
+        ...orderResults[0],
+        ...itemsResults[0]
+    };
 };
 
 const fetchWalkInSalesMetrics = async (startDate, endDate, connection = pool) => {
-    const [results] = await connection.query(`
+
+    //Get orders and total (Needs to be seperated so it will not dup because of the JOIN or Im just dumb XD)
+    const [orderResults] = await connection.query(`
         SELECT
-            COUNT(DISTINCT w.id) as walkin_orders_count,
-            COALESCE(SUM(w.total_amount), 0) as walkin_total_sales,
-            COALESCE(SUM(wi.quantity), 0) as walkin_items_sold
-        FROM walk_in_sales w
-        LEFT JOIN walk_in_sale_items wi ON w.id = wi.sale_id
+            COUNT(DISTINCT id) as walkin_orders_count,
+            COALESCE(SUM(total_amount), 0) as walkin_total_sales
+        FROM walk_in_sales 
+        WHERE sale_date BETWEEN ? AND ?
+    `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
+
+    // Get items sold 
+    const [itemsResults] = await connection.query(`
+        SELECT COALESCE(SUM(wi.quantity), 0) as walkin_items_sold
+        FROM walk_in_sale_items wi
+        JOIN walk_in_sales w ON wi.sale_id = w.id
         WHERE w.sale_date BETWEEN ? AND ?
     `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
 
-    return results[0];
+    return {
+        ...orderResults[0],
+        ...itemsResults[0]
+    };
 };
 
 const fetchProductPerformance = async (startDate, endDate, limit = 5, connection = pool) => {

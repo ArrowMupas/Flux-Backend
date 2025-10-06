@@ -1,3 +1,7 @@
+-- This reflects our base database table before the addition of knex migrations
+-- This file is not to be touched/edited again hopefully
+-- Any seeding or edit of a table should be done with knex
+
 CREATE DATABASE IF NOT EXISTS sauce;
 USE sauce;
 
@@ -54,12 +58,6 @@ CREATE TABLE IF NOT EXISTS staff_permissions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE
 );
-
-INSERT IGNORE INTO staff_permissions (name) VALUES
-('get_sales_summary'),
-('get_top_products'),
-('get_daily_sales'),
-('get_user_report');
 
 CREATE TABLE IF NOT EXISTS user_permissions (
     user_id INT,
@@ -229,72 +227,6 @@ CREATE TABLE IF NOT EXISTS product_reviews (
     FOREIGN KEY (order_id) REFERENCES orders(id),
     UNIQUE KEY unique_user_product_review (user_id, product_id)
 );
-
--- Seeds for easier testing (why did we not do this earlier)
--- Seed products
-INSERT IGNORE INTO products (id, name, category, stock_quantity, price, image, description, created_at)
-VALUES
-('P001', 'The Ballad of Q', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302194/alas_uploads/iknwr95caffzjwbkkhdu.jpg', 'A mysterious sauce with a bold, rich flavor.', '2025-05-30 09:14:12'),
-('P002', 'Big Bald Bob', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302182/alas_uploads/bbounuzrfo02cbronbme.jpg', 'Intense and strong, just like Bob himself.', '2025-05-30 09:14:12'),
-('P003', 'Call Me Debra', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302419/alas_uploads/ffgfhv57rvygxjkriw9e.jpg', 'Sweet with a surprising kick.', '2025-05-30 09:14:12'),
-('P004', 'Carbon', 'Condiment', 50, 400.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302380/alas_uploads/gpdvbwvqnx1l2ri4fbx9.jpg', 'Smoky and dark — for those who like it bold.', '2025-05-30 09:14:12'),
-('P005', 'Catch 22', 'Condiment', 50, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749303226/alas_uploads/n2yltnqql5zvciosdugo.jpg', 'A twisty blend that keeps you coming back.', '2025-05-30 09:14:12');
-
-INSERT IGNORE INTO products (id, name, category, stock_quantity, price, image, description)
-VALUES
-('P006', 'Gypsy Bu', 'Condiment', 40, 999.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302550/alas_uploads/zgb62etqzs0pmyohucar.jpg', 'Rises in heat and flavor.'),
-('P007', 'Grin', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302469/alas_uploads/y3alljz8lpsne23jbdm2.jpg', 'Hits quietly, leaves a lasting impression.'),
-('P008', 'Birds Eye Gambit', 'Condiment', 30, 300.00, 'https://res.cloudinary.com/drq2wzvmo/image/upload/v1749302297/alas_uploads/gzl6lzcevjp8uhyza6h8.jpg', 'Hits quietly, leaves a lasting impression.');
-
--- Seed users
-INSERT IGNORE INTO users (username, address, contact_number, role_id, email, password_hash, created_at, updated_at)
-VALUES
-('walter_white', '308 Negra Arroyo Lane, Albuquerque', '5051234567', 1, 'heisenberg@bb.com', '$2b$10$HeisenbergHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
-('jesse_pinkman', '9809 Margo Street, Albuquerque', '5057654321', 2, 'yo@bb.com', '$2b$10$JesseHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
-('saul_goodman', '1000 Legal Ave, Albuquerque', '5050000000', 2, 'bettercall@saul.com', '$2b$10$SaulHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
-('skyler_white', '308 Negra Arroyo Lane, Albuquerque', '5059999999', 2, 'skyler@bb.com', '$2b$10$SkylerHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12'),
-('gus_fring', 'Los Pollos Hermanos HQ, Albuquerque', '5051112222', 1, 'gus@pollos.com', '$2b$10$GusHashPlaceholder', '2025-05-30 09:14:12', '2025-05-30 09:14:12');
-
--- Seed orders
-INSERT IGNORE INTO orders (
-  id,
-  customer_id,
-  order_date,
-  status,
-  total_amount,
-  discount_amount,
-  notes,
-  cancel_requested,
-  coupon_code,
-  subtotal
-) VALUES
-('ALAS202505010001', 1, '2025-05-01 10:00:00', 'processing', 600.00, 0.00, 'Test order #1', 0, NULL, 600.00),
-('ALAS202505020002', 2, '2025-05-02 11:30:00', 'shipping', 800.00, 0.00, 'Test order #2', 0, NULL, 800.00),
-('ALAS202505030003', 3, '2025-05-03 09:15:00', 'delivered', 900.00, 0.00, 'Test order #3', 0, NULL, 900.00),
-('ALAS202505040004', 1, '2025-05-04 14:20:00', 'processing', 1200.00, 0.00, 'Test order #4', 0, NULL, 1200.00),
-('ALAS202505050005', 2, '2025-05-05 16:45:00', 'shipping', 900.00, 0.00, 'Test order #5', 0, NULL, 900.00),
-('ALAS202505060006', 3, '2025-05-06 08:00:00', 'delivered', 1500.00, 0.00, 'Test order #6', 0, NULL, 1500.00),
-('ALAS202505070007', 1, '2025-05-07 13:10:00', 'processing', 700.00, 0.00, 'Test order #7', 0, NULL, 700.00),
-('ALAS202505080008', 2, '2025-05-08 15:30:00', 'shipping', 600.00, 0.00, 'Test order #8', 0, NULL, 600.00),
-('ALAS202505090009', 3, '2025-05-09 17:40:00', 'delivered', 1000.00, 0.00, 'Test order #9', 0, NULL, 1000.00),
-('ALAS202505100010', 1, '2025-05-10 12:05:00', 'processing', 300.00, 0.00, 'Test order #10', 0, NULL, 300.00);
-
-
-INSERT IGNORE INTO order_items (order_id, product_id, quantity, unit_price, subtotal) VALUES
-('ALAS202505010001', 'P001', 2, 300.00, 600.00),
-('ALAS202505020002', 'P002', 2, 400.00, 800.00),
-('ALAS202505020002', 'P005', 2, 400.00, 800.00),
-('ALAS202505030003', 'P003', 2, 400.00, 800.00),
-('ALAS202505030003', 'P003', 3, 300.00, 900.00),
-('ALAS202505040004', 'P004', 3, 400.00, 1200.00),
-('ALAS202505050005', 'P005', 3, 300.00, 900.00),
-('ALAS202505060006', 'P001', 5, 300.00, 1500.00),
-('ALAS202505070007', 'P004', 1, 400.00, 400.00),
-('ALAS202505070007', 'P005', 1, 300.00, 300.00),
-('ALAS202505080008', 'P003', 2, 300.00, 600.00),
-('ALAS202505090009', 'P002', 2, 400.00, 800.00),
-('ALAS202505090009', 'P005', 1, 300.00, 300.00),
-('ALAS202505100010', 'P001', 1, 300.00, 300.00);
 
 CREATE TABLE IF NOT EXISTS inventory_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
