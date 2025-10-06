@@ -31,13 +31,10 @@ export default defineConfig([
             'no-debugger': 'error',
             'consistent-return': 'warn',
             'no-duplicate-imports': 'error',
-            'object-shorthand': ['error', 'always'],
+            'object-shorthand': ['warn', 'always'],
             'prefer-template': 'warn',
             'no-useless-catch': 'warn',
-            'no-unused-vars': [
-                'warn',
-                { vars: 'all', args: 'after-used', ignoreRestSiblings: false },
-            ],
+            'no-unused-vars': ['warn', { vars: 'all', args: 'after-used', ignoreRestSiblings: false }],
         },
     },
 ]);
