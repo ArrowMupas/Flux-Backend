@@ -52,8 +52,11 @@ const generateOrdersPDFReport = async (req, res) => {
             return res.status(400).json({ message: 'Start date and end date are required' });
         }
 
-        const start = dayjs(startDate).startOf('day');
-        const end = dayjs(endDate).endOf('day');
+        const startNormalized = dayjs(startDate).format('YYYY-MM-DD');
+        const endNormalized = dayjs(endDate).format('YYYY-MM-DD');
+
+        const start = dayjs(startNormalized).startOf('day');
+        const end = dayjs(endNormalized).endOf('day');
 
         if (!start.isValid() || !end.isValid()) {
             return res.status(400).json({ message: 'Invalid date format' });
@@ -77,8 +80,15 @@ const generateOrdersPDFReport = async (req, res) => {
         // Generate PDF
         const pdfBuffer = await generateOrdersPDF(orders, dateRange, reportType);
 
+        const startFormatted = dayjs(startNormalized).format('YYYY-MM-DD')
+        const endFormatted = dayjs(endNormalized).format('YYYY-MM-DD')
+
+        const filename = startFormatted === endFormatted
+            ? `sales-report-${startFormatted}.pdf`
+            : `sales-report-${startFormatted}-to-${endFormatted}.pdf`;
+
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=orders-report-${start.format('YYYY-MM-DD')}-to-${end.format('YYYY-MM-DD')}.pdf`);
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
         
         res.send(pdfBuffer);
 
@@ -92,7 +102,7 @@ const generateOrdersPDFReport = async (req, res) => {
 };
 
 module.exports = {
-    getDailySales,
+    getDailySales,  
     getWeeklySales,
     getMonthlySales,
     getYearlySales,
