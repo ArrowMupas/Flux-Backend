@@ -206,8 +206,7 @@ const clearCart = async (cartId, connection = null) => {
 const applyCouponToCart = async (userId, code, connection = null) => {
     const conn = connection || pool;
 
-    // fetch cart
-    const cart = await cartModel.getCartByUserIdTransaction(conn, userId);
+    const cart = await cartModel.getCartByUserId(userId, conn);
     if (!cart) throw new HttpError(404, 'Cart not found');
 
     const cartData = await cartModel.getCartItemsByCartIdTransaction(conn, cart.id);
@@ -216,12 +215,22 @@ const applyCouponToCart = async (userId, code, connection = null) => {
     }
 
     // fetch coupon
-    const coupon = await couponModel.getCouponByCode(conn, code);
+    const coupon = await couponModel.getCouponByCode(code, conn);
     if (!coupon || !coupon.is_active) throw new HttpError(400, 'Invalid or inactive coupon');
 
     // Validate coupon usage limits
     if (coupon.usage_limit !== null && coupon.times_used >= coupon.usage_limit) {
         throw new HttpError(400, 'This coupon has reached its usage limit.');
+    }
+
+    const now = new Date();
+
+    if (coupon.starts_at && new Date(coupon.starts_at) > now) {
+        throw new HttpError(400, 'This coupon is not active yet.');
+    }
+
+    if (coupon.expires_at && new Date(coupon.expires_at) < now) {
+        throw new HttpError(400, 'This coupon has expired.');
     }
 
     // Validate coupon per user limit

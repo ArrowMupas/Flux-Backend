@@ -23,7 +23,6 @@ const uploadRoute = require('./routes/uploadRoute');
 const couponRoute = require('./routes/couponRoute');
 const logRoute = require('./routes/logRoute');
 const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
-const { initializeStockChecker } = require('./utilities/inventoryStockChecker');
 const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 
@@ -76,8 +75,5 @@ app.use(errorMiddleware);
 
 // port
 app.listen(process.env.PORT, () => {
-    console.log(`Node API is running on port ${process.env.PORT}`);
-
-    // Initialize automated inventory stock checking
-    initializeStockChecker();
+    console.log(`Alas BackEnd is now Running!`);
 });
