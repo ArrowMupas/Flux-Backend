@@ -26,75 +26,6 @@ const getCartItemsByCartId = async (cartId) => {
     return rows;
 };
 
-const getCartItemsWithDetails = async (cartId) => {
-    const [rows] = await pool.query(SQL`
-        SELECT 
-            ci.id AS cart_item_id,
-            ci.quantity,
-            ci.updated_at AS item_updated_at,
-            p.id AS product_id,
-            p.name AS product_name,
-            p.price AS product_price,
-            p.image AS product_image,
-            p.stock_quantity AS product_stock,
-            p.description AS product_description,
-            SUM(ci.quantity * p.price) OVER (PARTITION BY ci.cart_id) AS cart_total
-        FROM cart_items ci
-        JOIN products p ON p.id = ci.product_id
-        WHERE ci.cart_id = ${cartId}
-    `);
-
-    return rows;
-};
-
-const insertCartItem = async (connection, cartId, productId, quantity) => {
-    const [result] = await connection.query(SQL`
-        INSERT INTO cart_items (cart_id, product_id, quantity)
-        VALUES (${cartId}, ${productId}, ${quantity})
-    `);
-    return result;
-};
-
-const updateCartItem = async (connection, cartId, productId, quantity) => {
-    const [result] = await connection.query(SQL`
-        UPDATE cart_items
-        SET quantity = ${quantity}, updated_at = CURRENT_TIMESTAMP
-        WHERE cart_id = ${cartId} AND product_id = ${productId}
-    `);
-    return result;
-};
-
-const removeCartItemByCartId = async (connection, cartId, productId) => {
-    const [result] = await connection.query(SQL`
-        DELETE FROM cart_items
-        WHERE cart_id = ${cartId} AND product_id = ${productId}
-    `);
-    return result;
-};
-
-//
-// ✅ Get cart for user (returns a single cart or null)
-const getCartByUserId = async (userId) => {
-    const [rows] = await pool.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
-    return rows[0];
-};
-
-const getCartByUserIdTransaction = async (connection, userId) => {
-    const [rows] = await connection.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
-    return rows[0];
-};
-
-const getCartById = async (connection, cartId) => {
-    const [rows] = await connection.query('SELECT * FROM carts WHERE id = ?', [cartId]);
-    return rows[0];
-};
-
-// ✅ Create a new cart for user
-const createCart = async (userId) => {
-    const [result] = await pool.query('INSERT INTO carts (user_id) VALUES (?)', [userId]);
-    return result.insertId;
-};
-
 const getCartItemsByCartIdTransaction = async (connection, cartId) => {
     // Get cart items and product details
     const [items] = await connection.query(
@@ -146,6 +77,75 @@ const getCartItemsByCartIdTransaction = async (connection, cartId) => {
         items,
         user_id,
     };
+};
+
+const getCartItemsWithDetails = async (cartId) => {
+    const [rows] = await pool.query(SQL`
+        SELECT 
+            ci.id AS cart_item_id,
+            ci.quantity,
+            ci.updated_at AS item_updated_at,
+            p.id AS product_id,
+            p.name AS product_name,
+            p.price AS product_price,
+            p.image AS product_image,
+            p.stock_quantity AS product_stock,
+            p.description AS product_description,
+            SUM(ci.quantity * p.price) OVER (PARTITION BY ci.cart_id) AS cart_total
+        FROM cart_items ci
+        JOIN products p ON p.id = ci.product_id
+        WHERE ci.cart_id = ${cartId}
+    `);
+
+    return rows;
+};
+
+const insertCartItem = async (connection, cartId, productId, quantity) => {
+    const [result] = await connection.query(SQL`
+        INSERT INTO cart_items (cart_id, product_id, quantity)
+        VALUES (${cartId}, ${productId}, ${quantity})
+    `);
+    return result;
+};
+
+const updateCartItem = async (connection, cartId, productId, quantity) => {
+    const [result] = await connection.query(SQL`
+        UPDATE cart_items
+        SET quantity = ${quantity}, updated_at = CURRENT_TIMESTAMP
+        WHERE cart_id = ${cartId} AND product_id = ${productId}
+    `);
+    return result;
+};
+
+const removeCartItemByCartId = async (connection, cartId, productId) => {
+    const [result] = await connection.query(SQL`
+        DELETE FROM cart_items
+        WHERE cart_id = ${cartId} AND product_id = ${productId}
+    `);
+    return result;
+};
+
+//
+// ✅ Get cart for user (returns a single cart or null)
+const getCartByUserId = async (userId, connection = pool) => {
+    const [rows] = await connection.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
+    return rows[0];
+};
+
+const getCartByUserIdTransaction = async (connection, userId) => {
+    const [rows] = await connection.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
+    return rows[0];
+};
+
+const getCartById = async (connection, cartId) => {
+    const [rows] = await connection.query('SELECT * FROM carts WHERE id = ?', [cartId]);
+    return rows[0];
+};
+
+// ✅ Create a new cart for user
+const createCart = async (userId) => {
+    const [result] = await pool.query('INSERT INTO carts (user_id) VALUES (?)', [userId]);
+    return result.insertId;
 };
 
 // ✅ Get product stock (uses given connection)

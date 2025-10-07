@@ -13,7 +13,7 @@ const insertCoupon = async (coupon) => {
         per_user_limit,
     } = coupon;
 
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
         `INSERT INTO coupons (
       code, description, discount_type, discount_value,
       is_active, starts_at, expires_at, usage_limit, per_user_limit
@@ -35,11 +35,11 @@ const insertCoupon = async (coupon) => {
 };
 
 const getCouponById = async (id) => {
-    const [rows] = await pool.execute('SELECT * FROM coupons WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM coupons WHERE id = ?', [id]);
     return rows[0];
 };
 
-const getCouponByCode = async (connection, code) => {
+const getCouponByCode = async (code, connection = pool) => {
     const [rows] = await connection.query('SELECT * FROM coupons WHERE code = ?', [code]);
     return rows[0];
 };
@@ -49,13 +49,10 @@ const incrementUsage = async (code, connection = pool) => {
 };
 
 const logUserCouponUsage = async (userId, couponCode, connection = pool) => {
-    await connection.query(`INSERT INTO coupon_usages (user_id, coupon_code) VALUES (?, ?)`, [
-        userId,
-        couponCode,
-    ]);
+    await connection.query(`INSERT INTO coupon_usages (user_id, coupon_code) VALUES (?, ?)`, [userId, couponCode]);
 };
 
-const getUserCouponUsageCount = async (connection, userId, couponCode) => {
+const getUserCouponUsageCount = async (connection = pool, userId, couponCode) => {
     const [rows] = await connection.query(
         `SELECT COUNT(*) AS usage_count FROM coupon_usages WHERE user_id = ? AND coupon_code = ?`,
         [userId, couponCode]
