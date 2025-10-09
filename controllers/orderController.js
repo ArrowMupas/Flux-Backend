@@ -17,6 +17,15 @@ const createOrder = asyncHandler(async (req, res) => {
         account_name,
     });
 
+    const io = req.app.get('io');
+    // Triggers the toast event to all logged in admins when a new order is created
+    // Should be replaced with a more relevant event later
+    io.to('admins').emit('toast', {
+        type: 'info',
+        message: `New order created by user #${userId}`,
+    });
+    console.log('📢 Emitted toast to admins:', userId);
+
     return sendResponse(res, 200, 'Order Created', result);
 });
 
@@ -29,7 +38,11 @@ const getOrders = asyncHandler(async (req, res) => {
     const paymentMethods = [].concat(req.query.payment_method || []);
 
     const monthYear = req.query.month_year || null;
-    const data = await orderService.getOrders(userId, { status, payment_methods: paymentMethods, month_year: monthYear });
+    const data = await orderService.getOrders(userId, {
+        status,
+        payment_methods: paymentMethods,
+        month_year: monthYear,
+    });
     return sendResponse(res, 200, 'Orders retrieved', data);
 });
 

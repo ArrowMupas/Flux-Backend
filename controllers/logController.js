@@ -27,9 +27,7 @@ const fetchAxiomLogs = async (aplQuery) => {
 
 const getSignins = async (req, res) => {
     try {
-        const matches = await fetchAxiomLogs(
-            'where message =~ "login" | order by _time desc | limit 50'
-        );
+        const matches = await fetchAxiomLogs('where message =~ "login" | order by _time desc | limit 50');
 
         const logins = matches.map((match) => {
             const data = match.data || {};
@@ -58,14 +56,10 @@ const getSignins = async (req, res) => {
 const getAdminAuditLogs = async (req, res) => {
     // console.log('You reached me'); uncomment if you want to see how the cache work
     try {
-        const matches = await fetchAxiomLogs(
-            'where message =~ "Admin action" | order by _time desc | limit 20'
-        );
+        const matches = await fetchAxiomLogs('where message =~ "Admin action" | order by _time desc | limit 20');
 
         const cleanData = (data) =>
-            Object.fromEntries(
-                Object.entries(data).filter(([_, value]) => value !== null && value !== undefined)
-            );
+            Object.fromEntries(Object.entries(data).filter(([_, value]) => value !== null && value !== undefined));
 
         const logs = matches.map((match) => {
             const data = match.data || {};

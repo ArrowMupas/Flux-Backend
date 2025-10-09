@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const compression = require('compression');
 const errorMiddleware = require('./middlewares/errorMiddleware');
+const http = require('http');
 
 // route import
 const userRoute = require('./routes/userRoute');
@@ -26,6 +27,7 @@ const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute'
 const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 
+// security & optimization
 app.use(helmet());
 app.use(compression());
 
@@ -73,7 +75,13 @@ app.use((req, res, next) => {
 // error middleware
 app.use(errorMiddleware);
 
-// port
-app.listen(process.env.PORT, () => {
-    console.log(`Alas BackEnd is now Running!`);
+// Create HTTP server and attach Express app
+const server = http.createServer(app);
+const initializeSocket = require('./utilities/socket');
+
+const io = initializeSocket(server, app, FRONTEND);
+
+// Start server
+server.listen(process.env.PORT, () => {
+    console.log(`🚀 Alas BackEnd is now Running!`);
 });
