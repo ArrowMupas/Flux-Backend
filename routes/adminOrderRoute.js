@@ -6,7 +6,8 @@ const { generalLimiter } = require('../middlewares/rateLimiterMiddleware');
 const { statusUpdateSchema } = require('../validations/adminOrderValidation');
 const validate = require('../middlewares/validateMiddleware');
 const ROLES = require('../constants/roles');
-const { orderCompletionStockMiddleware } = require('../middlewares/autoStockCheckMiddleware');
+const adminLogMiddleware = require('../middlewares/adminLogMiddleware');
+const { ACTION_TYPES, ENTITY_TYPES } = require('../constants/adminActivityTypes');
 const adminOrderController = require('../controllers/adminOrderController');
 const {
     getAllOrders,
@@ -24,9 +25,37 @@ router.get('/:id', getOrderById);
 router.get('/user/:id', getOrdersByUserId);
 router.get('/status-history/:orderId', getOrderStatusHistory);
 router.patch('/status-update/:orderId', validate(statusUpdateSchema), adminOrderController.changeOrderStatus);
-router.patch('/move-to-processing/:orderId', adminOrderController.movePendingToProcessing);
-router.patch('/move-to-shipping/:orderId', adminOrderController.moveProcessingToShipping);
-router.patch('/move-to-delivered/:orderId', adminOrderController.moveShippingToDelivered);
-router.patch('/cancel/:orderId', orderCompletionStockMiddleware(), adminOrderController.adminCancelOrder);
+router.patch(
+    '/move-to-processing/:orderId',
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.ORDER,
+        action_type: ACTION_TYPES.PROCESS,
+    }),
+    adminOrderController.movePendingToProcessing
+);
+router.patch(
+    '/move-to-shipping/:orderId',
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.ORDER,
+        action_type: ACTION_TYPES.SHIP,
+    }),
+    adminOrderController.moveProcessingToShipping
+);
+router.patch(
+    '/move-to-delivered/:orderId',
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.ORDER,
+        action_type: ACTION_TYPES.DELIVER,
+    }),
+    adminOrderController.moveShippingToDelivered
+);
+router.patch(
+    '/cancel/:orderId',
+    adminLogMiddleware({
+        entity_type: ENTITY_TYPES.ORDER,
+        action_type: ACTION_TYPES.CANCEL,
+    }),
+    adminOrderController.adminCancelOrder
+);
 
 module.exports = router;

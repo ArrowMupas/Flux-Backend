@@ -61,6 +61,13 @@ const movePendingToProcessing = asyncHandler(async (req, res) => {
     const { notes } = req.body;
 
     const order = await adminOrderService.pendingToProcessingLogic(orderId, notes, id);
+
+    res.locals.auditLog = {
+        entity_id: orderId,
+        description: `Processed order "${orderId}"`,
+        before_data: { status: 'Pending' },
+        after_data: { status: 'Processing' },
+    };
     return sendResponse(res, 200, 'Order moved to Processing', order);
 });
 
@@ -69,6 +76,13 @@ const moveProcessingToShipping = asyncHandler(async (req, res) => {
     const { notes } = req.body;
 
     const order = await adminOrderService.processingToShippingLogic(orderId, notes);
+
+    res.locals.auditLog = {
+        entity_id: orderId,
+        description: `Shipped order "${orderId}"`,
+        before_data: { status: 'Processing' },
+        after_data: { status: 'Shipping' },
+    };
     return sendResponse(res, 200, 'Order moved to Shipping', order);
 });
 
@@ -77,6 +91,13 @@ const moveShippingToDelivered = asyncHandler(async (req, res) => {
     const { notes } = req.body;
 
     const order = await adminOrderService.shippingToDeliveredLogic(orderId, notes);
+
+    res.locals.auditLog = {
+        entity_id: orderId,
+        description: `Delivered order "${orderId}"`,
+        before_data: { status: 'Shipping' },
+        after_data: { status: 'Delivered' },
+    };
     return sendResponse(res, 200, 'Order moved to Delivered', order);
 });
 
