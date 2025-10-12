@@ -107,8 +107,8 @@ const updateProductActiveStatus = asyncHandler(async (req, res) => {
         entity_id: id,
         entity_name: product.name,
         description: `Set product "${product.name}" (ID: ${id}) to ${is_active ? 'active' : 'inactive'}`,
-        before_data: { is_active: product.is_active },
-        after_data: { is_active },
+        before_data: { is_active: product.is_active ? 'Yes' : 'No' },
+        after_data: { is_active: is_active ? 'Yes' : 'No' },
     };
 
     res.status(200).json({

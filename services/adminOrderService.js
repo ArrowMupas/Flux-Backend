@@ -184,6 +184,7 @@ const pendingToProcessingLogic = async (orderId, notes, adminId) => {
 
         await adminOrderModel.changeOrderStatus(orderId, 'processing', notes, connection);
         await connection.commit();
+
         return await adminOrderModel.getOrderById(orderId);
     } catch (error) {
         await connection.rollback();
