@@ -36,6 +36,15 @@ const getOrderStatusHistory = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order status history retrieved', history);
 });
 
+// Admin cancel order
+const adminCancelOrder = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+    const { notes } = req.body;
+
+    await adminOrderService.adminCancelOrder(orderId, notes);
+    return sendResponse(res, 200, 'Order cancelled by admin');
+});
+
 // Admin change status of order
 const changeOrderStatus = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
@@ -46,13 +55,29 @@ const changeOrderStatus = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order status updated', order);
 });
 
-// Admin cancel order
-const adminCancelOrder = asyncHandler(async (req, res) => {
+const movePendingToProcessing = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+    const { id } = req.user;
+    const { notes } = req.body;
+
+    const order = await adminOrderService.pendingToProcessingLogic(orderId, notes, id);
+    return sendResponse(res, 200, 'Order moved to Processing', order);
+});
+
+const moveProcessingToShipping = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const { notes } = req.body;
 
-    await adminOrderService.adminCancelOrder(orderId, notes);
-    return sendResponse(res, 200, 'Order cancelled by admin');
+    const order = await adminOrderService.processingToShippingLogic(orderId, notes);
+    return sendResponse(res, 200, 'Order moved to Shipping', order);
+});
+
+const moveShippingToDelivered = asyncHandler(async (req, res) => {
+    const { orderId } = req.params;
+    const { notes } = req.body;
+
+    const order = await adminOrderService.shippingToDeliveredLogic(orderId, notes);
+    return sendResponse(res, 200, 'Order moved to Delivered', order);
 });
 
 module.exports = {
@@ -60,6 +85,9 @@ module.exports = {
     getOrderById,
     getOrdersByUserId,
     getOrderStatusHistory,
-    changeOrderStatus,
     adminCancelOrder,
+    changeOrderStatus,
+    movePendingToProcessing,
+    moveProcessingToShipping,
+    moveShippingToDelivered,
 };

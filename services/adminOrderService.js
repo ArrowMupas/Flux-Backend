@@ -4,6 +4,7 @@ const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
 const INVENTORY_ACTIONS = require('../constants/inventoryActions');
+const validateStatusTransition = require('../helpers/validateStatusTransition');
 
 // Logic for getting all orders
 const getAllOrders = async (status, startDate = null, endDate = null) => {
@@ -61,77 +62,6 @@ const getOrderStatusHistory = async (orderId) => {
     return await adminOrderModel.getOrderStatusHistory(orderId);
 };
 
-// Logic for changing order status
-const changeOrderStatus = async (orderId, newStatus, notes, id) => {
-    const connection = await pool.getConnection();
-
-    try {
-        await connection.beginTransaction();
-
-        const order = await adminOrderModel.getOrderById(orderId);
-        if (!order) {
-            throw new HttpError(404, 'No order found');
-        }
-
-        const currentStatus = order.status;
-
-        if (currentStatus === newStatus) {
-            throw new HttpError(400, `Order is already marked as '${newStatus}'`);
-        }
-
-        const allowedTransitions = {
-            pending: ['processing', 'cancelled'],
-            processing: ['shipping'],
-            shipping: ['delivered'],
-        };
-
-        const allowedNext = allowedTransitions[currentStatus] || [];
-
-        if (!allowedNext.includes(newStatus)) {
-            throw new HttpError(
-                400,
-                `Cannot change status from '${currentStatus}' to '${newStatus}'`
-            );
-        }
-
-        if (currentStatus === 'pending' && newStatus === 'processing') {
-            // 🔁 Get inventory changes
-            const inventoryChanges = await reservationModel.deductReservedStock(
-                orderId,
-                connection
-            );
-
-            // 🧾 Log each change
-            for (const change of inventoryChanges) {
-                await logInventoryChange({
-                    productId: change.productId,
-                    orderId,
-                    adminId: id ?? null,
-                    action: INVENTORY_ACTIONS.CONFIRM,
-                    changeAvailable: change.changeAvailable,
-                    changeReserved: change.changeReserved,
-                    oldAvailable: change.oldAvailable,
-                    newAvailable: change.newAvailable,
-                    oldReserved: change.oldReserved,
-                    newReserved: change.newReserved,
-                    reason: 'Stock moved from reserved to sold',
-                    dbConnection: connection,
-                });
-            }
-        }
-
-        await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
-
-        await connection.commit();
-        return await adminOrderModel.getOrderById(orderId);
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
-};
-
 // Logic for admin cancelling an order
 const adminCancelOrder = async (orderId, notes) => {
     const connection = await pool.getConnection();
@@ -167,11 +97,146 @@ const adminCancelOrder = async (orderId, notes) => {
     }
 };
 
+// old logic for status change.
+// We are keeping it for reference in case we need to revert back
+const changeOrderStatus = async (orderId, newStatus, notes, adminId) => {
+    const order = await adminOrderModel.getOrderById(orderId);
+    if (!order) throw new HttpError(404, 'No order found');
+
+    const currentStatus = order.status;
+    if (currentStatus === newStatus) throw new HttpError(400, `Order is already marked as '${newStatus}'`);
+
+    const allowedTransitions = {
+        pending: ['processing', 'cancelled'],
+        processing: ['shipping'],
+        shipping: ['delivered'],
+    };
+
+    const allowedNext = allowedTransitions[currentStatus] || [];
+    if (!allowedNext.includes(newStatus)) {
+        throw new HttpError(400, `Cannot change status from '${currentStatus}' to '${newStatus}'`);
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // ✅ Only run transactional logic now
+        if (currentStatus === 'pending' && newStatus === 'processing') {
+            const inventoryChanges = await reservationModel.deductReservedStock(orderId, connection);
+
+            for (const change of inventoryChanges) {
+                await logInventoryChange({
+                    productId: change.productId,
+                    orderId,
+                    adminId: adminId ?? null,
+                    action: INVENTORY_ACTIONS.CONFIRM,
+                    changeAvailable: change.changeAvailable,
+                    changeReserved: change.changeReserved,
+                    oldAvailable: change.oldAvailable,
+                    newAvailable: change.newAvailable,
+                    oldReserved: change.oldReserved,
+                    newReserved: change.newReserved,
+                    reason: 'Stock moved from reserved to sold',
+                    dbConnection: connection,
+                });
+            }
+        }
+
+        await adminOrderModel.changeOrderStatus(orderId, newStatus, notes, connection);
+
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+// New logics for each status transition
+// Looks repetetive but when we start adding more complex logic it will be easier to manage
+const pendingToProcessingLogic = async (orderId, notes, adminId) => {
+    await validateStatusTransition(orderId, 'processing', 'pending');
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const inventoryChanges = await reservationModel.deductReservedStock(orderId, connection);
+        for (const change of inventoryChanges) {
+            await logInventoryChange({
+                productId: change.productId,
+                orderId,
+                adminId: adminId ?? null,
+                action: INVENTORY_ACTIONS.CONFIRM,
+                changeAvailable: change.changeAvailable,
+                changeReserved: change.changeReserved,
+                oldAvailable: change.oldAvailable,
+                newAvailable: change.newAvailable,
+                oldReserved: change.oldReserved,
+                newReserved: change.newReserved,
+                reason: 'Stock moved from reserved to sold',
+                dbConnection: connection,
+            });
+        }
+
+        await adminOrderModel.changeOrderStatus(orderId, 'processing', notes, connection);
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+const processingToShippingLogic = async (orderId, notes) => {
+    await validateStatusTransition(orderId, 'shipping', 'processing');
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        await adminOrderModel.changeOrderStatus(orderId, 'shipping', notes, connection);
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+const shippingToDeliveredLogic = async (orderId, notes) => {
+    await validateStatusTransition(orderId, 'delivered', 'shipping');
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        await adminOrderModel.changeOrderStatus(orderId, 'delivered', notes, connection);
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
 module.exports = {
     getAllOrders,
     getOrderById,
     getOrdersByUserId,
     getOrderStatusHistory,
-    changeOrderStatus,
     adminCancelOrder,
+    changeOrderStatus,
+    pendingToProcessingLogic,
+    processingToShippingLogic,
+    shippingToDeliveredLogic,
 };

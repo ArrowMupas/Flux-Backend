@@ -24,6 +24,9 @@ router.get('/:id', getOrderById);
 router.get('/user/:id', getOrdersByUserId);
 router.get('/status-history/:orderId', getOrderStatusHistory);
 router.patch('/status-update/:orderId', validate(statusUpdateSchema), adminOrderController.changeOrderStatus);
+router.patch('/move-to-processing/:orderId', adminOrderController.movePendingToProcessing);
+router.patch('/move-to-shipping/:orderId', adminOrderController.moveProcessingToShipping);
+router.patch('/move-to-delivered/:orderId', adminOrderController.moveShippingToDelivered);
 router.patch('/cancel/:orderId', orderCompletionStockMiddleware(), adminOrderController.adminCancelOrder);
 
 module.exports = router;
