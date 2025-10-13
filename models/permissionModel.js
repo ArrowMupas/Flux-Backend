@@ -19,17 +19,27 @@ const updateUserPermission = async (userId, permissions, connection = pool) => {
     await connection.query('DELETE FROM user_permissions WHERE user_id = ?', [userId]);
 
     for (const name of permissions) {
-        const [[permission]] = await connection.query(
-            'SELECT id FROM staff_permissions WHERE name = ?',
-            [name]
-        );
+        const [[permission]] = await connection.query('SELECT id FROM staff_permissions WHERE name = ?', [name]);
         if (permission) {
-            await connection.query(
-                'INSERT INTO user_permissions (user_id, permission_id) VALUES (?, ?)',
-                [userId, permission.id]
-            );
+            await connection.query('INSERT INTO user_permissions (user_id, permission_id) VALUES (?, ?)', [
+                userId,
+                permission.id,
+            ]);
         }
     }
+};
+
+const getUserPermissions = async (userId) => {
+    const [rows] = await pool.query(
+        `
+    SELECT sp.name
+    FROM staff_permissions sp
+    JOIN user_permissions up ON up.permission_id = sp.id
+    WHERE up.user_id = ?
+  `,
+        [userId]
+    );
+    return rows;
 };
 
 const isUserStaff = async (userId) => {
@@ -92,4 +102,5 @@ module.exports = {
     getStaffPermissions,
     getAllPermissions,
     userExistsAndIsStaff,
+    getUserPermissions,
 };

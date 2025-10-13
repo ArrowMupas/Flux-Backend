@@ -76,7 +76,6 @@ const generateOrdersPDFReport = async (req, res) => {
 
         // Generate PDF
         const pdfBuffer = await generateOrdersPDF(orders, dateRange, reportType);
-        console.log('PDF type:', typeof pdfBuffer, 'Is Buffer:', Buffer.isBuffer(pdfBuffer));
 
         const startFormatted = dayjs(startNormalized).format('YYYY-MM-DD');
         const endFormatted = dayjs(endNormalized).format('YYYY-MM-DD');
@@ -88,6 +87,7 @@ const generateOrdersPDFReport = async (req, res) => {
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
