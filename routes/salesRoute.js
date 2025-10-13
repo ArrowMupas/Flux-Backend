@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getDailySales, getWeeklySales, getMonthlySales, getYearlySales, generateOrdersPDFReport } = require('../controllers/salesController');
+const {
+    getDailySales,
+    getWeeklySales,
+    getMonthlySales,
+    getYearlySales,
+    generateOrdersPDFReport,
+} = require('../controllers/salesController');
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
 const ROLES = require('../constants/roles');
@@ -12,6 +18,14 @@ router.get('/daily', getDailySales);
 router.get('/weekly', getWeeklySales);
 router.get('/monthly', getMonthlySales);
 router.get('/yearly', getYearlySales);
-router.get('/pdf-report', generateOrdersPDFReport);
+router.get(
+    '/pdf-report',
+    (req, res, next) => {
+        // Disable response compression for this route
+        res.set('Content-Encoding', 'identity');
+        next();
+    },
+    generateOrdersPDFReport
+);
 
 module.exports = router;

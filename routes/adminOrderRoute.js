@@ -3,7 +3,7 @@ const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
 const authorizeAccess = require('../middlewares/accessMiddleware');
 const { generalLimiter } = require('../middlewares/rateLimiterMiddleware');
-const { statusUpdateSchema } = require('../validations/adminOrderValidation');
+const { statusUpdateSchema, updateStatusSchema } = require('../validations/adminOrderValidation');
 const validate = require('../middlewares/validateMiddleware');
 const ROLES = require('../constants/roles');
 const adminLogMiddleware = require('../middlewares/adminLogMiddleware');
@@ -27,6 +27,7 @@ router.get('/status-history/:orderId', getOrderStatusHistory);
 router.patch('/status-update/:orderId', validate(statusUpdateSchema), adminOrderController.changeOrderStatus);
 router.patch(
     '/move-to-processing/:orderId',
+    validate(updateStatusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.ORDER,
         action_type: ACTION_TYPES.PROCESS,
@@ -35,6 +36,7 @@ router.patch(
 );
 router.patch(
     '/move-to-shipping/:orderId',
+    validate(updateStatusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.ORDER,
         action_type: ACTION_TYPES.SHIP,
@@ -43,6 +45,7 @@ router.patch(
 );
 router.patch(
     '/move-to-delivered/:orderId',
+    validate(updateStatusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.ORDER,
         action_type: ACTION_TYPES.DELIVER,
@@ -51,6 +54,7 @@ router.patch(
 );
 router.patch(
     '/cancel/:orderId',
+    validate(updateStatusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.ORDER,
         action_type: ACTION_TYPES.CANCEL,

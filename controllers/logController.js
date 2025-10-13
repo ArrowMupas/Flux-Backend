@@ -48,13 +48,11 @@ const getSignins = async (req, res) => {
             data: logins,
             pagination: { total_records: logins.length, total_pages: 1, current_page: 1 },
         });
-    } catch (err) {
-        console.error(err);
+    } catch {
         res.status(500).json({ error: 'Failed to fetch login logs' });
     }
 };
 const getAdminAuditLogs = async (req, res) => {
-    // console.log('You reached me'); uncomment if you want to see how the cache work
     try {
         const matches = await fetchAxiomLogs('where message =~ "Admin action" | order by _time desc | limit 20');
 
@@ -84,8 +82,7 @@ const getAdminAuditLogs = async (req, res) => {
             data: logs,
             pagination: { total_records: logs.length, total_pages: 1, current_page: 1 },
         });
-    } catch (err) {
-        console.error(err);
+    } catch {
         res.status(500).json({ error: 'Failed to fetch audit logs' });
     }
 };
