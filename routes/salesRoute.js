@@ -21,8 +21,14 @@ router.get('/yearly', getYearlySales);
 router.get(
     '/pdf-report',
     (req, res, next) => {
-        // Disable response compression for this route
         res.set('Content-Encoding', 'identity');
+        res.set('Cache-Control', 'no-transform, no-cache, no-store, must-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+
+        res.removeHeader('ETag');
+        res.removeHeader('Last-Modified');
+
         next();
     },
     generateOrdersPDFReport
