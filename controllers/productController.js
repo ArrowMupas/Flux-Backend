@@ -21,15 +21,6 @@ const getProductById = asyncHandler(async (req, res) => {
         throw new HttpError(404, 'Product not found');
     }
 
-    // Very cheap websocket test, should be removed later
-    const io = req.app.get('io');
-    // Send an event called toast to all logged in admins when a product is viewed
-    io.to('admins').emit('toast', {
-        type: 'info',
-        message: `A user viewed product: ${product.name || `#${req.params.id}`}`,
-    });
-    console.log('📢 Emitted toast to admins:', product.name);
-
     res.status(200).json(product);
 });
 
