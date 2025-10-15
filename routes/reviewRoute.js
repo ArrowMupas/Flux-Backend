@@ -19,4 +19,5 @@ router.post('/admin/flag/:review_id', verifyToken, authAccess(['admin']), review
 router.post('/admin/moderate/:review_id', verifyToken, authAccess(['admin']), reviewController.moderateReview);
 router.delete('/admin/:review_id', verifyToken, authAccess(['admin']), reviewController.adminDeleteReview);
 
+router.get('/:product_id', reviewController.getReviewsByProduct);
 module.exports = router;
