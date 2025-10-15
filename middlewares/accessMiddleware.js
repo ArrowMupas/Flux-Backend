@@ -15,8 +15,7 @@ const authorizeAccess = (allowedRoles = [], requiredPermission = null) => {
                 if (!hasPermission) {
                     return res.status(403).json({ message: 'Access denied: Missing permission' });
                 }
-            } catch (err) {
-                console.error(err);
+            } catch {
                 return res.status(500).json({ message: 'Permission check failed' });
             }
         }

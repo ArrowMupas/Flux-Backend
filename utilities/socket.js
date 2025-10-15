@@ -39,6 +39,12 @@ function initializeSocket(server, app, FRONTEND) {
             console.log('👑 Admin joined room:', socket.id);
         });
 
+        socket.on('join-staff', (staffId) => {
+            const roomName = `staff_${staffId}`;
+            socket.join(roomName);
+            console.log(`👤 Staff ${staffId} joined room: ${roomName}`);
+        });
+
         socket.on('disconnect', () => {
             console.log('🔴 Socket disconnected:', socket.id);
         });
