@@ -70,6 +70,58 @@ const hasUserReviewedProduct = async (user_id, product_id) => {
     return rows.length > 0;
 };
 
+const getReviewsByUser = async (user_id) => {
+    const [rows] = await pool.query(
+        `SELECT r.*, p.name AS product_name
+        FROM product_reviews r
+        JOIN products p ON r.product_id = p.id
+        WHERE r.user_id = ?
+        ORDER BY r.created_at DESC
+        `,
+        [user_id]
+    );
+    return rows;
+}
+
+const updateReview = async (review_id, rating, review_text) => {
+    const fields = [];
+    const values = [];
+
+    if (rating !== undefined) {
+        fields.push('rating = ?');
+        values.push(rating);
+    }
+
+    if (review_text !== undefined) {
+        fields.push('review_text = ?');
+        values.push(review_text);
+    }
+
+    if (fields.length === 0) {
+        return null;
+    }
+
+    values.push(review_id);
+
+    const [result] = await pool.query(
+        `UPDATE product_reviews
+        SET ${fields.join(', ')}
+        WHERE review_id = ?`,
+        values
+    );
+
+    const [rows] = await pool.query(
+        `SELECT *
+        FROM product_reviews
+        WHERE review_id = ?
+        `,
+        [review_id]
+    )
+
+    return rows[0] || null;
+
+}
+
 module.exports = {
     addReview,
     getReviewsByProduct,
@@ -77,4 +129,6 @@ module.exports = {
     getReviewedProductsByOrderAndUser,
     hasUserPurchasedProduct,
     hasUserReviewedProduct,
+    getReviewsByUser,
+    updateReview,
 };
