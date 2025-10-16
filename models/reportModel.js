@@ -230,7 +230,37 @@ const fetchDashboardMetrics = async () => {
              LEFT JOIN walk_in_sale_items wi ON w.id = wi.sale_id) AS walkin_items_sold
     `);
 
-    return metrics[0]; // return raw DB row
+    const [topProducts] = await pool.query(`
+        SELECT 
+        p.id,
+        p.name,
+        p.price,
+        p.image,
+        COALESCE(SUM(oi.quantity), 0) AS total_sold
+        FROM products p
+        LEFT JOIN order_items oi ON oi.product_id = p.id
+        LEFT JOIN orders o ON oi.order_id = o.id
+        GROUP BY p.id, p.name, p.price, p.image
+        ORDER BY total_sold DESC
+        LIMIT 3
+    `);
+
+    const [lowStock] = await pool.query(`
+        SELECT 
+        p.id,
+        p.name,
+        p.stock_quantity AS stock
+        FROM products p
+        WHERE p.stock_quantity <= 10
+        ORDER BY p.stock_quantity ASC
+        LIMIT 5
+    `);
+
+    return {
+        ...metrics[0], // return raw DB row
+        topProducts,
+        lowStock,
+    };
 };
 
 module.exports = {
