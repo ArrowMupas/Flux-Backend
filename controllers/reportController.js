@@ -144,6 +144,8 @@ const getDashboardMetrics = asyncHandler(async (req, res) => {
         totalWalkInOrders: walkInMetrics.count,
         totalSales: parseInt(onlineMetrics.sales) + parseInt(walkInMetrics.sales),
         totalItemsSold: parseInt(onlineMetrics.items) + parseInt(walkInMetrics.items),
+        topProducts: report.topProducts || [],
+        lowStock: report.lowStock || [],
     };
 
     return sendResponse(res, 200, 'Dashboard metrics retrieved successfully', result);
