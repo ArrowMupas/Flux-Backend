@@ -35,8 +35,6 @@ const deleteReview = async (review_id) => {
     await pool.query(`DELETE FROM product_reviews WHERE review_id = ?`, [review_id]);
 };
 
-
-
 const getReviewedProductsByOrderAndUser = async (order_id, user_id) => {
     const [rows] = await pool.query(
         `SELECT pr.product_id
@@ -81,7 +79,7 @@ const getReviewsByUser = async (user_id) => {
         [user_id]
     );
     return rows;
-}
+};
 
 const updateReview = async (review_id, rating, review_text) => {
     const fields = [];
@@ -116,11 +114,10 @@ const updateReview = async (review_id, rating, review_text) => {
         WHERE review_id = ?
         `,
         [review_id]
-    )
+    );
 
     return rows[0] || null;
-
-}
+};
 
 module.exports = {
     addReview,
