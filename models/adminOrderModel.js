@@ -2,7 +2,7 @@ const pool = require('../database/pool');
 
 // Function to get all orders with optional filters
 const getOrders = async (status = null, start = null, end = null) => {
-    end = `${end  } 23:59:59`;
+    end = `${end} 23:59:59`;
 
     let query = `
         SELECT 
@@ -29,7 +29,7 @@ const getOrders = async (status = null, start = null, end = null) => {
     }
 
     if (conditions.length > 0) {
-        query += ` WHERE ${  conditions.join(' AND ')}`;
+        query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     query += ` ORDER BY o.order_date DESC`;
@@ -65,10 +65,13 @@ const getOrderById = async (orderId) => {
 const getOrderItems = async (orderId) => {
     const [items] = await pool.query(
         `
-        SELECT oi.*, pr.name AS product_name
-        FROM order_items oi
-        LEFT JOIN products pr ON oi.product_id = pr.id
-        WHERE oi.order_id = ?
+    SELECT 
+      oi.*, 
+      pr.name AS product_name,
+      pr.image AS product_image
+    FROM order_items oi
+    LEFT JOIN products pr ON oi.product_id = pr.id
+    WHERE oi.order_id = ?
     `,
         [orderId]
     );
@@ -92,10 +95,9 @@ const getAllOrdersByUser = async (userId) => {
 
 // Function to get order status history
 const getOrderStatusHistory = async (orderId) => {
-    const [rows] = await pool.query(
-        'SELECT * FROM order_status_history WHERE order_id = ? ORDER BY status_date ASC',
-        [orderId]
-    );
+    const [rows] = await pool.query('SELECT * FROM order_status_history WHERE order_id = ? ORDER BY status_date ASC', [
+        orderId,
+    ]);
     return rows;
 };
 
@@ -104,10 +106,11 @@ const changeOrderStatus = async (orderId, newStatus, notes, connection = pool) =
     await connection.query(`UPDATE orders SET status = ? WHERE id = ?`, [newStatus, orderId]);
 
     // Log the change on status history
-    await connection.query(
-        `INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)`,
-        [orderId, newStatus, notes]
-    );
+    await connection.query(`INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)`, [
+        orderId,
+        newStatus,
+        notes,
+    ]);
 };
 
 module.exports = {
