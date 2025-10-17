@@ -42,10 +42,35 @@ const getReviewsByProduct = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Product reviews retrieved.', reviews);
 });
 
+// User Delete review
 const deleteReview = asyncHandler(async (req, res) => {
     const { review_id } = req.params;
+    const userId = req.user.id;
+
+    const review = await reviewModel.getReviewById(review_id);
+    if (!review) {
+        throw new HttpError(404, 'No review found');
+    }
+
+    if (review.user.id !== userId) {
+        throw new HttpError(403, 'You are not allowed to delete this review!');
+    }
+
     await reviewModel.deleteReview(review_id);
-    return sendResponse(res, 200, 'Review deleted.');
+    return sendResponse(res, 200, 'Your review has been deleted!');
+});
+
+//Admin Delete review
+const adminDeleteReview = asyncHandler(async (req, res) => {
+    const { review_id } = req.params;
+
+    const review = await reviewModel.getReviewById(review_id);
+    if (!review) {
+        throw new HttpError(404, 'No review found');
+    }
+
+    await reviewModel.deleteReview(review_id);
+    return sendResponse(res, 200, 'Review Deleted');
 });
 
 const getReviewedProductsByOrderAndUser = asyncHandler(async (req, res) => {
@@ -90,6 +115,45 @@ const updateReview = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Review Updated Successfully!', updated);
 });
 
+//Admin get all reviews
+const getAllReviews = asyncHandler(async (req, res) => {
+    const reviews = await reviewModel.getAllReviews();
+    return sendResponse(res, 200, 'All reviews retrieved.', reviews);
+});
+//Admin get flagged reviews
+const getFlaggedReviews = asyncHandler(async (req, res) => {
+    const reviews = await reviewModel.getFlaggedReviews();
+    return sendResponse(res, 200, 'Flagged reviews retrieved.', reviews);
+});
+//Admin for flagging reviews
+const flagReviewByAdmin = asyncHandler(async (req, res) => {
+    const { review_id } = req.params;
+    const success = await reviewModel.updateReviewStatus(review_id, 'flagged');
+    if (!success) throw new HttpError(404, 'Review not found.');
+    return sendResponse(res, 200, 'Review flagged successfully.');
+});
+//Admin for approve or removing a review
+const moderateReview = asyncHandler(async (req, res) => {
+    const { review_id } = req.params;
+    const { action } = req.body;
+
+    const actionMap = {
+        approve: 'active',
+        remove: 'removed',
+        flag: 'flagged',
+    };
+
+    const status = actionMap[action];
+    if (!status) {
+        throw new HttpError(400, 'Invalid action.');
+    }
+
+    const success = await reviewModel.updateReviewStatus(review_id, status);
+    if (!success) throw new HttpError(404, 'Review not found.');
+
+    return sendResponse(res, 200, `Review ${action}d successfully.`);
+});
+
 module.exports = {
     createReview,
     getReviewsByProduct,
@@ -97,4 +161,9 @@ module.exports = {
     getReviewedProductsByOrderAndUser,
     getReviewsByUser,
     updateReview,
+    getAllReviews,
+    getFlaggedReviews,
+    flagReviewByAdmin,
+    moderateReview,
+    adminDeleteReview,
 };
