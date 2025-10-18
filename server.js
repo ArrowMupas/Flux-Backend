@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+app.set('trust proxy', 1);
 require('dotenv').config();
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -36,7 +37,7 @@ app.use(compression());
 const FRONTEND = process.env.FRONTEND;
 const corsOptions = {
     origin: FRONTEND,
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true,
     optionsSuccessStatus: 200,
 };
 

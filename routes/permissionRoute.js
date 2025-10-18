@@ -9,11 +9,9 @@ const permissionController = require('../controllers/permissionController');
 router.use(generalLimiter);
 router.use(verifyToken);
 
-router.use(authorizeAccess([ROLES.STAFF]));
+router.get('/me', authorizeAccess([ROLES.STAFF]), permissionController.getMyPermissions);
 
-router.get('/me', permissionController.getMyPermissions);
-
-// router.use(authorizeAccess([ROLES.ADMIN]));
+router.use(authorizeAccess([ROLES.ADMIN]));
 
 router.put('/control/:id', permissionController.updateStaffPermissions);
 router.get('/', permissionController.getPermissionsList);
