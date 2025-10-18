@@ -1,3 +1,4 @@
+const SQL = require('sql-template-strings');
 const pool = require('../database/pool');
 
 // Function to get a user by ID
@@ -101,6 +102,16 @@ const verifyUser = async (userId) => {
     await pool.query(`UPDATE users SET is_verified = 1 WHERE id = ?`, [userId]);
 };
 
+const getUserStats = async (userId) => {
+    const [stats] = await pool.query(SQL`
+    SELECT
+      (SELECT COUNT(*) FROM orders WHERE customer_id = ${userId}) AS total_orders,
+      (SELECT COUNT(*) FROM product_reviews WHERE user_id = ${userId}) AS total_reviews
+  `);
+
+    return stats[0];
+};
+
 // Function to delete verification token
 const deleteVerificationToken = async (token) => {
     await pool.query(`DELETE FROM email_verification_tokens WHERE token = ?`, [token]);
@@ -117,4 +128,5 @@ module.exports = {
     getUserByVerificationToken,
     verifyUser,
     deleteVerificationToken,
+    getUserStats,
 };

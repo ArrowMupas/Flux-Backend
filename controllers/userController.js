@@ -6,6 +6,7 @@ const userService = require('../services/userService');
 const crypto = require('crypto');
 require('dotenv').config();
 const { invalidateCache } = require('../utilities/cache');
+const sendResponse = require('../middlewares/responseMiddleware');
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
@@ -69,7 +70,12 @@ const updateUserPassword = asyncHandler(async (req, res) => {
     });
 });
 
-// To be finished and refactor.
+// Get user stats
+const getUserStats = asyncHandler(async (req, res) => {
+    const userStats = await userService.getUserStats(req.user.id);
+    sendResponse(res, 200, 'User stats fetched', userStats);
+});
+
 // Verify user email
 const verifyEmail = asyncHandler(async (req, res) => {
     const { token } = req.query;
@@ -85,6 +91,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
     res.send('Email verified successfully! You can now log in.');
 });
 
+// To be finished and refactor.
 // Resend verification email
 const resendVerificationEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
@@ -132,4 +139,5 @@ module.exports = {
     updateUserPassword,
     verifyEmail,
     resendVerificationEmail,
+    getUserStats,
 };

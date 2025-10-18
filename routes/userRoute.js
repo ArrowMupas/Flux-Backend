@@ -19,6 +19,7 @@ const {
     getUserProfile,
     updateUser,
     updateUserPassword,
+    getUserStats,
 } = require('../controllers/userController');
 
 // Public routes
@@ -34,6 +35,7 @@ router.post('/resend-verification-email', validate(emailSchema), resendVerificat
 router.use(verifyToken);
 
 router.get('/', getUserProfile);
+router.get('/stats/me', getUserStats);
 router.put('/', validate(updateUserSchema), updateUser);
 router.post('/reset', validate(resetPasswordSchema), updateUserPassword);
 

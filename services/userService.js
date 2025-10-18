@@ -134,9 +134,21 @@ const updatePasswordLogic = async (userId, password, newPassword) => {
     await userModel.resetUserPassword(user.id, hashedPassword);
 };
 
+const getUserStats = async (userId) => {
+    const user = await userModel.getUserById(userId);
+    ensureExist(user, 404, `User with ID: ${userId} not found`);
+
+    if (!user.is_active) {
+        throw new HttpError(403, 'Account is inactive');
+    }
+
+    return await userModel.getUserStats(userId);
+};
+
 module.exports = {
     registerLogic,
     loginLogic,
     getProfileLogic,
     updatePasswordLogic,
+    getUserStats,
 };
