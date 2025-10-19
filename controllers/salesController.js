@@ -1,6 +1,7 @@
 const salesService = require('../services/salesService');
 const { generateOrdersPDF } = require('../services/pdfService');
 const orderModel = require('../models/orderModel');
+const walkInOrderModel = require('../models/walkInOrderModel');
 const dayjs = require('dayjs');
 
 const getDailySales = async (req, res) => {
@@ -66,16 +67,35 @@ const generateOrdersPDFReport = async (req, res) => {
             return res.status(400).json({ message: 'End date cannot be before start date' });
         }
 
-        const orders = await orderModel.getOrdersByDateRange(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+       const onlineOrders = await orderModel.getOrdersByDateRange(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
 
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({ message: 'No orders found for the selected date range' });
-        }
+       const walkInOrders = await walkInOrderModel.getWalkInOrdersByDateRange(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+
+       const formattedWalkIn = walkInOrders.map((o) => ({
+        id: `W-${o.id}`,
+        customer_name: o.customer_name || 'Walk-In',
+        order_date: o.sale_date,
+        payment_method: 'Cash',
+        total_amount: o.total_amount,
+        type: 'Walk-In'
+       }));
+
+       const formattedOnline = onlineOrders.map((o) => ({
+        ...o,
+        type: 'Online'
+       }));
+
+       const combine = [...formattedOnline, ...formattedWalkIn];
+       combine.sort((a, b) => new Date(a.order_date) - new Date (b.order_date));
+
+       if (combine.length === 0) {
+        return res.status(404).json({ message: 'No orders found for this selected date range!'});
+       }
 
         const dateRange = `${start.format('MMM D, YYYY')} - ${end.format('MMM D, YYYY')}`;
 
         // Generate PDF
-        const pdfBuffer = await generateOrdersPDF(orders, dateRange, reportType);
+        const pdfBuffer = await generateOrdersPDF(combine, dateRange, reportType);
 
         const startFormatted = dayjs(startNormalized).format('YYYY-MM-DD');
         const endFormatted = dayjs(endNormalized).format('YYYY-MM-DD');

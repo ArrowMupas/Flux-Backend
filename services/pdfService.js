@@ -104,9 +104,10 @@ const generateOrdersPDF = (orders, dateRange, reportType) => {
           {
             table: {
               headerRows: 1,
-              widths: ['*', '*', 'auto', 'auto', 'auto'],
+              widths: ['auto','*', '*', 'auto', 'auto', 'auto'],
               body: [
                 [
+                  { text: 'Type', style: 'tableHeader', alignment: 'center' },
                   { text: 'Order ID', style: 'tableHeader', alignment: 'center' },
                   { text: 'Customer', style: 'tableHeader', alignment: 'center' },
                   { text: 'Date', style: 'tableHeader', alignment: 'center' },
@@ -114,6 +115,7 @@ const generateOrdersPDF = (orders, dateRange, reportType) => {
                   { text: 'Amount', style: 'tableHeader', alignment: 'center' }
                 ],
                 ...orders.map(order => [
+                  {text: order.type, alignment:'center'},
                   {text: order.id.toString(), alignment: 'center'},
                   {text: order.customer_name || 'N/A', alignment: 'center'},
                   dayjs(order.order_date).isValid()
