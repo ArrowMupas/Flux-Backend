@@ -18,4 +18,22 @@ const requestReturn = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Return Request Sent.', returnRequest);
 });
 
-module.exports = { getAllReturnRequests, requestReturn };
+const adminApproveReturn = asyncHandler(async (req, res) => {
+    const { notes } = req.body;
+    const { orderId } = req.params;
+
+    const approvedReturn = await returnService.approveReturnLogic(orderId, notes);
+
+    return sendResponse(res, 200, 'Return Request Approved', approvedReturn);
+});
+
+const adminDenyReturn = asyncHandler(async (req, res) => {
+    const { notes } = req.body;
+    const { orderId } = req.params;
+
+    const declinedReturn = await returnService.denyReturnLogic(orderId, notes);
+
+    return sendResponse(res, 200, 'Return Request Declined', declinedReturn);
+});
+
+module.exports = { getAllReturnRequests, requestReturn, adminApproveReturn, adminDenyReturn };

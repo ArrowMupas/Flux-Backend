@@ -56,4 +56,57 @@ const createReturnRequest = async (orderId, customerId, reason, contactNumber) =
     return rows[0];
 };
 
-module.exports = { getAllReturnRequests, checkExistingReturn, getLatestDeliveredDate, createReturnRequest };
+const getOrderStatusAndReturn = async (orderId) => {
+    const query = SQL`
+        SELECT 
+            o.status,
+            CASE 
+                WHEN r.id IS NOT NULL THEN TRUE 
+                ELSE FALSE 
+            END AS has_pending_return
+        FROM orders o
+        LEFT JOIN returns r 
+            ON o.id = r.order_id 
+            AND r.status = 'pending'
+        WHERE o.id = ${orderId};
+    `;
+
+    const [rows] = await pool.query(query);
+    return rows[0];
+};
+
+const approveReturnRequest = async (orderId, adminNotes, connection = pool) => {
+    const query = SQL`
+        UPDATE returns
+        SET status = 'approved',
+            admin_notes = ${adminNotes},
+            resolved_at = NOW()
+        WHERE order_id = ${orderId}
+            AND status = 'pending';
+    `;
+
+    return await connection.query(query);
+};
+
+const denyReturnRequest = async (orderId, adminNotes, connection = pool) => {
+    const query = SQL`
+        UPDATE returns
+        SET status = 'denied',
+            admin_notes = ${adminNotes},
+            resolved_at = NOW()
+        WHERE order_id = ${orderId}
+            AND status = 'pending';
+    `;
+
+    return await connection.query(query);
+};
+
+module.exports = {
+    getAllReturnRequests,
+    checkExistingReturn,
+    getLatestDeliveredDate,
+    createReturnRequest,
+    approveReturnRequest,
+    getOrderStatusAndReturn,
+    denyReturnRequest,
+};
