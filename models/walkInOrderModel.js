@@ -91,10 +91,23 @@ const getAllWalkInSalesWithItems = async () => {
     }
 };
 
+const getWalkInOrdersByDateRange = async (startDate, endDate, connection = pool ) => {
+    const [walkInData] = await connection.query(
+        `SELECT id, customer_name, sale_date, total_amount, 'Cash' as payment_method
+        FROM walk_in_sales
+        WHERE sale_date BETWEEN ? AND ?
+        ORDER BY sale_date DESC
+        `,
+        [startDate, `${endDate} 23:59:59`]
+    );
+    return walkInData;
+}
+
 module.exports = {
     createOrder,
     addOrderItem,
     deductStock,
     updateOrderTotal,
     getAllWalkInSalesWithItems,
+    getWalkInOrdersByDateRange,
 };
