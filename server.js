@@ -62,6 +62,7 @@ const salesRoute = require('./routes/salesRoute');
 const returnRoute = require('./routes/returnRoute');
 const refundRoute = require('./routes/refundRoute');
 const contactRoute = require('./routes/contactRoute');
+const landmarkRoute = require('./routes/landmarkRoute');
 
 // security & optimization
 app.use(helmet());
@@ -104,6 +105,7 @@ app.use('/api/sales', salesRoute);
 app.use('/api/returns', returnRoute);
 app.use('/api/refunds', refundRoute);
 app.use('/api/contact', contactRoute);
+app.use('/api/landmarks', landmarkRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
