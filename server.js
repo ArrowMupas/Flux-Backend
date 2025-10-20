@@ -28,6 +28,7 @@ const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute'
 const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 const returnRoute = require('./routes/returnRoute');
+const refundRoute = require('./routes/refundRoute');
 
 // security & optimization
 app.use(helmet());
@@ -69,6 +70,7 @@ app.use('/api/upload', uploadRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/sales', salesRoute);
 app.use('/api/returns', returnRoute);
+app.use('/api/refunds', refundRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
