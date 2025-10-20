@@ -8,6 +8,9 @@ const helmet = require('helmet');
 const compression = require('compression');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const http = require('http');
+const connectMongo = require('./database/mongo');
+
+connectMongo();
 
 // route import
 const userRoute = require('./routes/userRoute');
@@ -29,6 +32,7 @@ const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 const returnRoute = require('./routes/returnRoute');
 const refundRoute = require('./routes/refundRoute');
+const contactRoute = require('./routes/contactRoute');
 
 // security & optimization
 app.use(helmet());
@@ -71,6 +75,7 @@ app.use('/api/dashboard', dashboardRoute);
 app.use('/api/sales', salesRoute);
 app.use('/api/returns', returnRoute);
 app.use('/api/refunds', refundRoute);
+app.use('/api/contact', contactRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
