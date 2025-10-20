@@ -1,6 +1,8 @@
 const orderModel = require('../models/orderModel');
+const adminOrderModel = require('../models/adminOrderModel');
 const HttpError = require('../helpers/errorHelper');
 const returnModel = require('../models/returnModel');
+const pool = require('../database/pool');
 
 const getAllReturnRequests = async () => {
     return await returnModel.getAllReturnRequests();
@@ -44,4 +46,73 @@ const requestReturnLogic = async (orderId, customerId, reason, contactNumber) =>
     return await returnModel.createReturnRequest(orderId, customerId, reason, contactNumber);
 };
 
-module.exports = { getAllReturnRequests, requestReturnLogic };
+const approveReturnLogic = async (orderId, notes) => {
+    const order = await returnModel.getOrderStatusAndReturn(orderId);
+    if (!order) {
+        throw new HttpError(404, 'Order not found');
+    }
+
+    const currentStatus = order.status;
+    if (currentStatus === 'returned') {
+        throw new HttpError(400, `Order is already marked as 'returned'`);
+    }
+
+    if (currentStatus !== 'delivered') {
+        throw new HttpError(400, `Cannot change status from '${currentStatus}' to 'returned'`);
+    }
+
+    if (!order.has_pending_return) {
+        throw new HttpError(400, `This order do not have any return requests'`);
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        await returnModel.approveReturnRequest(orderId, notes, connection);
+        await adminOrderModel.changeOrderStatus(orderId, 'returned', notes, connection);
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+const denyReturnLogic = async (orderId, notes) => {
+    const order = await returnModel.getOrderStatusAndReturn(orderId);
+    if (!order) {
+        throw new HttpError(404, 'Order not found');
+    }
+
+    const currentStatus = order.status;
+    if (currentStatus === 'returned') {
+        throw new HttpError(400, `Order is already marked as 'returned'`);
+    }
+
+    if (currentStatus !== 'delivered') {
+        throw new HttpError(400, `Cannot change status from '${currentStatus}' to 'returned'`);
+    }
+
+    if (!order.has_pending_return) {
+        throw new HttpError(400, `This order do not have any return requests'`);
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        await returnModel.denyReturnRequest(orderId, notes, connection);
+        await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+module.exports = { getAllReturnRequests, requestReturnLogic, approveReturnLogic, denyReturnLogic };

@@ -11,5 +11,7 @@ router.use(verifyToken);
 
 router.get('/', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), returnController.getAllReturnRequests);
 router.post('/request/:orderId', authorizeAccess([ROLES.CUSTOMER]), returnController.requestReturn);
+router.patch('/approve/:orderId', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), returnController.adminApproveReturn);
+router.patch('/deny/:orderId', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), returnController.adminDenyReturn);
 
 module.exports = router;

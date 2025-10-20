@@ -22,7 +22,7 @@ const registerLogic = async ({ username, email, password }) => {
     const user = await userModel.createUser(username, normalizedEmail, hashedPassword);
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    await userModel.saveVerificationToken(user.id, verificationToken);
+    userModel.saveVerificationToken(user.id, verificationToken);
 
     console.log('verificationToken:', verificationToken);
 
