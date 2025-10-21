@@ -1,6 +1,8 @@
 services:
     backend:
-        build: .
+        build:
+            context: .
+            target: development # Add build targets
         image: alas-backend
         container_name: my-backend
         restart: unless-stopped

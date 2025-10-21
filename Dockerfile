@@ -8,7 +8,7 @@
     COPY package*.json ./
 
     # Install dependencies
-    RUN npm install
+    RUN npm install --omit=dev
 
     # Copy all source code
     COPY . .
@@ -17,4 +17,4 @@
     EXPOSE 3000
 
     # Start your backend
-    CMD ["npm", "run", "dev"]
+    CMD ["node", "server.js"]
