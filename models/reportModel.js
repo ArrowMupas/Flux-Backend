@@ -261,8 +261,9 @@ const fetchDashboardMetrics = async () => {
         topProducts,
         lowStock,
     };
+    
 };
-
+    
 module.exports = {
     fetchSalesSummary,
     fetchTopProducts,

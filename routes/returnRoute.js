@@ -18,7 +18,6 @@ router.post(
     authorizeAccess([ROLES.CUSTOMER]),
     returnController.requestReturn
 );
-router.post('/request/:orderId', authorizeAccess([ROLES.CUSTOMER]), returnController.requestReturn);
 router.patch('/approve/:orderId', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), returnController.adminApproveReturn);
 router.patch('/deny/:orderId', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), returnController.adminDenyReturn);
 

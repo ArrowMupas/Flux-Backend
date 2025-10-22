@@ -164,6 +164,7 @@ const getReviewedProductsByOrderAndUser = async (order_id, user_id) => {
     return rows;
 };
 
+
 module.exports = {
     addReview,
     getReviewsByProduct,
@@ -175,6 +176,6 @@ module.exports = {
     getReviewsByUser,
     hasUserPurchasedProduct,
     hasUserReviewedProduct,
+    getReviewsByUser,
     updateReview,
-    getReviewedProductsByOrderAndUser,
 };

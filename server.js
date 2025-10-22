@@ -23,6 +23,21 @@ app.get('/health', async (req, res) => {
         node: process.version,
     };
 
+    try {
+        // Test if databases are connected
+        const mongoose = require('mongoose');
+        const pool = require('./database/pool');
+
+        // Test MongoDB
+        await mongoose.connection.db.admin().ping();
+
+        // Test MySQL
+        await pool.execute('SELECT 1');
+    } catch (error) {
+        health.status = 'DEGRADED';
+        health.error = 'Database connection failed';
+    }
+
     const statusCode = health.status === 'OK' ? 200 : 503;
     res.status(statusCode).json(health);
 });
@@ -45,8 +60,10 @@ const logRoute = require('./routes/logRoute');
 const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 const returnRoute = require('./routes/returnRoute');
+const landmarkRoute = require('./routes/landmarkRoute');
 const refundRoute = require('./routes/refundRoute');
 const contactRoute = require('./routes/contactRoute');
+const landmarkRoute = require('./routes/landmarkRoute');
 
 // security & optimization
 app.use(helmet());
@@ -58,16 +75,6 @@ const corsOptions = {
     origin: FRONTEND,
     credentials: true,
     optionsSuccessStatus: 200,
-    allowedHeaders: [
-        'Origin',
-        'Content-Type',
-        'Accept',
-        'Authorization',
-        'X-Requested-With',
-        'User-Agent',
-        'Cache-Control',
-        'Pragma',
-    ],
 };
 
 app.use(cors(corsOptions));
@@ -97,8 +104,10 @@ app.use('/api/upload', uploadRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/sales', salesRoute);
 app.use('/api/returns', returnRoute);
+app.use('/api/landmarks', landmarkRoute);
 app.use('/api/refunds', refundRoute);
 app.use('/api/contact', contactRoute);
+app.use('/api/landmarks', landmarkRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
