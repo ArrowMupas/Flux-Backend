@@ -10,29 +10,36 @@ const errorMiddleware = require('./middlewares/errorMiddleware');
 const http = require('http');
 const connectMongo = require('./database/mongo');
 
-const logger = require('./utilities/logger');
-
 connectMongo().catch((err) => {
     console.log('⚠️ MongoDB connection failed, but server starting anyway:', err.message);
 });
 
-app.get('/health', (req, res) => {
-    const healthData = {
+app.get('/health', async (req, res) => {
+    const health = {
         status: 'OK',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        memory: Math.round(process.memoryUsage().rss / 1024 / 1024) + ' MB',
+        memory: `${Math.round(process.memoryUsage().rss / 1024 / 1024)} MB`,
+        node: process.version,
     };
 
-    logger.info('health_check', {
-        type: 'render_health_check',
-        uptime: healthData.uptime,
-        memory: healthData.memory,
-        userAgent: req.get('User-Agent') || 'unknown',
-        ip: req.ip,
-    });
+    try {
+        // Test if databases are connected
+        const mongoose = require('mongoose');
+        const pool = require('./database/pool');
 
-    res.status(200).json(healthData);
+        // Test MongoDB
+        await mongoose.connection.db.admin().ping();
+
+        // Test MySQL
+        await pool.execute('SELECT 1');
+    } catch (error) {
+        health.status = 'DEGRADED';
+        health.error = 'Database connection failed';
+    }
+
+    const statusCode = health.status === 'OK' ? 200 : 503;
+    res.status(statusCode).json(health);
 });
 
 // route import
@@ -50,7 +57,6 @@ const walkInOrderRoute = require('./routes/walkInOrderRoute');
 const uploadRoute = require('./routes/uploadRoute');
 const couponRoute = require('./routes/couponRoute');
 const logRoute = require('./routes/logRoute');
-const inventoryNotificationRoute = require('./routes/inventoryNotificationRoute');
 const dashboardRoute = require('./routes/dashboardRoute');
 const salesRoute = require('./routes/salesRoute');
 const returnRoute = require('./routes/returnRoute');
@@ -70,12 +76,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-app.use((req, res, next) => {
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Keep-Alive', 'timeout=30');
-    next();
-});
 
 // Cookies
 app.use(cookieParser());
@@ -97,7 +97,6 @@ app.use('/api/reports', reportRoute);
 app.use('/api/permissions', permissionRoute);
 app.use('/api/walkInOrders', walkInOrderRoute);
 app.use('/api/coupons', couponRoute);
-app.use('/api/inventory-notifications', inventoryNotificationRoute);
 app.use('/api/logs', logRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/dashboard', dashboardRoute);
@@ -122,10 +121,5 @@ const io = initializeSocket(server, app, FRONTEND);
 
 // Start server
 server.listen(process.env.PORT, () => {
-    logger.info('server_start', {
-        port: process.env.PORT,
-        environment: process.env.NODE_ENV || 'development',
-        nodeVersion: process.version,
-    });
     console.log(`🚀 Alas BackEnd is now Running!`);
 });
