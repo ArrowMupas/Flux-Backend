@@ -1,5 +1,6 @@
 const adminOrderModel = require('../models/adminOrderModel');
 const reservationModel = require('../models/reservationModel');
+const loyaltyModel = require('../models/loyaltyModel');
 const HttpError = require('../helpers/errorHelper');
 const pool = require('../database/pool');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
@@ -213,7 +214,7 @@ const processingToShippingLogic = async (orderId, notes) => {
 };
 
 const shippingToDeliveredLogic = async (orderId, notes) => {
-    await validateStatusTransition(orderId, 'delivered', 'shipping');
+    const order = await validateStatusTransition(orderId, 'delivered', 'shipping');
 
     const connection = await pool.getConnection();
     try {
@@ -221,6 +222,7 @@ const shippingToDeliveredLogic = async (orderId, notes) => {
 
         await adminOrderModel.changeOrderStatus(orderId, 'delivered', notes, connection);
         await connection.commit();
+        await loyaltyModel.updateUserLoyaltyProgress(order.user_id);
         return await adminOrderModel.getOrderById(orderId);
     } catch (error) {
         await connection.rollback();

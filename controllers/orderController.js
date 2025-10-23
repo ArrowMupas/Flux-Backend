@@ -24,7 +24,6 @@ const createOrder = asyncHandler(async (req, res) => {
         type: 'info',
         message: `New order created by user #${userId}`,
     });
-    console.log('📢 Emitted toast to admins:', userId);
 
     return sendResponse(res, 200, 'Order Created', result);
 });

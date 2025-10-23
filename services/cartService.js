@@ -1,6 +1,7 @@
 const pool = require('../database/pool');
 const cartModel = require('../models/cartModel');
 const couponModel = require('../models/couponModel');
+const loyaltyModel = require('../models/loyaltyModel');
 const HttpError = require('../helpers/errorHelper');
 
 // Get or create a cart for a specific user.
@@ -229,7 +230,7 @@ const applyCouponToCart = async (userId, code, connection = null) => {
         throw new HttpError(400, 'This coupon is not active yet.');
     }
 
-    if (coupon.expires_at && new Date(coupon.expires_at) < now) {
+    if (coupon.expires_at && coupon.expires_at !== null && new Date(coupon.expires_at) < now) {
         throw new HttpError(400, 'This coupon has expired.');
     }
 
