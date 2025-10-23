@@ -47,6 +47,7 @@ const getOrderById = async (orderId) => {
             p.method AS payment_method,
             p.reference_number,
             p.account_name,
+            u.id AS user_id,
             u.username,
             u.email,
             u.contact_number,
