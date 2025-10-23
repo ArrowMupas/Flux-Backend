@@ -8,7 +8,7 @@ const fetchOnlineSalesMetrics = async (startDate, endDate, connection = pool) =>
             COALESCE(SUM(total_amount), 0) as online_total_sales
         FROM orders 
         WHERE order_date BETWEEN ? AND ?
-          AND status IN ('processing', 'shipping', 'delivered')
+          AND status IN ('pending', 'processing', 'shipping', 'delivered')
     `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
 
     const [itemsResults] = await connection.query(`
@@ -16,7 +16,7 @@ const fetchOnlineSalesMetrics = async (startDate, endDate, connection = pool) =>
         FROM order_items oi
         JOIN orders o ON oi.order_id = o.id
         WHERE o.order_date BETWEEN ? AND ?
-          AND o.status IN ('processing', 'shipping', 'delivered')
+          AND o.status IN ('pending', 'processing', 'shipping', 'delivered')
     `, [dayjs(startDate).format('YYYY-MM-DD'), dayjs(endDate).format('YYYY-MM-DD 23:59:59')]);
 
     return {
@@ -67,7 +67,7 @@ const fetchProductPerformance = async (startDate, endDate, limit = 5, connection
             LEFT JOIN order_items oi ON p.id = oi.product_id
             LEFT JOIN orders o ON oi.order_id = o.id
             WHERE o.order_date BETWEEN ? AND ?
-              AND o.status IN ('processing', 'shipping', 'delivered')
+              AND o.status IN ('pending', 'processing', 'shipping', 'delivered')
             GROUP BY p.id
 
             UNION ALL
