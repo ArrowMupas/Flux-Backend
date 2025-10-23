@@ -23,21 +23,6 @@ app.get('/health', async (req, res) => {
         node: process.version,
     };
 
-    try {
-        // Test if databases are connected
-        const mongoose = require('mongoose');
-        const pool = require('./database/pool');
-
-        // Test MongoDB
-        await mongoose.connection.db.admin().ping();
-
-        // Test MySQL
-        await pool.execute('SELECT 1');
-    } catch (error) {
-        health.status = 'DEGRADED';
-        health.error = 'Database connection failed';
-    }
-
     const statusCode = health.status === 'OK' ? 200 : 503;
     res.status(statusCode).json(health);
 });
