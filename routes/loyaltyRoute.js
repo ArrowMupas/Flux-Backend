@@ -13,5 +13,6 @@ router.post('/create', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), loyaltyContr
 router.get('/me', authorizeAccess([ROLES.CUSTOMER]), loyaltyController.FetchLoyaltyProgress);
 router.post('/claim/:rewardId', authorizeAccess([ROLES.CUSTOMER]), loyaltyController.ClaimLoyaltyReward);
 router.get('/claimed', authorizeAccess([ROLES.CUSTOMER]), loyaltyController.FetchUserRewards);
+router.get('/admin', authorizeAccess([ROLES.ADMIN, ROLES.STAFF]), loyaltyController.FetchCurrentRewardsAdmin);
 
 module.exports = router;
