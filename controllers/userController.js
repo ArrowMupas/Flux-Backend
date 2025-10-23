@@ -7,6 +7,7 @@ const crypto = require('crypto');
 require('dotenv').config();
 const { invalidateCache } = require('../utilities/cache');
 const sendResponse = require('../middlewares/responseMiddleware');
+const {generatePasswordResetEmail} = require('../utilities/passwordResetTemplate');
 
 const registerUser = asyncHandler(async (req, res) => {
     const { username, email, password } = req.body;
@@ -130,6 +131,23 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Verification email resent' });
 });
 
+const requestPasswordReset = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const result = await userService.generateResetToken(email);
+    res.status(200).json(result);
+});
+
+const confirmPasswordReset = asyncHandler(async (req, res) => {
+    const {email, code, newPassword, confirmPassword} = req.body;
+
+    if (newPassword !== confirmPassword) {
+        throw new HttpError(400, 'New password and confirm password do not match.');
+    }
+
+    const result = await userService.confirmResetToken(email, code, newPassword);
+    res.status(200).json(result);
+});
+
 module.exports = {
     registerUser,
     loginUser,
@@ -140,4 +158,6 @@ module.exports = {
     verifyEmail,
     resendVerificationEmail,
     getUserStats,
+    requestPasswordReset,
+    confirmPasswordReset,
 };

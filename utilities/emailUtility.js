@@ -22,7 +22,7 @@ async function sendEmail({ to, subject, html }) {
     const transporter = await getTransporter();
 
     await transporter.sendMail({
-        from: `"Clark Sauce Shop" <${process.env.GMAIL_USER}>`,
+        from: `"Alas Delis Hot Sauce" <${process.env.GMAIL_USER}>`,
         to,
         subject,
         html,

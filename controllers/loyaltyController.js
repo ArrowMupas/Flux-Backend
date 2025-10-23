@@ -27,4 +27,15 @@ const FetchUserRewards = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'User  Reward Fetched Succesfully', result);
 });
 
-module.exports = { createLoyaltyReward, FetchLoyaltyProgress, ClaimLoyaltyReward, FetchUserRewards };
+const FetchCurrentRewardsAdmin = asyncHandler(async (req, res) => {
+    const result = await loyaltyService.getCurrentRewardsAdmin();
+    return sendResponse(res, 201, 'Rewards fetched succesfully', result);
+});
+
+module.exports = {
+    createLoyaltyReward,
+    FetchLoyaltyProgress,
+    ClaimLoyaltyReward,
+    FetchUserRewards,
+    FetchCurrentRewardsAdmin,
+};

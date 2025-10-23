@@ -8,6 +8,7 @@ const { ensureExist, ensureNotExist } = require('../helpers/existenceHelper');
 const HttpError = require('../helpers/errorHelper');
 const logger = require('../utilities/logger');
 const { getCache, setCache } = require('../utilities/cache');
+const {generatePasswordResetEmail} = require('../utilities/passwordResetTemplate');
 
 const registerLogic = async ({ username, email, password }) => {
     const userExists = await userModel.getUserByUsername(username);
@@ -145,10 +146,60 @@ const getUserStats = async (userId) => {
     return await userModel.getUserStats(userId);
 };
 
+const PASSWORD_RESET_EXPIRY_MINUTES = 10;
+
+const generateResetToken = async (email) => {
+    const user = await userModel.getUserByEmail(email);
+    if(!user) throw new HttpError(404, 'User Not Found!');
+
+    await userModel.deleteResetToken(user.id);
+
+    const code = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000);
+
+    await userModel.saveResetToken(user.id, code, expiresAt);
+
+    const html = generatePasswordResetEmail(user.username, code, PASSWORD_RESET_EXPIRY_MINUTES);
+
+    await sendEmail({
+        to: email,
+        subject: 'Password Reset Request',
+        html,
+    });
+
+    return { message: 'Password reset code sent to email.' };
+};
+
+const confirmResetToken = async (email, code, newPassword) => {
+    const user = await userModel.getUserByEmail(email);
+    if(!user) throw new HttpError(404, 'User Not Found!');
+
+    const token = await userModel.getResetToken(user.id);
+    if(!token || token.token !== code) {
+        throw new HttpError(400, 'Invalid or expired reset code.');
+    }
+
+    if (new Date(token.expires_at) < new Date ()) throw new HttpError(400, 'Reset code has expired.');
+
+    await userModel.resetUserPasswordFromToken(user.id, newPassword);
+    await userModel.deleteResetToken(user.id);
+
+    return { message: 'Password has been reset successfully.' };
+};
+
+//Node-cron cleaner thingy
+const cleanExpiredResetTokens = async () => {
+    await userModel.deleteExpiredResetTokens();
+};
+
+
 module.exports = {
     registerLogic,
     loginLogic,
     getProfileLogic,
     updatePasswordLogic,
     getUserStats,
+    generateResetToken,
+    confirmResetToken,
+    cleanExpiredResetTokens,
 };

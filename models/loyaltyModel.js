@@ -87,6 +87,39 @@ const getUserClaimedRewards = async (userId) => {
     return rows;
 };
 
+const getLoyaltyRewardsUpTo8 = async () => {
+    const [rows] = await pool.query(SQL`
+    WITH orders AS (
+      SELECT 1 AS order_num UNION ALL
+      SELECT 2 UNION ALL
+      SELECT 3 UNION ALL
+      SELECT 4 UNION ALL
+      SELECT 5 UNION ALL
+      SELECT 6 UNION ALL
+      SELECT 7 UNION ALL
+      SELECT 8
+    )
+    SELECT
+      o.order_num AS required_orders,
+      lr.id AS reward_id,
+      lr.coupon_id,
+      lr.is_monthly,
+      lr.active,
+      lr.created_at,
+      c.code AS coupon_code,
+      c.discount_type,
+      c.discount_value
+    FROM orders o
+    LEFT JOIN loyalty_rewards lr
+      ON lr.required_orders = o.order_num
+    LEFT JOIN coupons c
+      ON lr.coupon_id = c.id
+    ORDER BY o.order_num
+  `);
+
+    return rows;
+};
+
 module.exports = {
     updateUserLoyaltyProgress,
     createloyaltyCoupon,
@@ -94,4 +127,5 @@ module.exports = {
     createLoyaltyReward,
     updateLoyaltyRewardCoupon,
     getUserClaimedRewards,
+    getLoyaltyRewardsUpTo8,
 };

@@ -8,6 +8,7 @@ const {
     resetPasswordSchema,
     updateUserSchema,
     emailSchema,
+    confirmResetPasswordSchema,
 } = require('../validations/userValidation');
 const validate = require('../middlewares/validateMiddleware');
 const {
@@ -20,6 +21,8 @@ const {
     updateUser,
     updateUserPassword,
     getUserStats,
+    requestPasswordReset,
+    confirmPasswordReset,
 } = require('../controllers/userController');
 
 // Public routes
@@ -28,6 +31,8 @@ router.use(generalLimiter);
 
 router.post('/register', validate(registerSchema), registerUser);
 router.get('/verify-email', verifyEmail);
+router.post('/password-reset', validate(emailSchema), requestPasswordReset);
+router.post('/password-reset/confirm', validate(confirmResetPasswordSchema), confirmPasswordReset);
 router.post('/logout', logoutUser);
 router.post('/resend-verification-email', validate(emailSchema), resendVerificationEmail);
 
@@ -37,6 +42,6 @@ router.use(verifyToken);
 router.get('/', getUserProfile);
 router.get('/stats/me', getUserStats);
 router.put('/', validate(updateUserSchema), updateUser);
-router.post('/reset', validate(resetPasswordSchema), updateUserPassword);
+router.post('/profile/password', validate(resetPasswordSchema), updateUserPassword);
 
 module.exports = router;

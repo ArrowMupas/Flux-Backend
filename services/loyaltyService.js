@@ -182,9 +182,14 @@ const getUserClaimedReward = async (userId) => {
     return await loyaltyModel.getUserClaimedRewards(userId);
 };
 
+const getCurrentRewardsAdmin = async () => {
+    return await loyaltyModel.getLoyaltyRewardsUpTo8();
+};
+
 module.exports = {
     createCouponForLoyalty,
     getLoyaltyProgress,
     claimLoyaltyReward,
     getUserClaimedReward,
+    getCurrentRewardsAdmin,
 };
