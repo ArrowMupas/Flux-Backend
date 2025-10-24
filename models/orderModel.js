@@ -86,7 +86,24 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = [], mon
     let query = `
         SELECT 
             o.*, 
-            p.method AS payment_method
+            p.method AS payment_method,
+            (
+                SELECT MAX(h.status_date)
+                FROM order_status_history h
+                WHERE h.order_id = o.id
+            ) AS latest_status_date,
+            (
+                SELECT r.status
+                FROM refunds r
+                WHERE r.order_id = o.id
+                LIMIT 1
+            ) AS refund_status,
+            (
+                SELECT rt.status
+                FROM returns rt
+                WHERE rt.order_id = o.id
+                LIMIT 1
+            ) AS return_status
         FROM orders o
         LEFT JOIN payments p ON o.id = p.order_id
         WHERE o.customer_id = ?
@@ -94,7 +111,6 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = [], mon
 
     const params = [userId];
 
-    // Add filters dynamically
     if (statuses.length) {
         query += ` AND o.status IN (${statuses.map(() => '?').join(',')})`;
         params.push(...statuses);
@@ -106,12 +122,10 @@ const getFilteredOrders = async (userId, statuses = [], paymentMethods = [], mon
     }
 
     if (monthYear) {
-        // format is 'YYYY-MM'
         query += ` AND DATE_FORMAT(o.order_date, '%Y-%m') = ?`;
         params.push(monthYear);
     }
 
-    // Sort by newest first
     query += ` ORDER BY o.order_date DESC`;
 
     const [rows] = await pool.query(query, params);
@@ -221,7 +235,8 @@ const deleteReservationsByOrderId = async (order_id, connection = pool) => {
 
 // Function to get orders using date range
 const getOrdersByDateRange = async (startDate, endDate, connection = pool) => {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+        `
        SELECT 
             o.id,
             o.order_date,
@@ -237,6 +252,11 @@ const getOrdersByDateRange = async (startDate, endDate, connection = pool) => {
         [startDate, endDate]
     );
     return rows;
+};
+
+const checkReferenceNumberExists = async (referenceNumber) => {
+    const [rows] = await pool.query('SELECT id FROM payments WHERE reference_number = ? LIMIT 1', [referenceNumber]);
+    return rows.length > 0;
 };
 
 module.exports = {
@@ -257,4 +277,5 @@ module.exports = {
     deductStockForOrder,
     deleteReservationsByOrderId,
     getOrdersByDateRange,
+    checkReferenceNumberExists,
 };

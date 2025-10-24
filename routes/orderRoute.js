@@ -18,5 +18,6 @@ router.get('/:id', getOrderById);
 router.get('/status-history/:orderId', getOrderStatusHistory);
 router.post('/', orderLimiter, validate(checkoutSchema), orderController.createOrder);
 router.put('/cancel/:orderId', orderController.cancelOrder);
+router.post('/check-reference/:referenceNumber', orderController.checkReferenceNotExist);
 
 module.exports = router;
