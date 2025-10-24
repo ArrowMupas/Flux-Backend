@@ -89,10 +89,22 @@ const getOrderById = asyncHandler(async (req, res) => {
     return sendResponse(res, 200, 'Order retrieved', result);
 });
 
+const checkReferenceNotExist = asyncHandler(async (req, res) => {
+    const { referenceNumber } = req.params;
+
+    const exists = await orderModel.checkReferenceNumberExists(referenceNumber);
+    if (exists) {
+        throw new HttpError(400, 'Reference Number is already used');
+    }
+
+    return sendResponse(res, 200, 'Reference number checked!');
+});
+
 module.exports = {
     createOrder,
     getOrders,
     getOrderStatusHistory,
     cancelOrder,
     getOrderById,
+    checkReferenceNotExist,
 };
