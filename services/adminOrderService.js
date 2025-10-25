@@ -64,7 +64,7 @@ const getOrderStatusHistory = async (orderId) => {
 };
 
 // Logic for admin cancelling an order
-const adminCancelOrder = async (orderId, notes) => {
+const adminCancelOrder = async (orderId, notes, adminId) => {
     const connection = await pool.getConnection();
 
     try {
@@ -83,8 +83,22 @@ const adminCancelOrder = async (orderId, notes) => {
             throw new HttpError(400, 'Order has no pending cancel request');
         }
 
+        const orderItems = await adminOrderModel.getOrderItems(orderId, connection);
+
         // Release stock reservation
         await reservationModel.releaseReservedStock(orderId, connection);
+
+        for (const item of orderItems) {
+            await logInventoryChange({
+                productId: item.product_id,
+                orderId,
+                adminId,
+                action: INVENTORY_ACTIONS.CANCEL_RESERVE,
+                changeAvailable: item.quantity,
+                changeReserved: -item.quantity,
+                reason: `Order ${orderId} cancelled by admin`,
+            });
+        }
 
         // Change status to cancelled
         await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes, connection);
@@ -172,14 +186,9 @@ const pendingToProcessingLogic = async (orderId, notes, adminId) => {
                 orderId,
                 adminId: adminId ?? null,
                 action: INVENTORY_ACTIONS.CONFIRM,
-                changeAvailable: change.changeAvailable,
+                changeAvailable: 0,
                 changeReserved: change.changeReserved,
-                oldAvailable: change.oldAvailable,
-                newAvailable: change.newAvailable,
-                oldReserved: change.oldReserved,
-                newReserved: change.newReserved,
                 reason: 'Stock moved from reserved to sold',
-                dbConnection: connection,
             });
         }
 

@@ -49,10 +49,10 @@ const deductStock = async (productId, quantity, connection) => {
 
 // Update the total amount of a walk-in sale
 const updateOrderTotal = async (saleId, totalAmount, connection = pool) => {
-    const [result] = await connection.query(
-        `UPDATE walk_in_sales SET total_amount = ? WHERE id = ?`,
-        [totalAmount, saleId]
-    );
+    const [result] = await connection.query(`UPDATE walk_in_sales SET total_amount = ? WHERE id = ?`, [
+        totalAmount,
+        saleId,
+    ]);
 
     if (result.affectedRows === 0) {
         throw new Error(`Order with ID ${saleId} not found.`);
@@ -66,16 +66,11 @@ const getAllWalkInSalesWithItems = async () => {
     const connection = await pool.getConnection();
 
     try {
-        const [sales] = await connection.query(
-            `SELECT * FROM walk_in_sales ORDER BY sale_date DESC`
-        );
+        const [sales] = await connection.query(`SELECT * FROM walk_in_sales ORDER BY sale_date DESC`);
         if (sales.length === 0) return [];
 
         const saleIds = sales.map((sale) => sale.id);
-        const [items] = await connection.query(
-            `SELECT * FROM walk_in_sale_items WHERE sale_id IN (?)`,
-            [saleIds]
-        );
+        const [items] = await connection.query(`SELECT * FROM walk_in_sale_items WHERE sale_id IN (?)`, [saleIds]);
 
         const salesWithItems = sales.map((sale) => {
             const saleItems = items.filter((item) => item.sale_id === sale.id);
@@ -91,17 +86,18 @@ const getAllWalkInSalesWithItems = async () => {
     }
 };
 
-const getWalkInOrdersByDateRange = async (startDate, endDate, connection = pool ) => {
+const getWalkInOrdersByDateRange = async (startDate, endDate, connection = pool) => {
     const [walkInData] = await connection.query(
         `SELECT id, customer_name, sale_date, total_amount, 'Cash' as payment_method
         FROM walk_in_sales
         WHERE sale_date BETWEEN ? AND ?
+        AND status != 'cancelled'
         ORDER BY sale_date DESC
         `,
         [startDate, `${endDate} 23:59:59`]
     );
     return walkInData;
-}
+};
 
 module.exports = {
     createOrder,

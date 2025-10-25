@@ -41,8 +41,9 @@ const getOrderStatusHistory = asyncHandler(async (req, res) => {
 const adminCancelOrder = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const { notes } = req.body;
+    const { id } = req.user;
 
-    await adminOrderService.adminCancelOrder(orderId, notes);
+    await adminOrderService.adminCancelOrder(orderId, notes, id);
     return sendResponse(res, 200, 'Order cancelled by admin');
 });
 

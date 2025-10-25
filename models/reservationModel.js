@@ -55,10 +55,7 @@ const deductReservedStock = async (orderId, connection) => {
         }
 
         if (newReserved < 0) {
-            throw new HttpError(
-                400,
-                `Reserved quantity cannot be negative for product ${product_id}`
-            );
+            throw new HttpError(400, `Reserved quantity cannot be negative for product ${product_id}`);
         }
 
         // Step 3: Update product's stock and reserved quantity
@@ -91,6 +88,16 @@ const deductReservedStock = async (orderId, connection) => {
 
 // Release reservation (used in cancellation)
 const releaseReservedStock = async (orderId, connection) => {
+    await connection.query(
+        `
+        UPDATE products p
+        JOIN product_reservations pr ON p.id = pr.product_id
+        SET p.reserved_quantity = p.reserved_quantity - pr.quantity
+        WHERE pr.order_id = ?
+        `,
+        [orderId]
+    );
+
     await connection.query(`DELETE FROM product_reservations WHERE order_id = ?`, [orderId]);
 };
 

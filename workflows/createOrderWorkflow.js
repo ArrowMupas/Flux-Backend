@@ -72,7 +72,8 @@ const addItemsAndReserveStock = async ({ cart, orderId, userId, connection }) =>
         await addOrderItem(item, orderId, connection);
         const stock = await validateAndFetchStock(item.product_id, item.quantity, connection);
         const { newReserved, newAvailable } = await reserveStock(item, orderId, stock, connection);
-        await logInventoryReservation({
+
+        logInventoryReservation({
             item,
             stock,
             newReserved,
@@ -80,6 +81,8 @@ const addItemsAndReserveStock = async ({ cart, orderId, userId, connection }) =>
             orderId,
             userId,
             connection,
+        }).catch((error) => {
+            console.error('Failed to log inventory reservation:', error);
         });
     }
 };
@@ -122,18 +125,14 @@ const reserveStock = async (item, orderId, stock, connection) => {
 };
 
 const logInventoryReservation = async ({ item, stock, newReserved, newAvailable, orderId, userId, connection }) => {
-    await logInventoryChange({
+    return logInventoryChange({
         productId: item.product_id,
         orderId,
         userId,
         action: INVENTORY_ACTIONS.RESERVE,
         changeAvailable: -item.quantity,
-        oldAvailable: stock.stock_quantity - stock.reserved_quantity,
-        newAvailable,
         changeReserved: item.quantity,
-        oldReserved: stock.reserved_quantity,
-        newReserved,
-        dbConnection: connection,
+        reason: 'Product ordered by user',
     });
 };
 

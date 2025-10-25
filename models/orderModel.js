@@ -252,6 +252,7 @@ const getOrdersByDateRange = async (startDate, endDate, connection = pool) => {
         LEFT JOIN payments p ON o.id = p.order_id
         LEFT JOIN users u ON o.customer_id = u.id
         WHERE DATE(o.order_date) BETWEEN ? AND ?
+        AND o.status != 'cancelled'
         ORDER BY o.order_date DESC
         `,
         [startDate, endDate]
