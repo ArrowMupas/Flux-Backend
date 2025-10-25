@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const sendResponse = require('../middlewares/responseMiddleware');
 const adminOrderService = require('../services/adminOrderService');
+const HttpError = require('../helpers/errorHelper');
 
 // Admin get all orders
 const getAllOrders = asyncHandler(async (req, res) => {
@@ -73,9 +74,15 @@ const movePendingToProcessing = asyncHandler(async (req, res) => {
 
 const moveProcessingToShipping = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
-    const { notes } = req.body;
+    const { notes, shipping_price, shipping_company, order_reference_number } = req.body;
 
-    const order = await adminOrderService.processingToShippingLogic(orderId, notes);
+    const order = await adminOrderService.processingToShippingLogic(
+        orderId,
+        notes,
+        shipping_price,
+        shipping_company,
+        order_reference_number
+    );
 
     res.locals.auditLog = {
         entity_id: orderId,
