@@ -104,6 +104,7 @@ const adminCancelOrder = async (orderId, notes, adminId) => {
         await adminOrderModel.changeOrderStatus(orderId, 'cancelled', notes, connection);
 
         await connection.commit();
+        return await adminOrderModel.getOrderById(orderId);
     } catch (error) {
         await connection.rollback();
         throw error;
