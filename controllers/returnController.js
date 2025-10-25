@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const returnService = require('../services/returnService');
 const sendResponse = require('../middlewares/responseMiddleware');
+const HttpError = require('../helpers/errorHelper');
 
 const getAllReturnRequests = asyncHandler(async (req, res) => {
     const requests = await returnService.getAllReturnRequests();
@@ -9,11 +10,17 @@ const getAllReturnRequests = asyncHandler(async (req, res) => {
 });
 
 const requestReturn = asyncHandler(async (req, res) => {
-    const { reason, contact_number } = req.body;
+    const { reason, contact_number, image_url } = req.body;
     const { orderId } = req.params;
     const customerId = req.user.id;
 
-    const returnRequest = await returnService.requestReturnLogic(orderId, customerId, reason, contact_number);
+    const returnRequest = await returnService.requestReturnLogic(
+        orderId,
+        customerId,
+        reason,
+        contact_number,
+        image_url
+    );
 
     return sendResponse(res, 200, 'Return Request Sent.', returnRequest);
 });

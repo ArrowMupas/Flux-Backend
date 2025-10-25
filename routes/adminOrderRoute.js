@@ -36,7 +36,6 @@ router.patch(
 );
 router.patch(
     '/move-to-shipping/:orderId',
-    validate(updateStatusSchema),
     adminLogMiddleware({
         entity_type: ENTITY_TYPES.ORDER,
         action_type: ACTION_TYPES.SHIP,

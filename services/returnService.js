@@ -8,7 +8,7 @@ const getAllReturnRequests = async () => {
     return await returnModel.getAllReturnRequests();
 };
 
-const requestReturnLogic = async (orderId, customerId, reason, contactNumber) => {
+const requestReturnLogic = async (orderId, customerId, reason, contactNumber, imageURL) => {
     const order = await orderModel.getOrderById(orderId);
     if (!order) {
         throw new HttpError(404, 'Order not found');
@@ -43,7 +43,7 @@ const requestReturnLogic = async (orderId, customerId, reason, contactNumber) =>
         throw new HttpError(400, 'Return requests can only be made within 3 days of delivery.');
     }
 
-    return await returnModel.createReturnRequest(orderId, customerId, reason, contactNumber);
+    return await returnModel.createReturnRequest(orderId, customerId, reason, contactNumber, imageURL);
 };
 
 const approveReturnLogic = async (orderId, notes) => {

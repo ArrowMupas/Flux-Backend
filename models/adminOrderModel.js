@@ -51,10 +51,14 @@ const getOrderById = async (orderId) => {
             u.username,
             u.email,
             u.contact_number,
-            u.address
+            u.address,
+            s.shipping_price,
+            s.shipping_company,
+            s.order_reference_number AS shipping_reference
         FROM orders o
         LEFT JOIN payments p ON o.id = p.order_id
         LEFT JOIN users u ON o.customer_id = u.id
+        LEFT JOIN shipping s ON o.id = s.order_id
         WHERE o.id = ?
         `,
         [orderId]
@@ -114,6 +118,14 @@ const changeOrderStatus = async (orderId, newStatus, notes, connection = pool) =
     ]);
 };
 
+const addShippingRecord = async (orderId, shippingPrice, shippingCompany, orderReferenceNumber, connection = pool) => {
+    await connection.query(
+        `INSERT INTO shipping (order_id, shipping_price, shipping_company, order_reference_number)
+         VALUES (?, ?, ?, ?)`,
+        [orderId, shippingPrice, shippingCompany, orderReferenceNumber]
+    );
+};
+
 module.exports = {
     getOrders,
     getOrderById,
@@ -121,4 +133,5 @@ module.exports = {
     getAllOrdersByUser,
     getOrderStatusHistory,
     changeOrderStatus,
+    addShippingRecord,
 };

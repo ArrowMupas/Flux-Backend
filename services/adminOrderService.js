@@ -195,13 +195,20 @@ const pendingToProcessingLogic = async (orderId, notes, adminId) => {
     }
 };
 
-const processingToShippingLogic = async (orderId, notes) => {
+const processingToShippingLogic = async (orderId, notes, shipping_price, shipping_company, order_reference_number) => {
     await validateStatusTransition(orderId, 'shipping', 'processing');
 
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
+        await adminOrderModel.addShippingRecord(
+            orderId,
+            shipping_price,
+            shipping_company,
+            order_reference_number,
+            connection
+        );
         await adminOrderModel.changeOrderStatus(orderId, 'shipping', notes, connection);
         await connection.commit();
         return await adminOrderModel.getOrderById(orderId);
