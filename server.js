@@ -51,6 +51,7 @@ const contactRoute = require('./routes/contactRoute');
 const landmarkRoute = require('./routes/landmarkRoute');
 const loyaltyRoute = require('./routes/loyaltyRoute');
 const inventoryLogRoute = require('./routes/inventoryLogRoute');
+const notificationRoute = require('./routes/notificationRoute');
 
 // security & optimization
 app.use(helmet());
@@ -96,6 +97,7 @@ app.use('/api/contact', contactRoute);
 app.use('/api/landmarks', landmarkRoute);
 app.use('/api/loyalty', loyaltyRoute);
 app.use('/api/inventoryLog', inventoryLogRoute);
+app.use('/api/notifications', notificationRoute);
 
 // 404 for unhandled routes
 app.use((req, res, next) => {
