@@ -39,8 +39,8 @@ const getOrders = async (status = null, start = null, end = null) => {
 };
 
 // Function to get order
-const getOrderById = async (orderId) => {
-    const [rows] = await pool.query(
+const getOrderById = async (orderId, connection = pool) => {
+    const [rows] = await connection.query(
         `
         SELECT 
             o.*, 
@@ -67,8 +67,8 @@ const getOrderById = async (orderId) => {
 };
 
 // Function to get order items
-const getOrderItems = async (orderId) => {
-    const [items] = await pool.query(
+const getOrderItems = async (orderId, connection = pool) => {
+    const [items] = await connection.query(
         `
     SELECT 
       oi.*, 

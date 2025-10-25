@@ -128,12 +128,8 @@ const logInventoryReservation = async ({ item, stock, newReserved, newAvailable,
         userId,
         action: INVENTORY_ACTIONS.RESERVE,
         changeAvailable: -item.quantity,
-        oldAvailable: stock.stock_quantity - stock.reserved_quantity,
-        newAvailable,
         changeReserved: item.quantity,
-        oldReserved: stock.reserved_quantity,
-        newReserved,
-        dbConnection: connection,
+        reason: 'Product ordered by user',
     });
 };
 

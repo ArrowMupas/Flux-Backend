@@ -1,4 +1,4 @@
-const db = require('../database/pool'); // adjust as needed
+const InventoryLog = require('../models/inventoryHistoryModel');
 const asyncHandler = require('express-async-handler');
 
 const logInventoryChange = asyncHandler(
@@ -8,34 +8,12 @@ const logInventoryChange = asyncHandler(
         userId = null,
         adminId = null,
         action,
-        changeAvailable,
+        changeAvailable = 0,
         changeReserved = 0,
-        oldAvailable,
-        oldReserved = 0,
-        newAvailable,
-        newReserved = 0,
         reason = null,
-        dbConnection = db, // use default db if no custom connection is provided
     }) => {
-        await dbConnection.query(
-            `
-            INSERT INTO inventory_logs 
-            (
-                product_id,
-                order_id,
-                user_id,
-                admin_id,
-                action,
-                change_available,
-                change_reserved,
-                old_available,
-                old_reserved,
-                new_available,
-                new_reserved,
-                reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-            [
+        try {
+            const logEntry = new InventoryLog({
                 productId,
                 orderId,
                 userId,
@@ -43,13 +21,13 @@ const logInventoryChange = asyncHandler(
                 action,
                 changeAvailable,
                 changeReserved,
-                oldAvailable,
-                oldReserved,
-                newAvailable,
-                newReserved,
                 reason,
-            ]
-        );
+            });
+
+            await logEntry.save();
+        } catch (error) {
+            console.error('Inventory logging failed:', error);
+        }
     }
 );
 

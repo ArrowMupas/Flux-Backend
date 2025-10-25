@@ -123,14 +123,15 @@ const updateProductStockAndPrice = asyncHandler(async (req, res) => {
 
     // Add to current stock
     const updatedProduct = await productModel.updateProductStockAndPrice(id, restock_quantity, price);
+    if (!updateProduct) {
+        throw new HttpError(400, 'Update failed');
+    }
 
-    await logInventoryChange({
+    logInventoryChange({
         productId: id,
         adminId: req.user?.id || null,
         action: 'add_stock',
         changeAvailable: restock_quantity,
-        oldAvailable: product.stock_quantity,
-        newAvailable: updatedProduct.stock_quantity,
         reason: `Stock restocked by ${restock_quantity}`,
     });
 
