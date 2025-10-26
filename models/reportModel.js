@@ -115,6 +115,7 @@ const fetchSalesPerDay = async (start, end) => {
          ORDER BY DATE(o.order_date) ASC`,
         [start, end]
     );
+
     return rows;
 };
 
@@ -140,16 +141,20 @@ const fetchUserReport = async (start, end) => {
 
 // Chart Thingy
 const fetchWeeklySales = async (weeks = 7) => {
-    const endDate = dayjs();
-    const startDate = endDate.subtract(weeks * 7 - 1, 'day');
+    const today = dayjs();
+    // Find Monday of the current week
+    const currentWeekMonday = today.day() === 0 ? today.subtract(6, 'day') : today.subtract(today.day() - 1, 'day');
+    // Start date is N weeks before the current week Monday
+    const startDate = currentWeekMonday.subtract(weeks - 1, 'week');
 
     const start = startDate.format('YYYY-MM-DD');
-    const end = endDate.format('YYYY-MM-DD');
+    const end = today.format('YYYY-MM-DD');
     const endWithTime = `${end} 23:59:59`;
 
+    // Fetch sales data
     const [rows] = await pool.query(
         `SELECT DATE(order_date) AS date, SUM(total_amount) AS daily_sales
-         FROM orders 
+         FROM orders
          WHERE order_date BETWEEN ? AND ?
            AND status IN ('pending', 'processing', 'shipping', 'delivered')
          GROUP BY DATE(order_date)
@@ -157,15 +162,17 @@ const fetchWeeklySales = async (weeks = 7) => {
         [start, endWithTime]
     );
 
+    // Map date -> daily sales
     const salesMap = {};
     rows.forEach((row) => {
         const dateKey = dayjs(row.date).format('YYYY-MM-DD');
         salesMap[dateKey] = Number(row.daily_sales);
     });
 
+    // Fill missing dates
     const allDates = [];
     let currentDate = startDate;
-    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+    while (currentDate.isBefore(today) || currentDate.isSame(today, 'day')) {
         const dateStr = currentDate.format('YYYY-MM-DD');
         allDates.push({
             date: dateStr,
@@ -174,6 +181,7 @@ const fetchWeeklySales = async (weeks = 7) => {
         currentDate = currentDate.add(1, 'day');
     }
 
+    // Group by weeks (Monday → Sunday)
     const weeklyData = [];
     for (let i = 0; i < allDates.length; i += 7) {
         const weekDays = allDates.slice(i, i + 7);
