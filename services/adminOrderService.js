@@ -137,7 +137,7 @@ const changeOrderStatus = async (orderId, newStatus, notes, adminId) => {
     try {
         await connection.beginTransaction();
 
-        // ✅ Only run transactional logic now
+        //  Only run transactional logic now
         if (currentStatus === 'pending' && newStatus === 'processing') {
             const inventoryChanges = await reservationModel.deductReservedStock(orderId, connection);
 

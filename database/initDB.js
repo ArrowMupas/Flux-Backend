@@ -13,7 +13,7 @@ require('dotenv').config();
 
         const createDatabaseQuery = `CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`;
         await connection.query(createDatabaseQuery);
-        console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
+        console.log(` Database '${process.env.DB_NAME}' is ready`);
 
         await connection.query(`USE ${process.env.DB_NAME}`);
 

@@ -1,4 +1,3 @@
-// By Yours truly
 const logger = require('../utilities/logger');
 
 async function logAdminAction({
