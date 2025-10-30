@@ -126,7 +126,7 @@ const removeCartItemByCartId = async (connection, cartId, productId) => {
 };
 
 //
-// ✅ Get cart for user (returns a single cart or null)
+//  Get cart for user (returns a single cart or null)
 const getCartByUserId = async (userId, connection = pool) => {
     const [rows] = await connection.query('SELECT * FROM carts WHERE user_id = ?', [userId]);
     return rows[0];
@@ -142,19 +142,19 @@ const getCartById = async (connection, cartId) => {
     return rows[0];
 };
 
-// ✅ Create a new cart for user
+//  Create a new cart for user
 const createCart = async (userId) => {
     const [result] = await pool.query('INSERT INTO carts (user_id) VALUES (?)', [userId]);
     return result.insertId;
 };
 
-// ✅ Get product stock (uses given connection)
+//  Get product stock (uses given connection)
 const getProductStock = async (connection, productId) => {
     const [rows] = await connection.query('SELECT stock_quantity FROM products WHERE id = ?', [productId]);
     return rows;
 };
 
-// ✅ Get a specific cart item by cart + product
+//  Get a specific cart item by cart + product
 const getCartItem = async (connection, cartId, productId) => {
     const [rows] = await connection.query('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?', [
         cartId,
@@ -163,7 +163,7 @@ const getCartItem = async (connection, cartId, productId) => {
     return rows;
 };
 
-// ✅ Remove one item from the cart
+//  Remove one item from the cart
 const removeCartItem = async (cartId, productId) => {
     const [result] = await pool.query('DELETE FROM cart_items WHERE cart_id = ? AND product_id = ?', [
         cartId,
@@ -172,7 +172,7 @@ const removeCartItem = async (cartId, productId) => {
     return result;
 };
 
-// ✅ Clear all items in the cart
+//  Clear all items in the cart
 const clearCart = async (connection, cartId) => {
     const [result] = await connection.query('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
     return result;

@@ -125,7 +125,7 @@ const moveProcessingToShipping = asyncHandler(async (req, res) => {
     );
 
     if (order?.user_id) {
-        // 💾 Save to DB
+        // Save to DB
         await notificationModel.createNotification({
             user_id: order.user_id,
             type: 'info',
@@ -134,7 +134,7 @@ const moveProcessingToShipping = asyncHandler(async (req, res) => {
             order_id: orderId,
         });
 
-        // 🔔 Emit via socket
+        // Emit via socket
         io.to(`user_${order.user_id}`).emit('order:update', {
             type: 'info',
             message: `Your order #${orderId} has been shipped via ${shipping_company} 🚚`,
@@ -161,7 +161,7 @@ const moveShippingToDelivered = asyncHandler(async (req, res) => {
     const order = await adminOrderService.shippingToDeliveredLogic(orderId, notes);
 
     if (order?.user_id) {
-        // 💾 Save to DB
+        // Save to DB
         await notificationModel.createNotification({
             user_id: order.user_id,
             type: 'success',
@@ -170,7 +170,7 @@ const moveShippingToDelivered = asyncHandler(async (req, res) => {
             order_id: orderId,
         });
 
-        // 🔔 Emit via socket
+        // Emit via socket
         io.to(`user_${order.user_id}`).emit('order:update', {
             type: 'success',
             message: `Your order #${orderId} has been delivered 🎉`,

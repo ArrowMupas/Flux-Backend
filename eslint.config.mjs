@@ -22,7 +22,6 @@ export default defineConfig([
             ...nodePlugin.configs.recommended.rules,
             ...securityPlugin.configs.recommended.rules,
 
-            // 🔧 Additional good backend rules
             'no-var': 'error',
             'prefer-const': 'error',
             eqeqeq: ['error', 'always'],

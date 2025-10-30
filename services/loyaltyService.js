@@ -36,11 +36,11 @@ const createCouponForLoyalty = async (data) => {
         let rewardId;
 
         if (existingReward) {
-            // ✅ Step 3a: Update the existing reward's coupon_id
+            //  Step 3a: Update the existing reward's coupon_id
             await loyaltyModel.updateLoyaltyRewardCoupon(existingReward.id, newCouponId, connection);
             rewardId = existingReward.id;
         } else {
-            // ✅ Step 3b: Create a new reward if none exists
+            //  Step 3b: Create a new reward if none exists
             const newRewardId = await loyaltyModel.createLoyaltyReward(
                 {
                     required_orders,
