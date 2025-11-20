@@ -3,6 +3,7 @@ const cartModel = require('../models/cartModel');
 const paymentModel = require('../models/paymentModel');
 const productModel = require('../models/productModel');
 const couponModel = require('../models/couponModel');
+const loyaltyModel = require('../models/loyaltyModel');
 const HttpError = require('../helpers/errorHelper');
 const { generateOrderId } = require('../helpers/orderIdHelper');
 const { logInventoryChange } = require('../utilities/inventoryLogUtility');
@@ -62,6 +63,7 @@ const createNewOrder = async ({ userId, subtotal, total, discount = 0, coupon_co
     if (coupon_code) {
         await couponModel.incrementUsage(coupon_code, connection);
         await couponModel.logUserCouponUsage(userId, coupon_code, connection);
+        await loyaltyModel.removeUserClaimedReward(userId, coupon_code, connection);
     }
 
     return orderId;

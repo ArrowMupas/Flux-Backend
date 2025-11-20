@@ -120,6 +120,30 @@ const getLoyaltyRewardsUpTo8 = async () => {
     return rows;
 };
 
+// I know this is not the standard but at this point I just want this to be over
+const removeUserClaimedReward = async (userId, couponCode, connection = pool) => {
+    const [rows] = await connection.query(SQL`
+    SELECT ucr.id
+    FROM user_claimed_rewards ucr
+    JOIN coupons c ON c.id = ucr.claimed_coupon_id
+    WHERE ucr.user_id = ${userId}
+      AND c.code = ${couponCode}
+    ORDER BY ucr.claimed_at DESC
+    LIMIT 1
+  `);
+
+    if (!rows.length) return false;
+
+    const claimedId = rows[0].id;
+
+    await connection.query(SQL`
+    DELETE FROM user_claimed_rewards
+    WHERE id = ${claimedId}
+  `);
+
+    return true;
+};
+
 module.exports = {
     updateUserLoyaltyProgress,
     createloyaltyCoupon,
@@ -128,4 +152,5 @@ module.exports = {
     updateLoyaltyRewardCoupon,
     getUserClaimedRewards,
     getLoyaltyRewardsUpTo8,
+    removeUserClaimedReward,
 };
