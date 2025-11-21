@@ -25,9 +25,9 @@ const getProductById = asyncHandler(async (req, res) => {
 });
 
 const createProduct = asyncHandler(async (req, res) => {
-    const { id, name, category, stock_quantity, price, image, description } = req.body;
+    const { id, name, category, stock_quantity, price, image, description, spice_level } = req.body;
 
-    await productModel.addProduct(id, name, category, stock_quantity, price, image, description);
+    await productModel.addProduct(id, name, category, stock_quantity, price, image, description, spice_level);
 
     res.locals.auditLog = {
         entity_id: id,
@@ -40,7 +40,7 @@ const createProduct = asyncHandler(async (req, res) => {
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
-    const { name, category, price, image, description } = req.body;
+    const { name, category, price, image, description, spice_level } = req.body;
 
     // Get current product data for logging
     const currentProduct = await productModel.getProductById(req.params.id);
@@ -48,7 +48,15 @@ const updateProduct = asyncHandler(async (req, res) => {
         throw new HttpError(404, `Cannot find product with ID ${req.params.id}`);
     }
 
-    const result = await productModel.updateProduct(req.params.id, name, category, price, image, description);
+    const result = await productModel.updateProduct(
+        req.params.id,
+        name,
+        category,
+        price,
+        image,
+        description,
+        spice_level
+    );
 
     if (result.affectedRows === 0) {
         throw new HttpError(404, `Cannot update product with ID ${req.params.id}`);
