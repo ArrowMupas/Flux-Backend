@@ -8,6 +8,7 @@ const productSchema = Joi.object({
     price: Joi.number().min(0).required(),
     image: Joi.string().max(255).required(),
     description: Joi.string().max(500).optional().allow(''),
+    spice_level: Joi.number().integer().min(0).max(5).optional(),
 }).unknown();
 
 const updateProductSchema = Joi.object({
@@ -16,6 +17,7 @@ const updateProductSchema = Joi.object({
     price: Joi.number().min(0).required(),
     image: Joi.string().max(255).optional(),
     description: Joi.string().max(500).optional().allow(''),
+    spice_level: Joi.number().integer().min(0).max(5).optional(),
 }).unknown();
 
 const statusSchema = Joi.object({
