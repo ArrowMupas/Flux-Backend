@@ -3,6 +3,7 @@ const { generateOrdersPDF } = require('../services/pdfService');
 const orderModel = require('../models/orderModel');
 const walkInOrderModel = require('../models/walkInOrderModel');
 const dayjs = require('dayjs');
+const pool = require('../database/pool');
 
 const getDailySales = async (req, res) => {
     try {
@@ -44,6 +45,60 @@ const getYearlySales = async (req, res) => {
     }
 };
 
+const getProductBreakdown = async (startDate, endDate) => {
+    const start = dayjs(startDate).format('YYYY-MM-DD');
+    const end = dayjs(endDate).format('YYYY-MM-DD 23:59:59');
+    
+    // Gets the product breakdown for both online and walk-in sales
+    const [productBreakdown] = await pool.query(`
+        WITH online_sales AS (
+            SELECT 
+                p.id,
+                p.name,
+                p.price AS base_price,
+                SUM(oi.quantity) AS quantity_sold,
+                SUM(oi.subtotal) AS total_sales
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            JOIN products p ON oi.product_id = p.id
+            WHERE o.order_date BETWEEN ? AND ?
+              AND o.status IN ('processing', 'shipping', 'delivered')
+            GROUP BY p.id, p.name, p.price
+        ),
+        walkin_sales AS (
+            SELECT 
+                p.id,
+                p.name,
+                p.price AS base_price,
+                SUM(wisi.quantity) AS quantity_sold,
+                SUM(wisi.subtotal) AS total_sales
+            FROM walk_in_sale_items wisi
+            JOIN walk_in_sales wis ON wisi.sale_id = wis.id
+            JOIN products p ON wisi.product_id = p.id
+            WHERE wis.sale_date BETWEEN ? AND ?
+            GROUP BY p.id, p.name, p.price
+        ),
+        combined_sales AS (
+            SELECT * FROM online_sales
+            UNION ALL
+            SELECT * FROM walkin_sales
+        )
+        SELECT 
+            id,
+            name,
+            base_price,
+            SUM(quantity_sold) AS total_quantity_sold,
+            SUM(total_sales) AS total_sales_amount
+        FROM combined_sales
+        GROUP BY id, name, base_price
+        HAVING total_quantity_sold > 0
+        ORDER BY total_sales_amount DESC
+    `, [start, end, start, end]);
+    
+    return productBreakdown;
+};
+
+
 //PDF Generator
 const generateOrdersPDFReport = async (req, res) => {
     try {
@@ -67,15 +122,17 @@ const generateOrdersPDFReport = async (req, res) => {
             return res.status(400).json({ message: 'End date cannot be before start date' });
         }
 
-        const onlineOrders = await orderModel.getOrdersByDateRange(
-            start.format('YYYY-MM-DD'),
-            end.format('YYYY-MM-DD')
-        );
-
-        const walkInOrders = await walkInOrderModel.getWalkInOrdersByDateRange(
-            start.format('YYYY-MM-DD'),
-            end.format('YYYY-MM-DD')
-        );
+        const [onlineOrders, walkInOrders, productBreakdown] = await Promise.all([
+            orderModel.getOrdersByDateRange(
+                start.format('YYYY-MM-DD'),
+                end.format('YYYY-MM-DD')
+            ),
+            walkInOrderModel.getWalkInOrdersByDateRange(
+                start.format('YYYY-MM-DD'),
+                end.format('YYYY-MM-DD')
+            ),
+            getProductBreakdown(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'))
+        ]);
 
         const formattedWalkIn = walkInOrders.map((o) => ({
             id: `W-${o.id}`,
@@ -94,14 +151,14 @@ const generateOrdersPDFReport = async (req, res) => {
         const combine = [...formattedOnline, ...formattedWalkIn];
         combine.sort((a, b) => new Date(a.order_date) - new Date(b.order_date));
 
-        if (combine.length === 0) {
+        if (combine.length === 0 && productBreakdown.length === 0) {
             return res.status(404).json({ message: 'No orders found for this selected date range!' });
         }
 
         const dateRange = `${start.format('MMM D, YYYY')} - ${end.format('MMM D, YYYY')}`;
 
-        // Generate PDF
-        const pdfBuffer = await generateOrdersPDF(combine, dateRange, reportType);
+        // Generate PDF with product breakdown
+        const pdfBuffer = await generateOrdersPDF(combine, productBreakdown, dateRange, reportType);
 
         const startFormatted = dayjs(startNormalized).format('YYYY-MM-DD');
         const endFormatted = dayjs(endNormalized).format('YYYY-MM-DD');

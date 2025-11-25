@@ -15,12 +15,16 @@ const fonts = {
 const printer = new PdfPrinter(fonts);
 
 
-const generateOrdersPDF = (orders, dateRange, reportType) => {
+const generateOrdersPDF = (orders, productBreakdown, dateRange, reportType) => {
   return new Promise((resolve, reject) => {
     try {
       // Calculate totals
       const totalAmount = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
       const totalOrders = orders.length;
+      
+      // Calculate product breakdown totals
+      const totalProductSales = productBreakdown.reduce((sum, product) => sum + parseFloat(product.total_sales_amount || 0), 0);
+      const totalItemsSold = productBreakdown.reduce((sum, product) => sum + parseInt(product.total_quantity_sold || 0), 0);
 
       const docDefinition = {
         content: [
@@ -34,7 +38,7 @@ const generateOrdersPDF = (orders, dateRange, reportType) => {
               {
                 stack: [
                   { text: 'Alas Delis Hot Sauce', style: 'businessName' },
-                  { text: 'The Sauce That Bites Back', style: 'tagline' } // optional tagline
+                  { text: 'The Sauce That Bites Back', style: 'tagline' }
                 ],
                 alignment: 'left',
                 margin: [0, 10, 0, 0]
@@ -82,24 +86,69 @@ const generateOrdersPDF = (orders, dateRange, reportType) => {
           {
             table: {
               headerRows: 1,
-              widths: ['*', '*'],
+              widths: ['*', '*', '*', '*'],
               body: [
                 [
                   { text: 'Total Orders', style: 'tableHeader', alignment: 'center' },
-                  { text: 'Total Sales', style: 'tableHeader', alignment: 'center' }
+                  { text: 'Total Sales', style: 'tableHeader', alignment: 'center' },
+                  { text: 'Total Products Sold', style: 'tableHeader', alignment: 'center' },
+                  { text: 'Total Product Revenue', style: 'tableHeader', alignment: 'center' }
                 ],
                 [
                  { text: totalOrders.toString(), alignment: 'center' },
-                 { text: `₱${totalAmount.toFixed(2)}`, alignment: 'center' }
+                 { text: `₱${totalAmount.toFixed(2)}`, alignment: 'center' },
+                 { text: totalItemsSold.toString(), alignment: 'center' },
+                 { text: `₱${totalProductSales.toFixed(2)}`, alignment: 'center' }
                 ]
               ]
             }
           },
+          
+          // Product Breakdown Section
+          {
+            text: 'Product Breakdown',
+            style: 'sectionHeader',
+            margin: [0, 20, 0, 10],
+          },
+          {
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', 'auto', 'auto'],
+              body: [
+                [
+                  { text: 'Product Name', style: 'tableHeader', alignment: 'center' },
+                  { text: 'Base Price', style: 'tableHeader', alignment: 'center' },
+                  { text: 'Quantity Sold', style: 'tableHeader', alignment: 'center' },
+                  { text: 'Total Sales', style: 'tableHeader', alignment: 'center' }
+                ],
+                ...productBreakdown.map(product => [
+                  { text: product.name || 'Unknown Product', alignment: 'left' },
+                  {
+                    columns: [
+                      { text: '₱', width: 10, alignment: 'left' },
+                      { text: parseFloat(product.base_price || 0).toFixed(2), alignment: 'right' }
+                    ],
+                    columnGap: 2
+                  },
+                  { text: (product.total_quantity_sold || 0).toString(), alignment: 'center' },
+                  {
+                    columns: [
+                      { text: '₱', width: 10, alignment: 'left' },
+                      { text: parseFloat(product.total_sales_amount || 0).toFixed(2), alignment: 'right' }
+                    ],
+                    columnGap: 2
+                  }
+                ])
+              ]
+            }
+          },
+
           // Orders table
           {
             text: 'Order Details',
             style: 'sectionHeader',
-            margin: [0, 20, 0, 10]
+            margin: [0, 20, 0, 10],
+            pageBreak: 'before'
           },
           {
             table: {
