@@ -1,4 +1,5 @@
 // logger.js
+// Uses axiom for logging so that the logs has their own databases and don't clutter the main free database.
 const winston = require('winston');
 const { WinstonTransport: AxiomTransport } = require('@axiomhq/winston');
 

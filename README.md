@@ -1,6 +1,13 @@
-# Backend Foundation ~ In Progress
+# Backend Foundation ~ Done! (Passed with minor revisions!, Best Thesis on the exhibit!)
 
-This is a foundational backend setup. It’s currently a work in progress, focusing on basic CRUD operations.
+This is a foundational backend setup for our college thesis.
+It’s finished and done now and may stay this way going forward as it is now a memory.
+Will still probably edit some documentation or maybe not.
+Back then I really hoped to keep coding this even after the thesis has ended.
+Right now I just want the knowledge and move on as I just can't go back to this anymore.
+I still wanted to do a lot of things frontend and backend but I wanna close this chapter now.
+Maybe the changes for the better will go to my next projects instead.
+I loved this codebase no matter how bad it was.
 
 ## 🛠 Technologies Used/ You can use
 
@@ -10,7 +17,7 @@ This is a foundational backend setup. It’s currently a work in progress, focus
 -   **Visual Studio Code** – Code editor
 -   **MySQL2** – Database driver for MySQL
 
----
+## There really is more things we used than this but I want to finalized this so maybe I will add them to the wiki.
 
 ## 🚀 Installation
 
@@ -145,5 +152,3 @@ git fetch
 ```
 
 ---
-
-_More features and documentation coming soon._

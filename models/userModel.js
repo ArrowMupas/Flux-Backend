@@ -118,41 +118,10 @@ const deleteVerificationToken = async (token) => {
     await pool.query(`DELETE FROM email_verification_tokens WHERE token = ?`, [token]);
 };
 
-// PASSWORD RESET STARTS HERE
-
-const saveResetToken = async (userId, token, expiresAt) => {
-    //Remove any existing password_reset_tokens
-    await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = ?`, [userId]);
-
-    //Gives new Token
-    await pool.query(`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)`, [
-        userId,
-        token,
-        expiresAt,
-    ]);
-};
-
-const getResetToken = async (userId) => {
-    const [token] = await pool.query(`SELECT * FROM password_reset_tokens WHERE user_id = ?`, [userId]);
-    return token[0];
-};
-
-const deleteResetToken = async (userId) => {
-    await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = ?`, [userId]);
-};
-
-// This is for Node-cron to clean (Thank you robeck)
-const deleteExpiredResetTokens = async () => {
-    await pool.query(`DELETE FROM password_reset_tokens WHERE expires_at < NOW()`);
-};
-
 // Updates User Pass
 const resetUserPasswordFromToken = async (userId, newPassword) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await pool.query('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?', [
-        hashedPassword,
-        userId,
-    ]);
+    await pool.query('UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?', [hashedPassword, userId]);
 };
 
 module.exports = {
@@ -167,9 +136,5 @@ module.exports = {
     verifyUser,
     deleteVerificationToken,
     getUserStats,
-    saveResetToken,
-    getResetToken,
-    deleteResetToken,
-    deleteExpiredResetTokens,
     resetUserPasswordFromToken,
 };
