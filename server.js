@@ -9,7 +9,6 @@ const compression = require('compression');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const http = require('http');
 const connectMongo = require('./database/mongo');
-// const { startCleanupJob } = require('./utilities/cleanupExpiredTokens');
 
 connectMongo().catch((err) => {
     console.log('⚠️ MongoDB connection failed, but server starting anyway:', err.message);
@@ -112,9 +111,6 @@ const server = http.createServer(app);
 const initializeSocket = require('./utilities/socket');
 
 const io = initializeSocket(server, app, FRONTEND);
-
-// Cleanup thingy of Node-Cron
-// startCleanupJob();
 
 // Start server
 server.listen(process.env.PORT, () => {
